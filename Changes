@@ -1,5 +1,13 @@
 Revision history for App-CSVUtils
 
+0.003   2016-11-02 (PERLANCAR)
+
+        - [Incompatible change] Rename script replace-newline-in-csv to
+          csv-replace-newline for consistency with the other utilities.
+
+        - Add tests.
+
+
 0.002   2016-11-02 (PERLANCAR)
 
 	- Add utilities: csvutil, csv-list-field-names, csv-add-field,
