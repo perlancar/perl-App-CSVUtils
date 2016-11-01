@@ -1,10 +1,10 @@
-package App::CLITestUtils;
+package App::CSVUtils;
 
 # DATE
 # VERSION
 
 1;
-# ABSTRACT: CLI utilities related to testing/debugging in CLI environment
+# ABSTRACT: CLI utilities related to CSV
 
 =head1 DESCRIPTION
 
