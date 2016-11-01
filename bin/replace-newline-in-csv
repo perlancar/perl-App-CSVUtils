@@ -41,7 +41,6 @@ _
     },
 };
 sub app {
-    require IO::Scalar;
     require Text::CSV_XS;
 
     my %args = @_;
