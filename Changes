@@ -1,5 +1,11 @@
 Revision history for App-CSVUtils
 
+0.002   2016-11-02 (PERLANCAR)
+
+	- Add utilities: csvutil, csv-list-field-names, csv-add-field,
+	  csv-delete-field, csv-munge-field.
+
+
 0.001   2016-11-01 (PERLANCAR)
 
          - First release.
