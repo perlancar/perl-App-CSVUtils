@@ -293,6 +293,57 @@ sub csv_munge_field {
     csvutil(%args, action=>'munge-field');
 }
 
+$SPEC{csv_replace_newline} = {
+    v => 1.1,
+    summary => 'Replace newlines in CSV values',
+    description => <<'_',
+
+Some CSV parsers or applications cannot handle multiline CSV values. This
+utility can be used to convert the newline to something else. There are a few
+choices: replace newline with space (`--with-space`, the default), remove
+newline (`--with-nothing`), replace with encoded representation
+(`--with-backslash-n`), or with characters of your choice (`--with 'blah'`).
+
+_
+    args => {
+        %arg_filename_0,
+        with => {
+            schema => 'str*',
+            default => ' ',
+            cmdline_aliases => {
+                with_space => { is_flag=>1, code=>sub { $_[0]{with} = ' ' } },
+                with_nothing => { is_flag=>1, code=>sub { $_[0]{with} = '' } },
+                with_backslash_n => { is_flag=>1, code=>sub { $_[0]{with} = "\\n" } },
+            },
+        },
+    },
+};
+sub csv_replace_newline {
+    require Text::CSV_XS;
+
+    my %args = @_;
+    my $with = $args{with};
+
+    my $csv = Text::CSV_XS->new({binary => 1});
+    open my($fh), "<:encoding(utf8)", $args{filename} or
+        return [500, "Can't open input filename '$args{filename}': $!"];
+
+    my $res = "";
+    my $i = 0;
+    while (my $row = $csv->getline($fh)) {
+        $i++;
+        for my $col (@$row) {
+            $col =~ s/[\015\012]+/$with/g;
+        }
+        my $status = $csv->combine(@$row)
+            or die "Error in line $i: ".$csv->error_input;
+        $res .= $csv->string . "\n";
+    }
+
+    [200, "OK", $res, {"cmdline.skip_format"=>1}];
+}
+
+
 1;
 # ABSTRACT: CLI utilities related to CSV
 
