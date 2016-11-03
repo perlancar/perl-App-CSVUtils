@@ -142,40 +142,45 @@ sub csvutil {
                          sort keys %field_idxs],
                     {'table.fields'=>['name','index']}];
         } elsif ($action eq 'munge-field') {
-            unless ($code) {
-                $code = _compile($args{eval});
-                $field_idx = _get_field_idx($args{field}, \%field_idxs);
-            }
-            if (defined $row->[$field_idx]) {
-                local $_ = $row->[$field_idx];
-                local $main::row = $row;
-                local $main::rownum = $i;
-                eval { $code->($_) };
-                die "Error while munging row ".
-                    "#$i field '$args{field}' value '$_': $@\n" if $@;
-                $row->[$field_idx] = $_;
+            unless ($i == 1) {
+                unless ($code) {
+                    $code = _compile($args{eval});
+                    $field_idx = _get_field_idx($args{field}, \%field_idxs);
+                }
+                if (defined $row->[$field_idx]) {
+                    local $_ = $row->[$field_idx];
+                    local $main::row = $row;
+                    local $main::rownum = $i;
+                    eval { $code->($_) };
+                    die "Error while munging row ".
+                        "#$i field '$args{field}' value '$_': $@\n" if $@;
+                    $row->[$field_idx] = $_;
+                }
             }
             $res .= _get_csv_row($csv, $row, $i);
         } elsif ($action eq 'add-field') {
-            unless ($code) {
-                $code = _compile($args{eval});
-                if (!defined($args{field}) || !length($args{field})) {
-                    return [400, "Please specify field (-F)"];
-                }
-                if (defined $field_idxs{$args{field}}) {
-                    return [412, "Field '$args{field}' already exists"];
-                }
+            if ($i == 1) {
                 $field_idx = @$row;
                 push @$row, $args{field};
-            }
-            if (!defined($row->[$field_idx])) {
-                local $_;
-                local $main::row = $row;
-                local $main::rownum = $i;
-                eval { $_ = $code->() };
-                die "Error while adding field '$args{field}' for row #$i: $@\n"
-                    if $@;
-                $row->[$field_idx] = $_;
+            } else {
+                unless ($code) {
+                    $code = _compile($args{eval});
+                    if (!defined($args{field}) || !length($args{field})) {
+                        return [400, "Please specify field (-F)"];
+                    }
+                    if (defined $field_idxs{$args{field}}) {
+                        return [412, "Field '$args{field}' already exists"];
+                    }
+                }
+                if (!defined($row->[$field_idx])) {
+                    local $_;
+                    local $main::row = $row;
+                    local $main::rownum = $i;
+                    eval { $_ = $code->() };
+                    die "Error while adding field '$args{field}' for row #$i: $@\n"
+                        if $@;
+                    $row->[$field_idx] = $_;
+                }
             }
             $res .= _get_csv_row($csv, $row, $i);
         } elsif ($action eq 'delete-field') {
@@ -200,18 +205,10 @@ $SPEC{csv_add_field} = {
     summary => 'Add a field to CSV file',
     description => <<'_',
 
-This command:
-
-    % csv-add-field FILE.CSV FIELDNAME 'perl code'
-
-is equivalent to:
-
-    % csvutil add-field FILE.CSV -F FIELDNAME -e 'perl code'
-
-Your Perl code should return the value for the field. `$main::row` is available
-and contains the current row, while `$main::rownum` contains the row number (1
-means the header row, 2 means the first data row). Field will be added as the
-last field.
+Your Perl code (-e) will be called for each row (excluding the header row) and
+should return the value for the new field. `$main::row` is available and
+contains the current row, while `$main::rownum` contains the row number (2 means
+the first data row). Field will be added as the last field.
 
 _
     args => {
@@ -240,19 +237,6 @@ sub csv_list_field_names {
 $SPEC{csv_delete_field} = {
     v => 1.1,
     summary => 'Delete a field from CSV file',
-    description => <<'_',
-
-This command:
-
-    % csv-delete-field FILE.CSV FIELDNAME
-
-is equivalent to:
-
-    % csvutil delete-field FILE.CSV -F FIELDNAME
-
-Field must exist and there must be at least one remaining field after deletion.
-
-_
     args => {
         %arg_filename_0,
         %arg_field_1,
@@ -268,18 +252,10 @@ $SPEC{csv_munge_field} = {
     summary => 'Munge a field in every row of CSV file',
     description => <<'_',
 
-This command:
-
-    % csv-munge-field FILE.CSV FIELDNAME 'perl code'
-
-is equivalent to:
-
-    % csvutil munge-field FILE.CSV -F FIELDNAME -e 'perl code'
-
-Perl code will be called for each row and `$_` will contain the value of the
-field `FIELDNAME`, which the Perl code is expected to modify. `$main::row` will
-contain the current row array and `$main::rownum` contains the row number (1
-means the header row, 2 means the first data row).
+Perl code (-e) will be called for each row (excluding the header row) and `$_`
+will contain the value of the field, and the Perl code is expected to modify it.
+`$main::row` will contain the current row array and `$main::rownum` contains the
+row number (2 means the first data row).
 
 _
     args => {

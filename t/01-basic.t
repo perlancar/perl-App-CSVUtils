@@ -60,7 +60,7 @@ subtest csv_munge_field => sub {
     dies_ok { App::CSVUtils::csv_munge_field(filename=>"$dir/1.csv", field=>"f4", eval=>'1') }
         "munging unknown field -> dies";
 
-    $res = App::CSVUtils::csv_munge_field(filename=>"$dir/1.csv", field=>"f3", eval=>'$_ = $_*3 if $main::rownum > 1');
+    $res = App::CSVUtils::csv_munge_field(filename=>"$dir/1.csv", field=>"f3", eval=>'$_ = $_*3');
     is_deeply($res, [200,"OK","f1,f2,f3\n1,2,9\n4,5,18\n7,8,27\n",{'cmdline.skip_format'=>1}], "result");
 };
 
