@@ -14,6 +14,7 @@ my $dir = tempdir(CLEANUP => 1);
 write_text("$dir/1.csv", "f1,f2,f3\n1,2,3\n4,5,6\n7,8,9\n");
 write_text("$dir/2.csv", "f1\n1\n2\n3\n");
 write_text("$dir/3.csv", qq(f1,f2\n1,"row\n1"\n2,"row\n2"\n));
+write_text("$dir/4.csv", qq(f1,F3,f2\n1,2,3\n4,5,6\n));
 
 subtest csv_add_field => sub {
     my $res;
@@ -70,6 +71,26 @@ subtest csv_replace_newline => sub {
     $res = App::CSVUtils::csv_replace_newline(filename=>"$dir/3.csv", with=>" ");
     is_deeply($res, [200,"OK",qq(f1,f2\n1,"row 1"\n2,"row 2"\n),{'cmdline.skip_format'=>1}], "result");
     # XXX opt=with
+};
+
+subtest csv_sort_fields => sub {
+    my $res;
+
+    # alphabetical
+    $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv");
+    is_deeply($res, [200,"OK",qq(F3,f1,f2\n2,1,3\n5,4,6\n),{'cmdline.skip_format'=>1}], "result (alphabetical)");
+    # reverse alphabetical
+    $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", reverse=>1);
+    is_deeply($res, [200,"OK",qq(f2,f1,F3\n3,1,2\n6,4,5\n),{'cmdline.skip_format'=>1}], "result (reverse alphabetical)");
+    # ci alphabetical
+    $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", ci=>1);
+    is_deeply($res, [200,"OK",qq(f1,f2,F3\n1,3,2\n4,6,5\n),{'cmdline.skip_format'=>1}], "result (ci alphabetical)");
+    # example
+    $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", example=>["f2","F3","f1"]);
+    is_deeply($res, [200,"OK",qq(f2,F3,f1\n3,2,1\n6,5,4\n),{'cmdline.skip_format'=>1}], "result (example)");
+    # reverse example
+    $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", example=>["f2","F3","f1"], reverse=>1);
+    is_deeply($res, [200,"OK",qq(f1,F3,f2\n1,2,3\n4,5,6\n),{'cmdline.skip_format'=>1}], "result (reverse example)");
 };
 
 done_testing;
