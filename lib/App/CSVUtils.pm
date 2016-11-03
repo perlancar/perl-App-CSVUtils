@@ -174,7 +174,7 @@ sub csvutil {
                     $sorted_fields = [$sorter->(@$row)];
                 } else {
                     # alphabetical
-                    if ($args{ci}) {
+                    if ($args{sort_ci}) {
                         $sorted_fields = [sort {lc($a) cmp lc($b)} @$row];
                     } else {
                         $sorted_fields = [sort {$a cmp $b} @$row];
