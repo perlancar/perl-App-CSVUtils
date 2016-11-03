@@ -1,5 +1,12 @@
 Revision history for App-CSVUtils
 
+0.005   2016-11-03 (PERLANCAR)
+
+        - csv-add-field, csv-munge-field: Don't run code for header row.
+
+        - Tweak descriptions.
+
+
 0.004   2016-11-03 (PERLANCAR)
 
         - [Removed] Remove utility csvutil.
