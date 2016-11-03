@@ -73,6 +73,34 @@ my %arg_eval_2 = (
     },
 );
 
+my %args_sort = (
+    sort_reverse => {
+        schema => ['bool', is=>1],
+    },
+    sort_ci => {
+        schema => ['bool', is=>1],
+    },
+    sort_example => {
+        schema => ['array*', of=>'str*',
+                   'x.perl.coerce_rules' => ['str_comma_sep']],
+    },
+);
+
+my %args_sort_short = (
+    reverse => {
+        schema => ['bool', is=>1],
+        cmdline_aliases => {r=>{}},
+    },
+    ci => {
+        schema => ['bool', is=>1],
+        cmdline_aliases => {i=>{}},
+    },
+    example => {
+        schema => ['array*', of=>'str*',
+                   'x.perl.coerce_rules' => ['str_comma_sep']],
+    },
+);
+
 $SPEC{csvutil} = {
     v => 1.1,
     summary => 'Perform action on a CSV file',
@@ -83,6 +111,7 @@ $SPEC{csvutil} = {
                 'munge-field',
                 'delete-field',
                 'add-field',
+                'sort-fields',
             ]],
             req => 1,
             pos => 0,
@@ -101,6 +130,7 @@ $SPEC{csvutil} = {
         },
     },
     args_rels => {
+        # XXX sort_* hanya relevan untuk action=sort-fields
     },
 };
 sub csvutil {
@@ -120,6 +150,7 @@ sub csvutil {
 
     my $code;
     my $field_idx;
+    my $sorted_fields;
 
     while (my $row = $csv->getline($fh)) {
         $i++;
@@ -135,7 +166,25 @@ sub csvutil {
                 }
                 $field_idxs{$row->[$j]} = $j;
             }
-        }
+            if ($action eq 'sort-fields') {
+                if (my $eg = $args{sort_example}) {
+                    $eg = [split /\s*,\s*/, $eg] unless ref($eg) eq 'ARRAY';
+                    require Sort::ByExample;
+                    my $sorter = Sort::ByExample::sbe($eg);
+                    $sorted_fields = [$sorter->(@$row)];
+                } else {
+                    # alphabetical
+                    if ($args{ci}) {
+                        $sorted_fields = [sort {lc($a) cmp lc($b)} @$row];
+                    } else {
+                        $sorted_fields = [sort {$a cmp $b} @$row];
+                    }
+                }
+                $sorted_fields = [reverse @$sorted_fields]
+                    if $args{sort_reverse};
+                $row = $sorted_fields;
+            }
+        } # if i==1
         if ($action eq 'list-field-names') {
             return [200, "OK",
                     [map { {name=>$_, index=>$field_idxs{$_}+1} }
@@ -186,6 +235,15 @@ sub csvutil {
                 }
             }
             splice @$row, $field_idx, 1;
+            $res .= _get_csv_row($csv, $row, $i);
+        } elsif ($action eq 'sort-fields') {
+            unless ($i == 1) {
+                my @new_row;
+                for (@$sorted_fields) {
+                    push @new_row, $row->[$field_idxs{$_}];
+                }
+                $row = \@new_row;
+            }
             $res .= _get_csv_row($csv, $row, $i);
         } else {
             return [400, "Unknown action '$action'"];
@@ -341,6 +399,28 @@ sub csv_replace_newline {
     }
 
     [200, "OK", $res, {"cmdline.skip_format"=>1}];
+}
+
+$SPEC{csv_sort_fields} = {
+    v => 1.1,
+    summary => 'Sort CSV fields',
+    args => {
+        %arg_filename_0,
+        %args_sort_short,
+    },
+};
+sub csv_sort_fields {
+    my %args = @_;
+
+    my %csvutil_args = (
+        filename => $args{filename},
+        action => 'sort-fields',
+        (sort_example => $args{example}) x !!defined($args{example}),
+        sort_reverse => $args{reverse},
+        sort_ci => $args{ci},
+    );
+
+    csvutil(%csvutil_args);
 }
 
 
