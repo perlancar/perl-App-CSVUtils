@@ -126,7 +126,7 @@ my %arg_field_1 = (
     },
 );
 
-my %arg_field_nocomp = (
+my %arg_field_1_nocomp = (
     field => {
         summary => 'Field name',
         schema => 'str*',
@@ -345,7 +345,7 @@ the first data row). Field will be added as the last field.
 _
     args => {
         %arg_filename_0,
-        %arg_field_1,
+        %arg_field_1_nocomp,
         %arg_eval_2,
     },
 };
