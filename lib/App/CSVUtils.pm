@@ -33,6 +33,68 @@ sub _get_csv_row {
     $csv->string . "\n";
 }
 
+sub _complete_field_or_field_list {
+    # return list of known fields of a CSV
+
+    my $which = shift;
+
+    my %args = @_;
+    my $word = $args{word} // '';
+    my $cmdline = $args{cmdline};
+    my $r = $args{r};
+
+    # we are not called from cmdline, bail
+    return undef unless $cmdline;
+
+    # let's parse argv first
+    my $args;
+    {
+        # this is not activated yet
+        $r->{read_config} = 1;
+
+        my $res = $cmdline->parse_argv($r);
+        #return undef unless $res->[0] == 200;
+
+        $cmdline->_read_config($r) unless $r->{config};
+        $args = $res->[2];
+    }
+
+    # user hasn't specified -f, bail
+    return undef unless defined $args && $args->{filename};
+
+    # can the file be opened?
+    require Text::CSV_XS;
+    my $csv = Text::CSV_XS->new({binary => 1});
+    open my($fh), "<:encoding(utf8)", $args->{filename} or
+        return [];
+
+    # can the header row be read?
+    my $row = $csv->getline($fh) or return [];
+
+    require Complete::Util;
+    if ($which eq 'field') {
+        return Complete::Util::complete_array_elem(
+            word => $word,
+            array => $row,
+        );
+    } else {
+        # field_list
+        return Complete::Util::complete_comma_sep(
+            word => $word,
+            elems => $row,
+            uniq => 1,
+        );
+    }
+}
+
+sub _complete_field {
+    _complete_field_or_field_list('field', @_);
+}
+
+sub _complete_field_list {
+    _complete_field_or_field_list('field_list', @_);
+}
+
 my %arg_filename_1 = (
     filename => {
         summary => 'Input CSV file',
@@ -54,6 +116,17 @@ my %arg_filename_0 = (
 );
 
 my %arg_field_1 = (
+    field => {
+        summary => 'Field name',
+        schema => 'str*',
+        cmdline_aliases => { F=>{} },
+        req => 1,
+        pos => 1,
+        completion => \&_complete_field,
+    },
+);
+
+my %arg_field_nocomp = (
     field => {
         summary => 'Field name',
         schema => 'str*',
@@ -96,8 +169,9 @@ my %args_sort_short = (
         cmdline_aliases => {i=>{}},
     },
     example => {
-        schema => ['array*', of=>'str*',
-                   'x.perl.coerce_rules' => ['str_comma_sep']],
+        summary => 'A comma-separated list of field names',
+        schema => ['str*'],
+        completion => \&_complete_field_list,
     },
 );
 
