@@ -1,5 +1,13 @@
 Revision history for App-CSVUtils
 
+0.007   2016-11-15 (PERLANCAR)
+
+	- Add utilities: csv-sum, csv-avg.
+
+	- csv-add-field: Tweak completion: field should not be completed
+	  with existing field names.
+
+
 0.006   2016-11-03 (PERLANCAR)
 
         - [ux] Add completion for field name (-F) and --example.
