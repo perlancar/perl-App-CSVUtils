@@ -175,6 +175,13 @@ my %args_sort_short = (
     },
 );
 
+my %arg_with_data_rows = (
+    with_data_rows => {
+        summary => 'Whether to also output data rows',
+        schema => 'bool',
+    },
+);
+
 $SPEC{csvutil} = {
     v => 1.1,
     summary => 'Perform action on a CSV file',
@@ -225,10 +232,13 @@ sub csvutil {
     my $code;
     my $field_idx;
     my $sorted_fields;
+    my @summary_row;
 
     while (my $row = $csv->getline($fh)) {
         $i++;
         if ($i == 1) {
+            # header row
+
             $fields = $row;
             for my $j (0..$#{$row}) {
                 unless (length $row->[$j]) {
@@ -258,7 +268,11 @@ sub csvutil {
                     if $args{sort_reverse};
                 $row = $sorted_fields;
             }
-        } # if i==1
+            if ($action eq 'sum' || $action eq 'avg') {
+                @summary_row = map {0} @$row;
+            }
+        } # if i==1 (header row)
+
         if ($action eq 'list-field-names') {
             return [200, "OK",
                     [map { {name=>$_, index=>$field_idxs{$_}+1} }
@@ -324,9 +338,44 @@ sub csvutil {
                 $row = \@new_row;
             }
             $res .= _get_csv_row($csv, $row, $i);
+        } elsif ($action eq 'sum') {
+            if ($i == 1) {
+                $res .= _get_csv_row($csv, $row, $i);
+            } else {
+                require Scalar::Util;
+                for (0..$#{$row}) {
+                    next unless Scalar::Util::looks_like_number($row->[$_]);
+                    $summary_row[$_] += $row->[$_];
+                }
+                $res .= _get_csv_row($csv, $row, $i)
+                    if $args{_with_data_rows};
+            }
+        } elsif ($action eq 'avg') {
+            if ($i == 1) {
+                $res .= _get_csv_row($csv, $row, $i);
+            } else {
+                require Scalar::Util;
+                for (0..$#{$row}) {
+                    next unless Scalar::Util::looks_like_number($row->[$_]);
+                    $summary_row[$_] += $row->[$_];
+                }
+                $res .= _get_csv_row($csv, $row, $i)
+                    if $args{_with_data_rows};
+            }
         } else {
             return [400, "Unknown action '$action'"];
         }
+    }
+
+    if ($action eq 'sum') {
+        $res .= _get_csv_row($csv, \@summary_row,
+                             $args{_with_data_rows} ? $i+1 : 2);
+    } elsif ($action eq 'avg') {
+        if ($i > 2) {
+            for (@summary_row) { $_ /= ($i-1) }
+        }
+        $res .= _get_csv_row($csv, \@summary_row,
+                             $args{_with_data_rows} ? $i+1 : 2);
     }
 
     [200, "OK", $res, {"cmdline.skip_format"=>1}];
@@ -471,6 +520,34 @@ sub csv_sort_fields {
     );
 
     csvutil(%csvutil_args);
+}
+
+$SPEC{csv_sum} = {
+    v => 1.1,
+    summary => 'Output a summary row which are arithmetic sums of data rows',
+    args => {
+        %arg_filename_0,
+        %arg_with_data_rows,
+    },
+};
+sub csv_sum {
+    my %args = @_;
+
+    csvutil(%args, action=>'sum', _with_data_rows=>$args{with_data_rows});
+}
+
+$SPEC{csv_avg} = {
+    v => 1.1,
+    summary => 'Output a summary row which are arithmetic averages of data rows',
+    args => {
+        %arg_filename_0,
+        %arg_with_data_rows,
+    },
+};
+sub csv_avg {
+    my %args = @_;
+
+    csvutil(%args, action=>'avg', _with_data_rows=>$args{with_data_rows});
 }
 
 

@@ -15,6 +15,7 @@ write_text("$dir/1.csv", "f1,f2,f3\n1,2,3\n4,5,6\n7,8,9\n");
 write_text("$dir/2.csv", "f1\n1\n2\n3\n");
 write_text("$dir/3.csv", qq(f1,f2\n1,"row\n1"\n2,"row\n2"\n));
 write_text("$dir/4.csv", qq(f1,F3,f2\n1,2,3\n4,5,6\n));
+write_text("$dir/no-rows.csv", qq(f1,f2,f3\n));
 
 subtest csv_add_field => sub {
     my $res;
@@ -91,6 +92,28 @@ subtest csv_sort_fields => sub {
     # reverse example
     $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", example=>["f2","F3","f1"], reverse=>1);
     is_deeply($res, [200,"OK",qq(f1,F3,f2\n1,2,3\n4,5,6\n),{'cmdline.skip_format'=>1}], "result (reverse example)");
+};
+
+subtest csv_sum => sub {
+    my $res;
+
+    $res = App::CSVUtils::csv_sum(filename=>"$dir/4.csv");
+    is_deeply($res, [200,"OK",qq(f1,F3,f2\n5,7,9\n),{'cmdline.skip_format'=>1}], "result");
+    $res = App::CSVUtils::csv_sum(filename=>"$dir/4.csv", with_data_rows=>1);
+    is_deeply($res, [200,"OK",qq(f1,F3,f2\n1,2,3\n4,5,6\n5,7,9\n),{'cmdline.skip_format'=>1}], "result (with_data_rows=1)");
+    $res = App::CSVUtils::csv_sum(filename=>"$dir/no-rows.csv");
+    is_deeply($res, [200,"OK",qq(f1,f2,f3\n0,0,0\n),{'cmdline.skip_format'=>1}], "result (no rows)");
+};
+
+subtest csv_avg => sub {
+    my $res;
+
+    $res = App::CSVUtils::csv_avg(filename=>"$dir/4.csv");
+    is_deeply($res, [200,"OK",qq(f1,F3,f2\n2.5,3.5,4.5\n),{'cmdline.skip_format'=>1}], "result");
+    $res = App::CSVUtils::csv_avg(filename=>"$dir/4.csv", with_data_rows=>1);
+    is_deeply($res, [200,"OK",qq(f1,F3,f2\n1,2,3\n4,5,6\n2.5,3.5,4.5\n),{'cmdline.skip_format'=>1}], "result (with_data_rows=1)");
+    $res = App::CSVUtils::csv_avg(filename=>"$dir/no-rows.csv");
+    is_deeply($res, [200,"OK",qq(f1,f2,f3\n0,0,0\n),{'cmdline.skip_format'=>1}], "result (no rows)");
 };
 
 done_testing;
