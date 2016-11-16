@@ -15,6 +15,7 @@ write_text("$dir/1.csv", "f1,f2,f3\n1,2,3\n4,5,6\n7,8,9\n");
 write_text("$dir/2.csv", "f1\n1\n2\n3\n");
 write_text("$dir/3.csv", qq(f1,f2\n1,"row\n1"\n2,"row\n2"\n));
 write_text("$dir/4.csv", qq(f1,F3,f2\n1,2,3\n4,5,6\n));
+write_text("$dir/5.csv", qq(f1\n1\n2\n3\n4\n5\n6\n));
 write_text("$dir/no-rows.csv", qq(f1,f2,f3\n));
 
 subtest csv_add_field => sub {
@@ -114,6 +115,21 @@ subtest csv_avg => sub {
     is_deeply($res, [200,"OK",qq(f1,F3,f2\n1,2,3\n4,5,6\n2.5,3.5,4.5\n),{'cmdline.skip_format'=>1}], "result (with_data_rows=1)");
     $res = App::CSVUtils::csv_avg(filename=>"$dir/no-rows.csv");
     is_deeply($res, [200,"OK",qq(f1,f2,f3\n0,0,0\n),{'cmdline.skip_format'=>1}], "result (no rows)");
+};
+
+subtest csv_select_row => sub {
+    my $res;
+
+    $res = App::CSVUtils::csv_select_row(filename=>"$dir/5.csv", row_spec=>'10');
+    is_deeply($res, [200,"OK",qq(f1\n),{'cmdline.skip_format'=>1}], "result (n, outside range)");
+    $res = App::CSVUtils::csv_select_row(filename=>"$dir/5.csv", row_spec=>'4');
+    is_deeply($res, [200,"OK",qq(f1\n3\n),{'cmdline.skip_format'=>1}], "result (n)");
+    $res = App::CSVUtils::csv_select_row(filename=>"$dir/5.csv", row_spec=>'4-6');
+    is_deeply($res, [200,"OK",qq(f1\n3\n4\n5\n),{'cmdline.skip_format'=>1}], "result (n-m)");
+    $res = App::CSVUtils::csv_select_row(filename=>"$dir/5.csv", row_spec=>'2,4-6');
+    is_deeply($res, [200,"OK",qq(f1\n1\n3\n4\n5\n),{'cmdline.skip_format'=>1}], "result (n1,n2-m)");
+    $res = App::CSVUtils::csv_select_row(filename=>"$dir/5.csv", row_spec=>'1-');
+    is($res->[0], 400, "error in spec -> status 400");
 };
 
 done_testing;

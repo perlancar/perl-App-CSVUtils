@@ -195,6 +195,8 @@ $SPEC{csvutil} = {
                 'sort-fields',
                 'sum',
                 'avg',
+                'select-row',
+                'convert-to-hash',
             ]],
             req => 1,
             pos => 0,
@@ -235,6 +237,7 @@ sub csvutil {
     my $field_idx;
     my $sorted_fields;
     my @summary_row;
+    my $row_spec_sub;
 
     while (my $row = $csv->getline($fh)) {
         $i++;
@@ -272,6 +275,21 @@ sub csvutil {
             }
             if ($action eq 'sum' || $action eq 'avg') {
                 @summary_row = map {0} @$row;
+            }
+            if ($action eq 'select-row') {
+                my $spec = $args{row_spec};
+                my @codestr;
+                for my $spec_item (split /\s*,\s*/, $spec) {
+                    if ($spec_item =~ /\A\d+\z/) {
+                        push @codestr, "(\$i == $spec_item)";
+                    } elsif ($spec_item =~ /\A(\d+)\s*-\s*(\d+)\z/) {
+                        push @codestr, "(\$i >= $1 && \$i <= $2)";
+                    } else {
+                        return [400, "Invalid row specification '$spec_item'"];
+                    }
+                }
+                $row_spec_sub = eval 'sub { my $i = shift; '.join(" || ", @codestr).' }';
+                return [400, "BUG: Invalid row_spec code: $@"] if $@;
             }
         } # if i==1 (header row)
 
@@ -363,6 +381,10 @@ sub csvutil {
                 }
                 $res .= _get_csv_row($csv, $row, $i)
                     if $args{_with_data_rows};
+            }
+        } elsif ($action eq 'select-row') {
+            if ($i == 1 || $row_spec_sub->($i)) {
+                $res .= _get_csv_row($csv, $row, $i);
             }
         } else {
             return [400, "Unknown action '$action'"];
@@ -550,6 +572,26 @@ sub csv_avg {
     my %args = @_;
 
     csvutil(%args, action=>'avg', _with_data_rows=>$args{with_data_rows});
+}
+
+$SPEC{csv_select_row} = {
+    v => 1.1,
+    summary => 'Only output specified rows',
+    args => {
+        %arg_filename_0,
+        row_spec => {
+            schema => 'str*',
+            summary => 'Row number (e.g. 2 for first data row, or 7), '.
+                'range (1-7), or comma-separated list of such',
+            req => 1,
+            pos => 1,
+        },
+    },
+};
+sub csv_select_row {
+    my %args = @_;
+
+    csvutil(%args, action=>'select-row');
 }
 
 
