@@ -544,7 +544,7 @@ sub csv_list_field_names {
 
 $SPEC{csv_delete_field} = {
     v => 1.1,
-    summary => 'Delete a field from CSV file',
+    summary => 'Delete one or more fields from CSV file',
     args => {
         %arg_filename_0,
         %arg_fields_1,
