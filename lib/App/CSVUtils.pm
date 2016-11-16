@@ -223,6 +223,7 @@ $SPEC{csvutil} = {
                 'avg',
                 'select-row',
                 'convert-to-hash',
+                'select-fields',
             ]],
             req => 1,
             pos => 0,
@@ -414,6 +415,17 @@ sub csvutil {
                     splice @$row, $_, 1;
                 }
             }
+            $res .= _get_csv_row($csv, $row, $i);
+        } elsif ($action eq 'select-fields') {
+            if (!defined($field_idxs)) {
+                $field_idxs = [];
+                my %seen;
+                for my $f (@{ $args{_fields} }) {
+                    return [400, "Duplicate field '$f'"] if $seen{$f}++;
+                    push @$field_idxs, _get_field_idx($f, \%field_idxs);
+                }
+            }
+            $row = [map { $row->[$_] } @$field_idxs];
             $res .= _get_csv_row($csv, $row, $i);
         } elsif ($action eq 'sort-fields') {
             unless ($i == 1) {
@@ -811,6 +823,19 @@ sub csv_concat {
         $res .= $csv->string . "\n";
     }
     [200, "OK", $res, {"cmdline.skip_format"=>1}];
+}
+
+$SPEC{csv_select_fields} = {
+    v => 1.1,
+    summary => 'Only output selected field(s)',
+    args => {
+        %arg_filename_0,
+        %arg_fields_1,
+    },
+};
+sub csv_select_fields {
+    my %args = @_;
+    csvutil(%args, action=>'select-fields', _fields => $args{fields});
 }
 
 1;

@@ -166,4 +166,18 @@ subtest csv_concat => sub {
     is_deeply($res, [200,"OK",qq(f1,f2,f3,F3\n1,2,3,\n4,5,6,\n7,8,9,\n1,,,\n2,,,\n3,,,\n1,3,,2\n4,6,,5\n),{'cmdline.skip_format'=>1}], "result");
 };
 
+subtest csv_select_fields => sub {
+    my $res;
+
+    dies_ok { App::CSVUtils::csv_select_fields(filename=>"$dir/1.csv", fields=>["f1", "f4"]) }
+        "specifying unknown field -> dies";
+
+    $res = App::CSVUtils::csv_select_fields(filename=>"$dir/1.csv", fields=>["f1", "f1"]);
+    is($res->[0], 400, "duplicated field -> status 400");
+
+    $res = App::CSVUtils::csv_select_fields(filename=>"$dir/1.csv", fields=>["f3", "f1"]);
+    is_deeply($res, [200,"OK","f3,f1\n3,1\n6,4\n9,7\n",{'cmdline.skip_format'=>1}], "result")
+        or diag explain $res;
+};
+
 done_testing;
