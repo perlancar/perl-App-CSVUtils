@@ -197,6 +197,7 @@ my %arg_with_data_rows = (
 $SPEC{csvutil} = {
     v => 1.1,
     summary => 'Perform action on a CSV file',
+    'x.no_index' => 1,
     args => {
         action => {
             schema => ['str*', in=>[
