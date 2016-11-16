@@ -115,7 +115,7 @@ my %arg_filename_0 = (
     },
 );
 
-my %arg_filenames = (
+my %arg_filenames_0 = (
     filenames => {
         'x.name.is_plural' => 1,
         summary => 'Input CSV files',
@@ -145,6 +145,19 @@ my %arg_field_1_nocomp = (
         cmdline_aliases => { F=>{} },
         req => 1,
         pos => 1,
+    },
+);
+
+my %arg_fields_1 = (
+    fields => {
+        'x.name.is_plural' => 1,
+        summary => 'Field names',
+        schema => ['array*', of=>'str*'],
+        cmdline_aliases => { F=>{} },
+        req => 1,
+        pos => 1,
+        greedy => 1,
+        element_completion => \&_complete_field,
     },
 );
 
@@ -248,6 +261,7 @@ sub csvutil {
 
     my $code;
     my $field_idx;
+    my $field_idxs;
     my $sorted_fields;
     my @summary_row;
     my $selected_row;
@@ -383,13 +397,23 @@ sub csvutil {
             }
             $res .= _get_csv_row($csv, $row, $i);
         } elsif ($action eq 'delete-field') {
-            unless (defined $field_idx) {
-                $field_idx = _get_field_idx($args{field}, \%field_idxs);
-                if (@$row <= 1) {
-                    return [412, "Can't delete field because CSV will have zero fields"];
+            if (!defined($field_idxs)) {
+                $field_idxs = [];
+                for my $f (@{ $args{_fields} }) {
+                    push @$field_idxs, _get_field_idx($f, \%field_idxs);
+                }
+                $field_idxs = [sort {$b<=>$a} @$field_idxs];
+                for (@$field_idxs) {
+                    splice @$row, $_, 1;
+                    unless (@$row) {
+                        return [412, "Can't delete field(s) because CSV will have zero fields"];
+                    }
+                }
+            } else {
+                for (@$field_idxs) {
+                    splice @$row, $_, 1;
                 }
             }
-            splice @$row, $field_idx, 1;
             $res .= _get_csv_row($csv, $row, $i);
         } elsif ($action eq 'sort-fields') {
             unless ($i == 1) {
@@ -523,12 +547,12 @@ $SPEC{csv_delete_field} = {
     summary => 'Delete a field from CSV file',
     args => {
         %arg_filename_0,
-        %arg_field_1,
+        %arg_fields_1,
     },
 };
 sub csv_delete_field {
     my %args = @_;
-    csvutil(%args, action=>'delete-field');
+    csvutil(%args, action=>'delete-field', _fields => $args{fields});
 }
 
 $SPEC{csv_munge_field} = {
@@ -731,7 +755,7 @@ will result in:
 
 _
     args => {
-        %arg_filenames,
+        %arg_filenames_0,
     },
 };
 sub csv_concat {

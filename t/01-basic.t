@@ -43,14 +43,24 @@ subtest csv_add_field => sub {
 subtest csv_delete_field => sub {
     my $res;
 
-    dies_ok { App::CSVUtils::csv_delete_field(filename=>"$dir/1.csv", field=>"f4") }
-        "deleting unknown field -> dies";
+    dies_ok { App::CSVUtils::csv_delete_field(filename=>"$dir/1.csv", fields=>["f4"]) }
+        "deleting unknown field -> dies (1)";
 
-    $res = App::CSVUtils::csv_delete_field(filename=>"$dir/2.csv", field=>"f1");
-    is($res->[0], 412, "deleting last field -> error");
+    dies_ok { App::CSVUtils::csv_delete_field(filename=>"$dir/1.csv", fields=>["f1", "f4"]) }
+        "deleting unknown field -> dies (2)";
 
-    $res = App::CSVUtils::csv_delete_field(filename=>"$dir/1.csv", field=>"f1");
+    $res = App::CSVUtils::csv_delete_field(filename=>"$dir/2.csv", fields=>["f1"]);
+    is($res->[0], 412, "deleting last remaining field -> error (1)");
+
+    $res = App::CSVUtils::csv_delete_field(filename=>"$dir/3.csv", fields=>["f2", "f1"]);
+    is($res->[0], 412, "deleting last remaining field -> error (2)");
+
+    $res = App::CSVUtils::csv_delete_field(filename=>"$dir/1.csv", fields=>["f1"]);
     is_deeply($res, [200,"OK","f2,f3\n2,3\n5,6\n8,9\n",{'cmdline.skip_format'=>1}], "result");
+
+    $res = App::CSVUtils::csv_delete_field(filename=>"$dir/1.csv", fields=>["f3", "f1"]);
+    is_deeply($res, [200,"OK","f2\n2\n5\n8\n",{'cmdline.skip_format'=>1}], "result")
+        or diag explain $res;
 };
 
 subtest csv_list_field_names => sub {
