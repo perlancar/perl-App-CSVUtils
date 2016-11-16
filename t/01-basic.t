@@ -32,6 +32,12 @@ subtest csv_add_field => sub {
 
     $res = App::CSVUtils::csv_add_field(filename=>"$dir/1.csv", field=>"f4", eval=>'$main::rownum*2');
     is_deeply($res, [200,"OK","f1,f2,f3,f4\n1,2,3,4\n4,5,6,6\n7,8,9,8\n",{'cmdline.skip_format'=>1}], "result");
+    $res = App::CSVUtils::csv_add_field(filename=>"$dir/1.csv", field=>"f4", eval=>'$main::rownum*2', after=>'f1');
+    is_deeply($res, [200,"OK","f1,f4,f2,f3\n1,4,2,3\n4,6,5,6\n7,8,8,9\n",{'cmdline.skip_format'=>1}], "result (with 'after' option)");
+    $res = App::CSVUtils::csv_add_field(filename=>"$dir/1.csv", field=>"f4", eval=>'$main::rownum*2', before=>'f2');
+    is_deeply($res, [200,"OK","f1,f4,f2,f3\n1,4,2,3\n4,6,5,6\n7,8,8,9\n",{'cmdline.skip_format'=>1}], "result (with 'before' option)");
+    $res = App::CSVUtils::csv_add_field(filename=>"$dir/1.csv", field=>"f4", eval=>'$main::rownum*2', at=>2);
+    is_deeply($res, [200,"OK","f1,f4,f2,f3\n1,4,2,3\n4,6,5,6\n7,8,8,9\n",{'cmdline.skip_format'=>1}], "result (with 'at' option)");
 };
 
 subtest csv_delete_field => sub {

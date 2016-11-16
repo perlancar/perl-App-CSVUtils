@@ -331,8 +331,36 @@ sub csvutil {
             $res .= _get_csv_row($csv, $row, $i);
         } elsif ($action eq 'add-field') {
             if ($i == 1) {
-                $field_idx = @$row;
-                push @$row, $args{field};
+                if (defined $args{_at}) {
+                    $field_idx = $args{_at}-1;
+                } elsif (defined $args{before}) {
+                    for (0..$#{$row}) {
+                        if ($row->[$_] eq $args{before}) {
+                            $field_idx = $_;
+                            last;
+                        }
+                    }
+                    return [400, "Field '$args{before}' not found"]
+                        unless defined $field_idx;
+                } elsif (defined $args{after}) {
+                    for (0..$#{$row}) {
+                        if ($row->[$_] eq $args{after}) {
+                            $field_idx = $_+1;
+                            last;
+                        }
+                    }
+                    return [400, "Field '$args{after}' not found"]
+                        unless defined $field_idx;
+                } else {
+                    $field_idx = @$row;
+                }
+                splice @$row, $field_idx, 0, $args{field};
+                for (keys %field_idxs) {
+                    if ($field_idxs{$_} >= $field_idx) {
+                        $field_idxs{$_}++;
+                    }
+                }
+                $fields = $row;
             } else {
                 unless ($code) {
                     $code = _compile($args{eval});
@@ -343,14 +371,14 @@ sub csvutil {
                         return [412, "Field '$args{field}' already exists"];
                     }
                 }
-                if (!defined($row->[$field_idx])) {
+                {
                     local $_;
                     local $main::row = $row;
                     local $main::rownum = $i;
                     eval { $_ = $code->() };
                     die "Error while adding field '$args{field}' for row #$i: $@\n"
                         if $@;
-                    $row->[$field_idx] = $_;
+                    splice @$row, $field_idx, 0, $_;
                 }
             }
             $res .= _get_csv_row($csv, $row, $i);
@@ -439,18 +467,43 @@ $SPEC{csv_add_field} = {
 Your Perl code (-e) will be called for each row (excluding the header row) and
 should return the value for the new field. `$main::row` is available and
 contains the current row, while `$main::rownum` contains the row number (2 means
-the first data row). Field will be added as the last field.
+the first data row).
+
+Field by default will be added as the last field, unless you specify one of
+`--after` (to put after a certain field), `--before` (to put before a certain
+field), or `--at` (to put at specific position, 1 means as the first field).
 
 _
     args => {
         %arg_filename_0,
         %arg_field_1_nocomp,
         %arg_eval_2,
+        after => {
+            summary => 'Put the new field after specified field',
+            schema => 'str*',
+        },
+        before => {
+            summary => 'Put the new field before specified field',
+            schema => 'str*',
+        },
+        at => {
+            summary => 'Put the new field at specific position '.
+                '(1 means as first field)',
+            schema => ['int*', min=>1],
+        },
+    },
+    args_rels => {
+        choose_one => [qw/after before at/],
     },
 };
 sub csv_add_field {
     my %args = @_;
-    csvutil(%args, action=>'add-field');
+    csvutil(
+        %args, action=>'add-field',
+        _after  => $args{after},
+        _before => $args{before},
+        _at     => $args{at},
+    );
 }
 
 $SPEC{csv_list_field_names} = {
