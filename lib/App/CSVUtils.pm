@@ -193,6 +193,8 @@ $SPEC{csvutil} = {
                 'delete-field',
                 'add-field',
                 'sort-fields',
+                'sum',
+                'avg',
             ]],
             req => 1,
             pos => 0,
