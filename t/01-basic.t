@@ -143,4 +143,11 @@ subtest csv_convert_to_hash => sub {
     is_deeply($res, [200,"OK",{f1=>undef, f2=>undef, f3=>undef}], "result 3");
 };
 
+subtest csv_concat => sub {
+    my $res;
+
+    $res = App::CSVUtils::csv_concat(filenames=>["$dir/1.csv","$dir/2.csv","$dir/4.csv"]);
+    is_deeply($res, [200,"OK",qq(f1,f2,f3,F3\n1,2,3,\n4,5,6,\n7,8,9,\n1,,,\n2,,,\n3,,,\n1,3,,2\n4,6,,5\n),{'cmdline.skip_format'=>1}], "result");
+};
+
 done_testing;

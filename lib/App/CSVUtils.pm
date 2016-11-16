@@ -115,6 +115,18 @@ my %arg_filename_0 = (
     },
 );
 
+my %arg_filenames = (
+    filenames => {
+        'x.name.is_plural' => 1,
+        summary => 'Input CSV files',
+        schema => ['array*', of=>'filename*'],
+        req => 1,
+        pos => 0,
+        greedy => 1,
+        cmdline_aliases => {f=>{}},
+    },
+);
+
 my %arg_field_1 = (
     field => {
         summary => 'Field name',
@@ -627,6 +639,101 @@ sub csv_convert_to_hash {
             _row_number=>$args{row_number} // 2);
 }
 
+$SPEC{csv_concat} = {
+    v => 1.1,
+    summary => 'Concatenate several CSV files together, '.
+        'collecting all the fields',
+    description => <<'_',
+
+Example, concatenating this CSV:
+
+    col1,col2
+    1,2
+    3,4
+
+and:
+
+    col2,col4
+    a,b
+    c,d
+    e,f
+
+and:
+
+    col3
+    X
+    Y
+
+will result in:
+
+    col1,col2,col4,col3
+    1,2,
+    3,4,
+    ,a,b
+    ,c,d
+    ,e,f
+    ,,,X
+    ,,,Y
+
+_
+    args => {
+        %arg_filenames,
+    },
+};
+sub csv_concat {
+    require Text::CSV_XS;
+
+    my %args = @_;
+
+    my %res_field_idxs;
+    my @rows;
+
+    for my $filename (@{ $args{filenames} }) {
+        my $csv = Text::CSV_XS->new({binary => 1});
+        open my($fh), "<:encoding(utf8)", $filename or
+            return [500, "Can't open input filename '$filename': $!"];
+        my $i = 0;
+        my $fields;
+        while (my $row = $csv->getline($fh)) {
+            $i++;
+            if ($i == 1) {
+                $fields = $row;
+                for my $field (@$fields) {
+                    unless (exists $res_field_idxs{$field}) {
+                        $res_field_idxs{$field} = keys(%res_field_idxs);
+                    }
+                }
+                next;
+            }
+            my $res_row = [];
+            for my $j (0..$#{$row}) {
+                my $field = $fields->[$j];
+                $res_row->[ $res_field_idxs{$field} ] = $row->[$j];
+            }
+            push @rows, $res_row;
+        }
+    } # for each filename
+
+    my $num_fields = keys %res_field_idxs;
+    my $res = "";
+    my $csv = Text::CSV_XS->new({binary => 1});
+
+    # generate header
+    my $status = $csv->combine(
+        sort { $res_field_idxs{$a} <=> $res_field_idxs{$b} }
+            keys %res_field_idxs)
+        or die "Error in generating result header row: ".$csv->error_input;
+    $res .= $csv->string . "\n";
+    for my $i (0..$#rows) {
+        my $row = $rows[$i];
+        $row->[$num_fields-1] = undef if @$row < $num_fields;
+        my $status = $csv->combine(@$row)
+            or die "Error in generating data row #".($i+1).": ".
+            $csv->error_input;
+        $res .= $csv->string . "\n";
+    }
+    [200, "OK", $res, {"cmdline.skip_format"=>1}];
+}
 
 1;
 # ABSTRACT: CLI utilities related to CSV
