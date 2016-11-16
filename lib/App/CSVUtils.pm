@@ -237,6 +237,7 @@ sub csvutil {
     my $field_idx;
     my $sorted_fields;
     my @summary_row;
+    my $selected_row;
     my $row_spec_sub;
 
     while (my $row = $csv->getline($fh)) {
@@ -386,9 +387,22 @@ sub csvutil {
             if ($i == 1 || $row_spec_sub->($i)) {
                 $res .= _get_csv_row($csv, $row, $i);
             }
+        } elsif ($action eq 'convert-to-hash') {
+            if ($i == $args{_row_number}) {
+                $selected_row = $row;
+            }
         } else {
             return [400, "Unknown action '$action'"];
         }
+    } # while getline()
+
+    if ($action eq 'convert-to-hash') {
+        $selected_row //= [];
+        my $hash = {};
+        for (0..$#{$fields}) {
+            $hash->{ $fields->[$_] } = $selected_row->[$_];
+        }
+        return [200, "OK", $hash];
     }
 
     if ($action eq 'sum') {
@@ -401,7 +415,6 @@ sub csvutil {
         $res .= _get_csv_row($csv, \@summary_row,
                              $args{_with_data_rows} ? $i+1 : 2);
     }
-
     [200, "OK", $res, {"cmdline.skip_format"=>1}];
 }
 
@@ -576,13 +589,13 @@ sub csv_avg {
 
 $SPEC{csv_select_row} = {
     v => 1.1,
-    summary => 'Only output specified rows',
+    summary => 'Only output specified row(s)',
     args => {
         %arg_filename_0,
         row_spec => {
             schema => 'str*',
-            summary => 'Row number (e.g. 2 for first data row, or 7), '.
-                'range (1-7), or comma-separated list of such',
+            summary => 'Row number (e.g. 2 for first data row), '.
+                'range (2-7), or comma-separated list of such (2-7,10,20-23)',
             req => 1,
             pos => 1,
         },
@@ -592,6 +605,26 @@ sub csv_select_row {
     my %args = @_;
 
     csvutil(%args, action=>'select-row');
+}
+
+$SPEC{csv_convert_to_hash} = {
+    v => 1.1,
+    summary => 'Return a hash of field names as keys and first row as values',
+    args => {
+        %arg_filename_0,
+        row_number => {
+            schema => ['int*', min=>2],
+            default => 2,
+            summary => 'Row number (e.g. 2 for first data row)',
+            pos => 1,
+        },
+    },
+};
+sub csv_convert_to_hash {
+    my %args = @_;
+
+    csvutil(%args, action=>'convert-to-hash',
+            _row_number=>$args{row_number} // 2);
 }
 
 

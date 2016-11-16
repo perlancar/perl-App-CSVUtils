@@ -132,4 +132,15 @@ subtest csv_select_row => sub {
     is($res->[0], 400, "error in spec -> status 400");
 };
 
+subtest csv_convert_to_hash => sub {
+    my $res;
+
+    $res = App::CSVUtils::csv_convert_to_hash(filename=>"$dir/1.csv");
+    is_deeply($res, [200,"OK",{f1=>1, f2=>2, f3=>3}], "result 1");
+    $res = App::CSVUtils::csv_convert_to_hash(filename=>"$dir/1.csv", row_number=>3);
+    is_deeply($res, [200,"OK",{f1=>4, f2=>5, f3=>6}], "result 2");
+    $res = App::CSVUtils::csv_convert_to_hash(filename=>"$dir/1.csv", row_number=>10);
+    is_deeply($res, [200,"OK",{f1=>undef, f2=>undef, f3=>undef}], "result 3");
+};
+
 done_testing;
