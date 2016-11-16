@@ -1,5 +1,13 @@
 Revision history for App-CSVUtils
 
+0.009   2016-11-16 (PERLANCAR)
+
+	- Add utility: csv-concat.
+
+	- csv-add-field: add option --after, --before, --at to specify
+	  position of the new field.
+
+
 0.008   2016-11-16 (PERLANCAR)
 
         - Add utilities: csv-select-row, csv-convert-to-hash.

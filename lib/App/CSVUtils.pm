@@ -792,6 +792,8 @@ sub csv_concat {
 1;
 # ABSTRACT: CLI utilities related to CSV
 
+=for Pod::Coverage ^(csvutil)$
+
 =head1 DESCRIPTION
 
 This distribution contains the following CLI utilities:
