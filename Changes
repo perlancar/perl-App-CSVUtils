@@ -1,5 +1,3 @@
-Revision history for App-CSVUtils
-
 0.011   2016-11-17 (PERLANCAR)
 
 	- [Bugfix] csv-select-fields CLI was not generated in previous
