@@ -1,3 +1,9 @@
+0.012   2017-04-25 (PERLANCAR)
+
+	- csv-select-fields: Add --field-pat to select by regular
+	  expression.
+
+
 0.011   2016-11-17 (PERLANCAR)
 
 	- [Bugfix] csv-select-fields CLI was not generated in previous
