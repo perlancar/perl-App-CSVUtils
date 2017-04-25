@@ -161,6 +161,22 @@ my %arg_fields_1 = (
     },
 );
 
+my %arg_fields_or_field_pat = (
+    fields => {
+        'x.name.is_plural' => 1,
+        summary => 'Field names',
+        schema => ['array*', of=>'str*'],
+        cmdline_aliases => { F=>{} },
+        pos => 1,
+        greedy => 1,
+        element_completion => \&_complete_field,
+    },
+    field_pat => {
+        summary => 'Field regex pattern to select',
+        schema => 're*',
+    },
+);
+
 my %arg_eval_2 = (
     eval => {
         summary => 'Perl code to do munging',
@@ -420,9 +436,16 @@ sub csvutil {
             if (!defined($field_idxs)) {
                 $field_idxs = [];
                 my %seen;
-                for my $f (@{ $args{_fields} }) {
-                    return [400, "Duplicate field '$f'"] if $seen{$f}++;
-                    push @$field_idxs, _get_field_idx($f, \%field_idxs);
+                if ($args{_fields}) {
+                    for my $f (@{ $args{_fields} }) {
+                        return [400, "Duplicate field '$f'"] if $seen{$f}++;
+                        push @$field_idxs, _get_field_idx($f, \%field_idxs);
+                    }
+                } else {
+                    for my $f (@$fields) {
+                        next unless $f =~ $args{_field_pat};
+                        push @$field_idxs, $field_idxs{$f};
+                    }
                 }
             }
             $row = [map { $row->[$_] } @$field_idxs];
@@ -830,12 +853,16 @@ $SPEC{csv_select_fields} = {
     summary => 'Only output selected field(s)',
     args => {
         %arg_filename_0,
-        %arg_fields_1,
+        %arg_fields_or_field_pat,
+    },
+    args_rels => {
+        req_one => ['fields', 'field_pat'],
     },
 };
 sub csv_select_fields {
     my %args = @_;
-    csvutil(%args, action=>'select-fields', _fields => $args{fields});
+    csvutil(%args, action=>'select-fields',
+            _fields => $args{fields}, _field_pat => $args{field_pat});
 }
 
 1;
