@@ -975,6 +975,6 @@ This distribution contains the following CLI utilities:
 # INSERT_EXECS_LIST
 
 
-=head1 SEE ALSO
+=head1 prepend:SEE ALSO
 
 =cut
