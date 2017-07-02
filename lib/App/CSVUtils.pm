@@ -283,7 +283,6 @@ sub csvutil {
     my @summary_row;
     my $selected_row;
     my $row_spec_sub;
-    my $row_grep_sub;
 
     while (my $row = $csv->getline($fh)) {
         $i++;
@@ -338,8 +337,6 @@ sub csvutil {
                 return [400, "BUG: Invalid row_spec code: $@"] if $@;
             }
             if ($action eq 'grep') {
-                $row_grep_sub = eval 'sub { '.$args{code}.' }';
-                return [400, "BUG: Invalid code: $@"] if $@;
             }
         } # if i==1 (header row)
 
@@ -493,6 +490,9 @@ sub csvutil {
                 $res .= _get_csv_row($csv, $row, $i);
             }
         } elsif ($action eq 'grep') {
+            unless ($code) {
+                $code = _compile($args{eval});
+            }
             if ($i == 1 || do {
                 my $rowhash;
                 if ($args{hash}) {
@@ -502,7 +502,7 @@ sub csvutil {
                     }
                 }
                 local $_ = $args{hash} ? $rowhash : $row;
-                $row_grep_sub->($row);
+                $code->($row);
             }) {
                 $res .= _get_csv_row($csv, $row, $i);
             }
@@ -764,12 +764,11 @@ where Perl expression returns true will be included in the result.
 _
     args => {
         %arg_filename_0,
-        code => {
+        eval => {
+            summary => 'Perl code',
             schema => 'str*',
-            summary => 'Row number (e.g. 2 for first data row), '.
-                'range (2-7), or comma-separated list of such (2-7,10,20-23)',
+            cmdline_aliases => { e=>{} },
             req => 1,
-            cmdline_aliases => {e=>{}},
         },
         hash => {
             summary => 'Provide row in $_ as hashref instead of arrayref',
