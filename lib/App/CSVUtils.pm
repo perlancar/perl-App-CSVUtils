@@ -238,6 +238,7 @@ $SPEC{csvutil} = {
                 'sum',
                 'avg',
                 'select-row',
+                'grep',
                 'convert-to-hash',
                 'select-fields',
             ]],
@@ -258,7 +259,6 @@ $SPEC{csvutil} = {
         },
     },
     args_rels => {
-        # XXX sort_* hanya relevan untuk action=sort-fields
     },
 };
 sub csvutil {
@@ -283,6 +283,7 @@ sub csvutil {
     my @summary_row;
     my $selected_row;
     my $row_spec_sub;
+    my $row_grep_sub;
 
     while (my $row = $csv->getline($fh)) {
         $i++;
@@ -335,6 +336,10 @@ sub csvutil {
                 }
                 $row_spec_sub = eval 'sub { my $i = shift; '.join(" || ", @codestr).' }';
                 return [400, "BUG: Invalid row_spec code: $@"] if $@;
+            }
+            if ($action eq 'grep') {
+                $row_grep_sub = eval 'sub { '.$args{code}.' }';
+                return [400, "BUG: Invalid code: $@"] if $@;
             }
         } # if i==1 (header row)
 
@@ -485,6 +490,20 @@ sub csvutil {
             }
         } elsif ($action eq 'select-row') {
             if ($i == 1 || $row_spec_sub->($i)) {
+                $res .= _get_csv_row($csv, $row, $i);
+            }
+        } elsif ($action eq 'grep') {
+            if ($i == 1 || do {
+                my $rowhash;
+                if ($args{hash}) {
+                    $rowhash = {};
+                    for (0..$#{$fields}) {
+                        $rowhash->{ $fields->[$_] } = $row->[$_];
+                    }
+                }
+                local $_ = $args{hash} ? $rowhash : $row;
+                $row_grep_sub->($row);
+            }) {
                 $res .= _get_csv_row($csv, $row, $i);
             }
         } elsif ($action eq 'convert-to-hash') {
@@ -730,6 +749,42 @@ sub csv_select_row {
     my %args = @_;
 
     csvutil(%args, action=>'select-row');
+}
+
+$SPEC{csv_grep} = {
+    v => 1.1,
+    summary => 'Only output row(s) where Perl expression returns true',
+    description => <<'_',
+
+This is like Perl's grep performed over rows of CSV. In `$_`, your Perl code
+will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
+Your code is then free to return true or false based on some criteria. Only rows
+where Perl expression returns true will be included in the result.
+
+_
+    args => {
+        %arg_filename_0,
+        code => {
+            schema => 'str*',
+            summary => 'Row number (e.g. 2 for first data row), '.
+                'range (2-7), or comma-separated list of such (2-7,10,20-23)',
+            req => 1,
+            cmdline_aliases => {e=>{}},
+        },
+        hash => {
+            summary => 'Provide row in $_ as hashref instead of arrayref',
+            schema => ['bool*', is=>1],
+            cmdline_aliases => {H=>{}},
+        },
+    },
+    links => [
+        {url=>'prog:csvgrep'},
+    ],
+};
+sub csv_grep {
+    my %args = @_;
+
+    csvutil(%args, action=>'grep');
 }
 
 $SPEC{csv_convert_to_hash} = {
