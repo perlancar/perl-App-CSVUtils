@@ -531,6 +531,8 @@ sub csvutil {
                     }
                 }
                 local $_ = $args{hash} ? $rowhash : $row;
+                local $main::row = $row;
+                local $main::rownum = $i;
                 $code->($row);
             }) {
                 $res .= _get_csv_row($csv, $row, $i, $has_header);
@@ -798,8 +800,10 @@ $SPEC{csv_grep} = {
 
 This is like Perl's grep performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
-Your code is then free to return true or false based on some criteria. Only rows
-where Perl expression returns true will be included in the result.
+`$main::row` is also set to the row, while `$main::rownum` contains the row
+number (2 means the first data row). Your code is then free to return true or
+false based on some criteria. Only rows where Perl expression returns true will
+be included in the result.
 
 _
     args => {
