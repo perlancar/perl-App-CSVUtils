@@ -852,6 +852,21 @@ _
         %arg_eval,
         %arg_hash,
     },
+    examples => [
+        {
+            summary => 'Only show rows where the amount field '.
+                'is divisible by 7',
+            argv => ['-He', '$row->{amount} % 7 ? 1:0', 'file.csv'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+        {
+            summary => 'Only show rows where the date is a Wednesday',
+            argv => ['-He', 'BEGIN { use DateTime::Format::Natural; $parser = DateTime::Format::Natural->new } $dt = $parser->parse_datetime($row->{date}); $dt->day_of_week == 3', 'file.csv'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+    ],
     links => [
         {url=>'prog:csvgrep'},
     ],
@@ -886,6 +901,14 @@ _
             default => 1,
         },
     },
+    examples => [
+        {
+            summary => 'Create SQL insert statements (escaping is left as an exercise for users)',
+            argv => ['-He', '"INSERT INTO mytable (id,amount) VALUES ($row->{id}, $row->{amount});"', 'file.csv'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+    ],
     links => [
         {url=>'prog:csvgrep'},
     ],
