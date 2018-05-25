@@ -843,10 +843,10 @@ $SPEC{csv_grep} = {
 
 This is like Perl's `grep` performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
-`$main::row` is also set to the row, while `$main::rownum` contains the row
-number (2 means the first data row). Your code is then free to return true or
-false based on some criteria. Only rows where Perl expression returns true will
-be included in the result.
+`$main::row` is also set to the row (always as arrayref), while `$main::rownum`
+contains the row number (2 means the first data row). Your code is then free to
+return true or false based on some criteria. Only rows where Perl expression
+returns true will be included in the result.
 
 _
     args => {
@@ -864,7 +864,7 @@ _
             'x.doc.show_result' => 0,
         },
         {
-            summary => 'Only show rows where the date is a Wednesday',
+            summary => 'Only show rows where date is a Wednesday',
             argv => ['-He', 'BEGIN { use DateTime::Format::Natural; $parser = DateTime::Format::Natural->new } $dt = $parser->parse_datetime($_->{date}); $dt->day_of_week == 3', 'file.csv'],
             test => 0,
             'x.doc.show_result' => 0,
@@ -887,10 +887,10 @@ $SPEC{csv_map} = {
 
 This is like Perl's `map` performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
-`$main::row` is also set to the row, while `$main::rownum` contains the row
-number (2 means the first data row). Your code is then free to return a string
-based on some operation against these data. This utility will then print out the
-resulting string.
+`$main::row` is also set to the row (always as arrayref), while `$main::rownum`
+contains the row number (2 means the first data row). Your code is then free to
+return a string based on some operation against these data. This utility will
+then print out the resulting string.
 
 _
     args => {
