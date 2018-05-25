@@ -856,13 +856,13 @@ _
         {
             summary => 'Only show rows where the amount field '.
                 'is divisible by 7',
-            argv => ['-He', '$row->{amount} % 7 ? 1:0', 'file.csv'],
+            argv => ['-He', '$_->{amount} % 7 ? 1:0', 'file.csv'],
             test => 0,
             'x.doc.show_result' => 0,
         },
         {
             summary => 'Only show rows where the date is a Wednesday',
-            argv => ['-He', 'BEGIN { use DateTime::Format::Natural; $parser = DateTime::Format::Natural->new } $dt = $parser->parse_datetime($row->{date}); $dt->day_of_week == 3', 'file.csv'],
+            argv => ['-He', 'BEGIN { use DateTime::Format::Natural; $parser = DateTime::Format::Natural->new } $dt = $parser->parse_datetime($_->{date}); $dt->day_of_week == 3', 'file.csv'],
             test => 0,
             'x.doc.show_result' => 0,
         },
@@ -904,7 +904,7 @@ _
     examples => [
         {
             summary => 'Create SQL insert statements (escaping is left as an exercise for users)',
-            argv => ['-He', '"INSERT INTO mytable (id,amount) VALUES ($row->{id}, $row->{amount});"', 'file.csv'],
+            argv => ['-He', '"INSERT INTO mytable (id,amount) VALUES ($_->{id}, $_->{amount});"', 'file.csv'],
             test => 0,
             'x.doc.show_result' => 0,
         },
