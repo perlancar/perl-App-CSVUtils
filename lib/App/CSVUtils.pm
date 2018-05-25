@@ -301,7 +301,7 @@ sub csvutil {
     my %args = @_;
     my $action = $args{action};
     my $has_header = $args{header} // 1;
-    my $add_newline = $args{add_newlin} // 1;
+    my $add_newline = $args{add_newline} // 1;
 
     my $csv = Text::CSV_XS->new({binary => 1});
     open my($fh), "<:encoding(utf8)", $args{filename} or
