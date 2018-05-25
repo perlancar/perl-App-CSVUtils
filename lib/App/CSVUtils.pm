@@ -238,6 +238,23 @@ my %arg_with_data_rows = (
     },
 );
 
+my %arg_eval = (
+    eval => {
+        summary => 'Perl code',
+        schema => 'str*',
+        cmdline_aliases => { e=>{} },
+        req => 1,
+    },
+);
+
+my %arg_hash = (
+    hash => {
+        summary => 'Provide row in $_ as hashref instead of arrayref',
+        schema => ['bool*', is=>1],
+        cmdline_aliases => {H=>{}},
+    },
+);
+
 $SPEC{csvutil} = {
     v => 1.1,
     summary => 'Perform action on a CSV file',
@@ -255,6 +272,7 @@ $SPEC{csvutil} = {
                 'avg',
                 'select-row',
                 'grep',
+                'map',
                 'convert-to-hash',
                 'select-fields',
             ]],
@@ -366,6 +384,7 @@ sub csvutil {
                 return [400, "BUG: Invalid row_spec code: $@"] if $@;
             }
             if ($action eq 'grep') {
+            } elsif ($action eq 'map') {
             }
         } # if i==1 (header row)
 
@@ -537,6 +556,27 @@ sub csvutil {
             }) {
                 $res .= _get_csv_row($csv, $row, $i, $has_header);
             }
+        } elsif ($action eq 'map') {
+            unless ($code) {
+                $code = _compile($args{eval});
+            }
+            my $rowres = do {
+                my $rowhash;
+                if ($args{hash}) {
+                    $rowhash = {};
+                    for (0..$#{$fields}) {
+                        $rowhash->{ $fields->[$_] } = $row->[$_];
+                    }
+                }
+                local $_ = $args{hash} ? $rowhash : $row;
+                local $main::row = $row;
+                local $main::rownum = $i;
+                $code->($row);
+            } // '';
+            unless (!$args{add_newline} || $rowres =~ /\R\z/) {
+                $rowres .= "\n";
+            }
+            $res .= $rowres;
         } elsif ($action eq 'convert-to-hash') {
             if ($i == $args{_row_number}) {
                 $selected_row = $row;
@@ -798,7 +838,7 @@ $SPEC{csv_grep} = {
     summary => 'Only output row(s) where Perl expression returns true',
     description => <<'_',
 
-This is like Perl's grep performed over rows of CSV. In `$_`, your Perl code
+This is like Perl's `grep` performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
 `$main::row` is also set to the row, while `$main::rownum` contains the row
 number (2 means the first data row). Your code is then free to return true or
@@ -809,17 +849,8 @@ _
     args => {
         %args_common,
         %arg_filename_0,
-        eval => {
-            summary => 'Perl code',
-            schema => 'str*',
-            cmdline_aliases => { e=>{} },
-            req => 1,
-        },
-        hash => {
-            summary => 'Provide row in $_ as hashref instead of arrayref',
-            schema => ['bool*', is=>1],
-            cmdline_aliases => {H=>{}},
-        },
+        %arg_eval,
+        %arg_hash,
     },
     links => [
         {url=>'prog:csvgrep'},
@@ -829,6 +860,40 @@ sub csv_grep {
     my %args = @_;
 
     csvutil(%args, action=>'grep');
+}
+
+$SPEC{csv_map} = {
+    v => 1.1,
+    summary => 'Return result of Perl code for every row',
+    description => <<'_',
+
+This is like Perl's `map` performed over rows of CSV. In `$_`, your Perl code
+will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
+`$main::row` is also set to the row, while `$main::rownum` contains the row
+number (2 means the first data row). Your code is then free to return a string
+based on some operation against these data. This utility will then print out the
+resulting string.
+
+_
+    args => {
+        %args_common,
+        %arg_filename_0,
+        %arg_eval,
+        %arg_hash,
+        add_newline => {
+            summary => 'Whether to make sure each string ends with newline',
+            schema => 'bool*',
+            default => 1,
+        },
+    },
+    links => [
+        {url=>'prog:csvgrep'},
+    ],
+};
+sub csv_map {
+    my %args = @_;
+
+    csvutil(%args, action=>'map');
 }
 
 $SPEC{csv_convert_to_hash} = {
