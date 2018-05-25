@@ -301,6 +301,7 @@ sub csvutil {
     my %args = @_;
     my $action = $args{action};
     my $has_header = $args{header} // 1;
+    my $add_newline = $args{add_newlin} // 1;
 
     my $csv = Text::CSV_XS->new({binary => 1});
     open my($fh), "<:encoding(utf8)", $args{filename} or
@@ -560,23 +561,25 @@ sub csvutil {
             unless ($code) {
                 $code = _compile($args{eval});
             }
-            my $rowres = do {
-                my $rowhash;
-                if ($args{hash}) {
-                    $rowhash = {};
-                    for (0..$#{$fields}) {
-                        $rowhash->{ $fields->[$_] } = $row->[$_];
+            if ($i > 1) {
+                my $rowres = do {
+                    my $rowhash;
+                    if ($args{hash}) {
+                        $rowhash = {};
+                        for (0..$#{$fields}) {
+                            $rowhash->{ $fields->[$_] } = $row->[$_];
+                        }
                     }
+                    local $_ = $args{hash} ? $rowhash : $row;
+                    local $main::row = $row;
+                    local $main::rownum = $i;
+                    $code->($row);
+                } // '';
+                unless (!$add_newline || $rowres =~ /\R\z/) {
+                    $rowres .= "\n";
                 }
-                local $_ = $args{hash} ? $rowhash : $row;
-                local $main::row = $row;
-                local $main::rownum = $i;
-                $code->($row);
-            } // '';
-            unless (!$args{add_newline} || $rowres =~ /\R\z/) {
-                $rowres .= "\n";
+                $res .= $rowres;
             }
-            $res .= $rowres;
         } elsif ($action eq 'convert-to-hash') {
             if ($i == $args{_row_number}) {
                 $selected_row = $row;
