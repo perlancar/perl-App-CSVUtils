@@ -12,7 +12,7 @@ our %SPEC;
 sub _compile {
     my $str = shift;
     defined($str) && length($str) or die "Please specify code (-e)\n";
-    $str = "sub { $str }";
+    $str = "package main; no strict; no warnings; sub { $str }";
     my $code = eval $str;
     die "Can't compile code (-e) '$str': $@\n" if $@;
     $code;
