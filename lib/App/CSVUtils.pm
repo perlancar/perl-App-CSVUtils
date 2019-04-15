@@ -11,6 +11,7 @@ our %SPEC;
 
 sub _compile {
     my $str = shift;
+    return $str if ref $str eq 'CODE';
     defined($str) && length($str) or die "Please specify code (-e)\n";
     $str = "package main; no strict; no warnings; sub { $str }";
     my $code = eval $str;
@@ -283,7 +284,7 @@ $SPEC{csvutil} = {
         %arg_filename_1,
         eval => {
             summary => 'Perl code to do munging',
-            schema => 'str*',
+            schema => ['any*', of=>['str*', 'code*']],
             cmdline_aliases => { e=>{} },
         },
         field => {
