@@ -274,6 +274,7 @@ $SPEC{csvutil} = {
                 'select-row',
                 'grep',
                 'map',
+                'each-row',
                 'convert-to-hash',
                 'select-fields',
             ]],
@@ -387,6 +388,7 @@ sub csvutil {
             }
             if ($action eq 'grep') {
             } elsif ($action eq 'map') {
+            } elsif ($action eq 'each-row') {
             }
         } # if i==1 (header row)
 
@@ -558,7 +560,7 @@ sub csvutil {
             }) {
                 $res .= _get_csv_row($csv, $row, $i, $has_header);
             }
-        } elsif ($action eq 'map') {
+        } elsif ($action eq 'map' || $action eq 'each-row') {
             unless ($code) {
                 $code = _compile($args{eval});
             }
@@ -576,10 +578,12 @@ sub csvutil {
                     local $main::rownum = $i;
                     $code->($row);
                 } // '';
-                unless (!$add_newline || $rowres =~ /\R\z/) {
-                    $rowres .= "\n";
+                if ($action eq 'map') {
+                    unless (!$add_newline || $rowres =~ /\R\z/) {
+                        $rowres .= "\n";
+                    }
+                    $res .= $rowres;
                 }
-                $res .= $rowres;
             }
         } elsif ($action eq 'convert-to-hash') {
             if ($i == $args{_row_number}) {
@@ -921,6 +925,37 @@ sub csv_map {
     my %args = @_;
 
     csvutil(%args, action=>'map');
+}
+
+$SPEC{csv_each_row} = {
+    v => 1.1,
+    summary => 'Run Perl code for every row',
+    description => <<'_',
+
+This is like csv_map, except result of code is not printed.
+
+_
+    args => {
+        %args_common,
+        %arg_filename_0,
+        %arg_eval,
+        %arg_hash,
+    },
+    examples => [
+        {
+            summary => 'Delete user data',
+            argv => ['-He', '"unlink qq(/home/data/$_->{username}.dat)"', 'users.csv'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+    ],
+    links => [
+    ],
+};
+sub csv_each_row {
+    my %args = @_;
+
+    csvutil(%args, action=>'each_row');
 }
 
 $SPEC{csv_convert_to_hash} = {
