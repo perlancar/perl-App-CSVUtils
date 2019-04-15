@@ -407,6 +407,7 @@ sub csvutil {
                     local $_ = $row->[$field_idx];
                     local $main::row = $row;
                     local $main::rownum = $i;
+                    local $main::field_idxs = \%field_idxs;
                     eval { $code->($_) };
                     die "Error while munging row ".
                         "#$i field '$args{field}' value '$_': $@\n" if $@;
@@ -556,6 +557,7 @@ sub csvutil {
                 local $_ = $args{hash} ? $rowhash : $row;
                 local $main::row = $row;
                 local $main::rownum = $i;
+                local $main::field_idxs = \%field_idxs;
                 $code->($row);
             }) {
                 $res .= _get_csv_row($csv, $row, $i, $has_header);
@@ -576,6 +578,7 @@ sub csvutil {
                     local $_ = $args{hash} ? $rowhash : $row;
                     local $main::row = $row;
                     local $main::rownum = $i;
+                    local $main::field_idxs = \%field_idxs;
                     $code->($row);
                 } // '';
                 if ($action eq 'map') {
@@ -626,7 +629,8 @@ $SPEC{csv_add_field} = {
 Your Perl code (-e) will be called for each row (excluding the header row) and
 should return the value for the new field. `$main::row` is available and
 contains the current row, while `$main::rownum` contains the row number (2 means
-the first data row).
+the first data row). `$main::field_idxs` is also available for additional
+information.
 
 Field by default will be added as the last field, unless you specify one of
 `--after` (to put after a certain field), `--before` (to put before a certain
@@ -701,7 +705,8 @@ $SPEC{csv_munge_field} = {
 Perl code (-e) will be called for each row (excluding the header row) and `$_`
 will contain the value of the field, and the Perl code is expected to modify it.
 `$main::row` will contain the current row array and `$main::rownum` contains the
-row number (2 means the first data row).
+row number (2 means the first data row). `$main::field_idxs` is also available
+for additional information.
 
 _
     args => {
@@ -849,9 +854,11 @@ $SPEC{csv_grep} = {
 This is like Perl's `grep` performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
 `$main::row` is also set to the row (always as arrayref), while `$main::rownum`
-contains the row number (2 means the first data row). Your code is then free to
-return true or false based on some criteria. Only rows where Perl expression
-returns true will be included in the result.
+contains the row number (2 means the first data row). `$main::field_idxs` is
+also available for additional information.
+
+Your code is then free to return true or false based on some criteria. Only rows
+where Perl expression returns true will be included in the result.
 
 _
     args => {
@@ -893,9 +900,11 @@ $SPEC{csv_map} = {
 This is like Perl's `map` performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
 `$main::row` is also set to the row (always as arrayref), while `$main::rownum`
-contains the row number (2 means the first data row). Your code is then free to
-return a string based on some operation against these data. This utility will
-then print out the resulting string.
+contains the row number (2 means the first data row). `$main::field_idxs` is
+also available for additional information.
+
+Your code is then free to return a string based on some operation against these
+data. This utility will then print out the resulting string.
 
 _
     args => {
