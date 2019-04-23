@@ -334,6 +334,8 @@ sub csvutil {
         $csv->getline($fh);
     };
 
+    my $rows = [];
+
     while (my $row = $code_getline->()) {
         $i++;
         if ($i == 1) {
@@ -592,6 +594,17 @@ sub csvutil {
             if ($i == $args{_row_number}) {
                 $selected_row = $row;
             }
+        } elsif ($action eq 'dump') {
+            my $rowhash;
+            if ($args{hash}) {
+                $rowhash = {};
+                for (0..$#{$fields}) {
+                    $rowhash->{ $fields->[$_] } = $row->[$_];
+                }
+                push @$rows, $rowhash unless $i == 1;
+            } else {
+                push @$rows, $row;
+            }
         } else {
             return [400, "Unknown action '$action'"];
         }
@@ -618,8 +631,13 @@ sub csvutil {
                              $args{_with_data_rows} ? $i+1 : 2,
                              $has_header);
     }
+
+    if ($action eq 'dump') {
+        return [200, "OK", $rows];
+    }
+
     [200, "OK", $res, {"cmdline.skip_format"=>1}];
-}
+} # csvutil
 
 $SPEC{csv_add_field} = {
     v => 1.1,
@@ -1101,6 +1119,20 @@ sub csv_select_fields {
     my %args = @_;
     csvutil(%args, action=>'select-fields',
             _fields => $args{fields}, _field_pat => $args{field_pat});
+}
+
+$SPEC{csv_dump} = {
+    v => 1.1,
+    summary => 'Dump CSV as data structure (array of array/hash)',
+    args => {
+        %args_common,
+        %arg_filename_0,
+        %arg_hash,
+    },
+};
+sub csv_dump {
+    my %args = @_;
+    csvutil(%args, action=>'dump');
 }
 
 1;
