@@ -35,6 +35,21 @@ sub _get_csv_row {
     $csv->string . "\n";
 }
 
+sub _instantiate_parser {
+    require Text::CSV_XS;
+
+    my $args = shift;
+
+    my %tcsv_opts = (binary=>1);
+    if ($args->{tsv}) {
+        $tcsv_opts{sep_char}    = "\t";
+        $tcsv_opts{quote_char}  = undef;
+        $tcsv_opts{escape_char} = undef;
+    }
+
+    Text::CSV_XS->new(\%tcsv_opts);
+}
+
 sub _complete_field_or_field_list {
     # return list of known fields of a CSV
 
@@ -65,8 +80,7 @@ sub _complete_field_or_field_list {
     return undef unless defined $args && $args->{filename};
 
     # can the file be opened?
-    require Text::CSV_XS;
-    my $csv = Text::CSV_XS->new({binary => 1});
+    my $csv = _instantiate_parser(\%args);
     open my($fh), "<:encoding(utf8)", $args->{filename} or
         return [];
 
@@ -108,6 +122,10 @@ When you declare that CSV does not have header row (`--no-header`), the fields
 will be named `field1`, `field2`, and so on.
 
 _
+    },
+    tsv => {
+        summary => "Inform that input file is in TSV (tab-separated) format instead of CSV",
+        schema => 'bool*',
     },
 );
 
@@ -301,14 +319,12 @@ $SPEC{csvutil} = {
     },
 };
 sub csvutil {
-    require Text::CSV_XS;
-
     my %args = @_;
     my $action = $args{action};
     my $has_header = $args{header} // 1;
     my $add_newline = $args{add_newline} // 1;
 
-    my $csv = Text::CSV_XS->new({binary => 1});
+    my $csv = _instantiate_parser(\%args);
     open my($fh), "<:encoding(utf8)", $args{filename} or
         return [500, "Can't open input filename '$args{filename}': $!"];
 
@@ -769,12 +785,10 @@ _
     },
 };
 sub csv_replace_newline {
-    require Text::CSV_XS;
-
     my %args = @_;
     my $with = $args{with};
 
-    my $csv = Text::CSV_XS->new({binary => 1});
+    my $csv = _instantiate_parser(\%args);
     open my($fh), "<:encoding(utf8)", $args{filename} or
         return [500, "Can't open input filename '$args{filename}': $!"];
 
@@ -1052,15 +1066,13 @@ _
     },
 };
 sub csv_concat {
-    require Text::CSV_XS;
-
     my %args = @_;
 
     my %res_field_idxs;
     my @rows;
 
     for my $filename (@{ $args{filenames} }) {
-        my $csv = Text::CSV_XS->new({binary => 1});
+        my $csv = _instantiate_parser(\%args);
         open my($fh), "<:encoding(utf8)", $filename or
             return [500, "Can't open input filename '$filename': $!"];
         my $i = 0;
@@ -1087,7 +1099,7 @@ sub csv_concat {
 
     my $num_fields = keys %res_field_idxs;
     my $res = "";
-    my $csv = Text::CSV_XS->new({binary => 1});
+    my $csv = _instantiate_parser(\%args);
 
     # generate header
     my $status = $csv->combine(

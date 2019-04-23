@@ -20,6 +20,8 @@ write_text("$dir/5.csv", qq(f1\n1\n2\n3\n4\n5\n6\n));
 write_text("$dir/no-rows.csv", qq(f1,f2,f3\n));
 write_text("$dir/no-header-1.csv", "1,2,3\n4,5,6\n7,8,9\n");
 
+write_text("$dir/1.tsv", "f1\tf2\tf3\n1\t2\t3\n4\t5\t6\n7\t8\t9\n");
+
 # XXX test with opt: --no-header
 
 subtest csv_add_field => sub {
@@ -229,6 +231,10 @@ subtest csv_dump => sub {
     my $res;
 
     $res = App::CSVUtils::csv_dump(filename=>"$dir/1.csv");
+    is_deeply($res, [200,"OK",[["f1","f2","f3"],[1,2,3],[4,5,6],[7,8,9]]])
+        or diag explain $res;
+
+    $res = App::CSVUtils::csv_dump(filename=>"$dir/1.tsv", tsv=>1);
     is_deeply($res, [200,"OK",[["f1","f2","f3"],[1,2,3],[4,5,6],[7,8,9]]])
         or diag explain $res;
 
