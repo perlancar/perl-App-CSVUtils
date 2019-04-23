@@ -111,7 +111,7 @@ sub _complete_field_list {
     _complete_field_or_field_list('field_list', @_);
 }
 
-my %args_common = (
+our %args_common = (
     header => {
         summary => 'Whether CSV has a header row',
         schema => 'bool*',
@@ -129,7 +129,7 @@ _
     },
 );
 
-my %arg_filename_1 = (
+our %arg_filename_1 = (
     filename => {
         summary => 'Input CSV file',
         schema => 'filename*',
@@ -139,7 +139,7 @@ my %arg_filename_1 = (
     },
 );
 
-my %arg_filename_0 = (
+our %arg_filename_0 = (
     filename => {
         summary => 'Input CSV file',
         schema => 'filename*',
@@ -149,7 +149,7 @@ my %arg_filename_0 = (
     },
 );
 
-my %arg_filenames_0 = (
+our %arg_filenames_0 = (
     filenames => {
         'x.name.is_plural' => 1,
         summary => 'Input CSV files',
@@ -161,7 +161,7 @@ my %arg_filenames_0 = (
     },
 );
 
-my %arg_field_1 = (
+our %arg_field_1 = (
     field => {
         summary => 'Field name',
         schema => 'str*',
@@ -172,7 +172,7 @@ my %arg_field_1 = (
     },
 );
 
-my %arg_field_1_nocomp = (
+our %arg_field_1_nocomp = (
     field => {
         summary => 'Field name',
         schema => 'str*',
@@ -182,7 +182,7 @@ my %arg_field_1_nocomp = (
     },
 );
 
-my %arg_fields_1 = (
+our %arg_fields_1 = (
     fields => {
         'x.name.is_plural' => 1,
         summary => 'Field names',
@@ -195,7 +195,7 @@ my %arg_fields_1 = (
     },
 );
 
-my %arg_fields_or_field_pat = (
+our %arg_fields_or_field_pat = (
     fields => {
         'x.name.is_plural' => 1,
         summary => 'Field names',
@@ -211,7 +211,7 @@ my %arg_fields_or_field_pat = (
     },
 );
 
-my %arg_eval_2 = (
+our %arg_eval_2 = (
     eval => {
         summary => 'Perl code to do munging',
         schema => 'str*',
@@ -221,7 +221,7 @@ my %arg_eval_2 = (
     },
 );
 
-my %args_sort = (
+our %args_sort = (
     sort_reverse => {
         schema => ['bool', is=>1],
     },
@@ -234,7 +234,7 @@ my %args_sort = (
     },
 );
 
-my %args_sort_short = (
+our %args_sort_short = (
     reverse => {
         schema => ['bool', is=>1],
         cmdline_aliases => {r=>{}},
@@ -250,14 +250,14 @@ my %args_sort_short = (
     },
 );
 
-my %arg_with_data_rows = (
+our %arg_with_data_rows = (
     with_data_rows => {
         summary => 'Whether to also output data rows',
         schema => 'bool',
     },
 );
 
-my %arg_eval = (
+our %arg_eval = (
     eval => {
         summary => 'Perl code',
         schema => 'str*',
@@ -266,7 +266,7 @@ my %arg_eval = (
     },
 );
 
-my %arg_hash = (
+our %arg_hash = (
     hash => {
         summary => 'Provide row in $_ as hashref instead of arrayref',
         schema => ['bool*', is=>1],
