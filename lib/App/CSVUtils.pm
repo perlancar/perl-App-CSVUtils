@@ -35,6 +35,12 @@ sub _get_csv_row {
     $csv->string . "\n";
 }
 
+sub _instantiate_parser_default {
+    require Text::CSV_XS;
+
+    Text::CSV_XS->new({binary=>1});
+}
+
 sub _instantiate_parser {
     require Text::CSV_XS;
 
@@ -156,7 +162,7 @@ our %arg_filenames_0 = (
         schema => ['array*', of=>'filename*'],
         req => 1,
         pos => 0,
-        greedy => 1,
+        slurpy => 1,
         cmdline_aliases => {f=>{}},
     },
 );
@@ -190,7 +196,7 @@ our %arg_fields_1 = (
         cmdline_aliases => { F=>{} },
         req => 1,
         pos => 1,
-        greedy => 1,
+        slurpy => 1,
         element_completion => \&_complete_field,
     },
 );
@@ -202,7 +208,7 @@ our %arg_fields_or_field_pat = (
         schema => ['array*', of=>'str*'],
         cmdline_aliases => { F=>{} },
         pos => 1,
-        greedy => 1,
+        slurpy => 1,
         element_completion => \&_complete_field,
     },
     field_pat => {
@@ -251,7 +257,6 @@ compared.
 
 _
         schema => ['any*', of=>['str*', 'code*']],
-        #completion => \&_complete_sort_field_list,
     },
 );
 
@@ -333,6 +338,7 @@ $SPEC{csvutil} = {
                 #'concat', # not implemented in csvutil
                 'select-fields',
                 'dump',
+                #'setop', # not implemented in csvutil
             ]],
             req => 1,
             pos => 0,
@@ -1243,7 +1249,7 @@ sub csv_concat {
 
     my $num_fields = keys %res_field_idxs;
     my $res = "";
-    my $csv = _instantiate_parser(\%args);
+    my $csv = _instantiate_parser_default();
 
     # generate header
     my $status = $csv->combine(
@@ -1292,6 +1298,268 @@ $SPEC{csv_dump} = {
 sub csv_dump {
     my %args = @_;
     csvutil(%args, action=>'dump');
+}
+
+$SPEC{csv_setop} = {
+    v => 1.1,
+    summary => 'Set operation against several CSV files',
+    description => <<'_',
+
+Example input:
+
+    # file1.csv
+    a,b,c
+    1,2,3
+    4,5,6
+    7,8,9
+
+    # file2.csv
+    a,b,c
+    1,2,3
+    4,5,7
+    7,8,9
+
+Output of intersection (`--intersect file1.csv file2.csv`), which will return
+common rows between the two files:
+
+    a,b,c
+    1,2,3
+    7,8,9
+
+Output of union (`--union file1.csv file2.csv`), which will return all rows with
+duplicate removed:
+
+    a,b,c
+    1,2,3
+    4,5,6
+    4,5,7
+    7,8,9
+
+Output of difference (`--diff file1.csv file2.csv`), which will return all rows
+in the first file but not in the second:
+
+    a,b,c
+    4,5,6
+
+Output of symmetric difference (`--symdiff file1.csv file2.csv`), which will
+return all rows in the first file not in the second, as well as rows in the
+second not in the first:
+
+    a,b,c
+    4,5,6
+    4,5,7
+
+You can specify `--compare-fields` to only consider some fields only, for
+example `--union --compare-fields a,b file1.csv file2.csv`:
+
+    a,b,c
+    1,2,3
+    4,5,6
+    7,8,9
+
+Each field specified in `--compare-fields` can be specified using `F1:F2:...`
+format to refer to different field names or indexes in each file, for example if
+`file3.csv` is:
+
+    # file3.csv
+    Ei,Si,Bi
+    1,3,2
+    4,7,5
+    7,9,8
+
+Then `--union --compare-fields a:Ei,b:Bi file1.csv file3.csv` will result in:
+
+    a,b,c
+    1,2,3
+    4,5,6
+    7,8,9
+
+Finally you can print out certain fields using `--result-fields`.
+
+_
+    args => {
+        %args_common,
+        %arg_filenames_0,
+        op => {
+            summary => 'Set operation to perform',
+            schema => ['str*', in=>[qw/intersect union diff symdiff cross/]],
+            req => 1,
+            cmdline_aliases => {
+                intersect   => {is_flag=>1, summary=>'Shortcut for --op=intersect', code=>sub{ $_[0]{op} = 'intersect' }},
+                union       => {is_flag=>1, summary=>'Shortcut for --op=union'    , code=>sub{ $_[0]{op} = 'union'     }},
+                diff        => {is_flag=>1, summary=>'Shortcut for --op=diff'     , code=>sub{ $_[0]{op} = 'diff'      }},
+                symdiff     => {is_flag=>1, summary=>'Shortcut for --op=symdiff'  , code=>sub{ $_[0]{op} = 'symdiff'   }},
+                cross       => {is_flag=>1, summary=>'Shortcut for --op=cross'    , code=>sub{ $_[0]{op} = 'cross'     }},
+            },
+        },
+        ignore_case => {
+            schema => 'bool*',
+            cmdline_aliases => {i=>{}},
+        },
+        compare_fields => {
+            schema => ['str*'],
+        },
+        result_fields => {
+            schema => ['str*'],
+        },
+    },
+    links => [
+        {url=>'prog:setop'},
+    ],
+};
+sub csv_setop {
+    require Tie::IxHash;
+
+    my %args = @_;
+
+    my $op = $args{op};
+    my $ci = $args{ignore_case};
+    my $num_files = @{ $args{filenames} };
+
+    unless ($op ne 'cross' || $num_files > 1) {
+        return [400, "Please specify at least 2 input files for cross"];
+    }
+    unless ($num_files >= 1) {
+        return [400, "Please specify at least 1 input file"];
+    }
+
+    my @all_data_rows;   # elem=rows, one elem for each input file
+    my @all_field_idxs;  # elem=field_idxs (hash, key=column name, val=index)
+    my @all_field_names; # elem=[field1,field2,...] for 1st file, ...
+
+    # read all csv
+    for my $filename (@{ $args{filenames} }) {
+        my $csv = _instantiate_parser(\%args);
+        open my($fh), "<:encoding(utf8)", $filename or
+            return [500, "Can't open input filename '$filename': $!"];
+        my $i = 0;
+        my @data_rows;
+        my $field_idxs = {};
+        while (my $row = $csv->getline($fh)) {
+            $i++;
+            if ($i == 1) {
+                if ($args{header} // 1) {
+                    my $fields = $row;
+                    for my $field (@$fields) {
+                        unless (exists $field_idxs->{$field}) {
+                            $field_idxs->{$field} = keys(%$field_idxs);
+                        }
+                    }
+                    push @all_field_names, $fields;
+                    push @all_field_idxs, $field_idxs;
+                    next;
+                } else {
+                    my $fields = [];
+                    for (1..@$row) {
+                        $field_idxs->{"field$_"} = $_-1;
+                        push @$fields, "field$_";
+                    }
+                    push @all_field_names, $fields;
+                    push @all_field_idxs, $field_idxs;
+                }
+            }
+            push @data_rows, $row;
+        }
+        push @all_data_rows, \@data_rows;
+    } # for each filename
+
+    my @compare_fields; # elem = [fieldname-for-file1, fieldname-for-file2, ...]
+    if (defined $args{compare_fields}) {
+        my @ff = ref($args{compare_fields}) eq 'ARRAY' ?
+            @{$args{compare_fields}} : split(/,/, $args{compare_fields});
+        for my $field_idx (0..$#ff) {
+            my @ff2 = split /:/, $ff[$field_idx];
+            for (@ff2+1 .. $num_files) {
+                push @ff2, $ff2[0];
+            }
+            $compare_fields[$field_idx] = \@ff2;
+        }
+    } else {
+        for my $field_idx (0..$#{ $all_field_names[0] }) {
+            $compare_fields[$field_idx] = [
+                map { $all_field_names[0][$field_idx] } 0..$num_files-1];
+        }
+    }
+
+    my @result_fields; # elem = fieldname, ...
+    if (defined $args{result_fields}) {
+        @result_fields = ref($args{result_fields}) eq 'ARRAY' ?
+            @{$args{result_fields}} : split(/,/, $args{result_fields});
+    } else {
+        @result_fields = @{ $all_field_names[0] };
+    }
+
+    tie my(%res), 'Tie::IxHash';
+    my $res = "";
+
+    my $code_get_compare_key = sub {
+        my ($file_idx, $row_idx) = @_;
+        my $row   = $all_data_rows[$file_idx][$row_idx];
+        my $key = join "|", map {
+            my $field = $compare_fields[$_][$file_idx];
+            my $field_idx = $all_field_idxs[$file_idx]{$field};
+            my $val = defined $field_idx ? $row->[$field_idx] : "";
+            $val = uc $val if $ci;
+            $val;
+        } 0..$#compare_fields;
+        #say "D:compare_key($file_idx, $row_idx)=<$key>";
+        $key;
+    };
+
+    my $csv = _instantiate_parser_default();
+    my $code_format_result_row = sub {
+        my ($file_idx, $row) = @_;
+        my @res_row = map {
+            my $field = $result_fields[$_];
+            my $field_idx = $all_field_idxs[$file_idx]{$field};
+            defined $field_idx ? $row->[$field_idx] : "";
+        } 0..$#result_fields;
+        $csv->combine(@res_row);
+        $csv->string . "\n";
+    };
+
+    if ($op eq 'intersect') {
+        for my $file_idx (0..$num_files-1) {
+            if ($file_idx == 0) {
+                for my $row_idx (0..$#{ $all_data_rows[$file_idx] }) {
+                    my $key = $code_get_compare_key->($file_idx, $row_idx);
+                    $res{$key} //= [1, $row_idx];
+                }
+            } else {
+                for my $row_idx (0..$#{ $all_data_rows[$file_idx] }) {
+                    my $key = $code_get_compare_key->($file_idx, $row_idx);
+                    if ($res{$key} && $res{$key}[0] == $file_idx) {
+                        $res{$key}[0]++;
+                    }
+                }
+            }
+
+            # store result
+            if ($file_idx == $num_files-1) {
+                #use DD; dd \%res;
+                $csv->combine(@result_fields);
+                $res .= $csv->string . "\n";
+                for my $key (keys %res) {
+                    $res .= $code_format_result_row->(
+                        0, $all_data_rows[0][$res{$key}[1]])
+                        if $res{$key}[0] == $num_files;
+                }
+            }
+        } # for file_idx
+    } # op=intersect
+
+    else {
+        return [400, "Unknown/unimplemented op '$op'"];
+    }
+
+    #use DD; dd +{
+    #    compare_fields => \@compare_fields,
+    #    result_fields => \@result_fields,
+    #    all_field_idxs=>\@all_field_idxs,
+    #    all_data_rows=>\@all_data_rows,
+    #};
+
+    [200, "OK", $res, {"cmdline.skip_format"=>1}];
 }
 
 1;

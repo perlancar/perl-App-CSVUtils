@@ -252,4 +252,25 @@ subtest csv_dump => sub {
 
 };
 
+subtest csv_setop => sub {
+    write_text("$dir/setop1.csv", "f1,f2,f3\nv1,v2,v3\nv4,v5,v6\nv7,v8,v9\n");
+    write_text("$dir/setop2.csv", "f1,f2,f3\nv1,v2,v3\nv4,V5,v7\nv7,v8,v9\n");
+
+    my $res;
+
+    subtest intersect => sub {
+        $res = App::CSVUtils::csv_setop(op=>"intersect", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"]);
+        is($res->[2], "f1,f2,f3\nv1,v2,v3\nv7,v8,v9\n");
+
+        $res = App::CSVUtils::csv_setop(op=>"intersect", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"], compare_fields=>"f1");
+        is($res->[2], "f1,f2,f3\nv1,v2,v3\nv4,v5,v6\nv7,v8,v9\n", "opt:compare_fields");
+
+        $res = App::CSVUtils::csv_setop(op=>"intersect", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"], compare_fields=>"f1,f2", ignore_case=>1);
+        is($res->[2], "f1,f2,f3\nv1,v2,v3\nv4,v5,v6\nv7,v8,v9\n", "opt:ignore_case");
+
+        $res = App::CSVUtils::csv_setop(op=>"intersect", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"], result_fields=>"f2,f1");
+        is($res->[2], "f2,f1\nv2,v1\nv8,v7\n");
+    };
+};
+
 done_testing;
