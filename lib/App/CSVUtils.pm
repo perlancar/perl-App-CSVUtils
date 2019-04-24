@@ -815,6 +815,24 @@ sub csv_replace_newline {
 $SPEC{csv_sort_fields} = {
     v => 1.1,
     summary => 'Sort CSV fields',
+    description => <<'_',
+
+This utility sorts the order of fields in the CSV. Example input CSV:
+
+    b,c,a
+    1,2,3
+    4,5,6
+
+Example output CSV:
+
+    a,b,c
+    3,1,2
+    6,4,5
+
+You can also reverse the sort order (`-r`), sort case-insensitively (`-i`), or
+provides the ordering, e.g. `--example a,c,b`.
+
+_
     args => {
         %args_common,
         %arg_filename_0,
