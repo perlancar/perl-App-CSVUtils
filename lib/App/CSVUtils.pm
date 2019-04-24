@@ -665,8 +665,8 @@ $SPEC{csv_add_field} = {
 
 Your Perl code (-e) will be called for each row (excluding the header row) and
 should return the value for the new field. `$main::row` is available and
-contains the current row, while `$main::rownum` contains the row number (2 means
-the first data row). `$main::field_idxs` is also available for additional
+contains the current row. `$main::rownum` contains the row number (2 means the
+first data row). `$main::field_idxs` is also available for additional
 information.
 
 Field by default will be added as the last field, unless you specify one of
@@ -741,7 +741,7 @@ $SPEC{csv_munge_field} = {
 
 Perl code (-e) will be called for each row (excluding the header row) and `$_`
 will contain the value of the field, and the Perl code is expected to modify it.
-`$main::row` will contain the current row array and `$main::rownum` contains the
+`$main::row` will contain the current row array. `$main::rownum` contains the
 row number (2 means the first data row). `$main::field_idxs` is also available
 for additional information.
 
@@ -888,7 +888,7 @@ $SPEC{csv_grep} = {
 
 This is like Perl's `grep` performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
-`$main::row` is also set to the row (always as arrayref), while `$main::rownum`
+`$main::row` is also set to the row (always as arrayref). `$main::rownum`
 contains the row number (2 means the first data row). `$main::field_idxs` is
 also available for additional information.
 
@@ -934,7 +934,7 @@ $SPEC{csv_map} = {
 
 This is like Perl's `map` performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
-`$main::row` is also set to the row (always as arrayref), while `$main::rownum`
+`$main::row` is also set to the row (always as arrayref). `$main::rownum`
 contains the row number (2 means the first data row). `$main::field_idxs` is
 also available for additional information.
 
