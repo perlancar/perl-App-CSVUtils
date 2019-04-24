@@ -428,6 +428,7 @@ sub csvutil {
                     local $_ = $row->[$field_idx];
                     local $main::row = $row;
                     local $main::rownum = $i;
+                    local $main::csv = $csv;
                     local $main::field_idxs = \%field_idxs;
                     eval { $code->($_) };
                     die "Error while munging row ".
@@ -482,6 +483,8 @@ sub csvutil {
                     local $_;
                     local $main::row = $row;
                     local $main::rownum = $i;
+                    local $main::csv = $csv;
+                    local $main::field_idxs = \%field_idxs;
                     eval { $_ = $code->() };
                     die "Error while adding field '$args{field}' for row #$i: $@\n"
                         if $@;
@@ -578,6 +581,7 @@ sub csvutil {
                 local $_ = $args{hash} ? $rowhash : $row;
                 local $main::row = $row;
                 local $main::rownum = $i;
+                local $main::csv = $csv;
                 local $main::field_idxs = \%field_idxs;
                 $code->($row);
             }) {
@@ -599,6 +603,7 @@ sub csvutil {
                     local $_ = $args{hash} ? $rowhash : $row;
                     local $main::row = $row;
                     local $main::rownum = $i;
+                    local $main::csv = $csv;
                     local $main::field_idxs = \%field_idxs;
                     $code->($row);
                 } // '';
@@ -666,8 +671,8 @@ $SPEC{csv_add_field} = {
 Your Perl code (-e) will be called for each row (excluding the header row) and
 should return the value for the new field. `$main::row` is available and
 contains the current row. `$main::rownum` contains the row number (2 means the
-first data row). `$main::field_idxs` is also available for additional
-information.
+first data row). `$csv` is the <pm:Text::CSV_XS> object. `$main::field_idxs` is
+also available for additional information.
 
 Field by default will be added as the last field, unless you specify one of
 `--after` (to put after a certain field), `--before` (to put before a certain
@@ -742,8 +747,8 @@ $SPEC{csv_munge_field} = {
 Perl code (-e) will be called for each row (excluding the header row) and `$_`
 will contain the value of the field, and the Perl code is expected to modify it.
 `$main::row` will contain the current row array. `$main::rownum` contains the
-row number (2 means the first data row). `$main::field_idxs` is also available
-for additional information.
+row number (2 means the first data row). `$main::csv` is the <pm:Text::CSV_XS>
+object. `$main::field_idxs` is also available for additional information.
 
 _
     args => {
@@ -889,8 +894,9 @@ $SPEC{csv_grep} = {
 This is like Perl's `grep` performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
 `$main::row` is also set to the row (always as arrayref). `$main::rownum`
-contains the row number (2 means the first data row). `$main::field_idxs` is
-also available for additional information.
+contains the row number (2 means the first data row). `$main::csv` is the
+<pm:Text::CSV_XS> object. `$main::field_idxs` is also available for additional
+information.
 
 Your code is then free to return true or false based on some criteria. Only rows
 where Perl expression returns true will be included in the result.
@@ -935,8 +941,9 @@ $SPEC{csv_map} = {
 This is like Perl's `map` performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
 `$main::row` is also set to the row (always as arrayref). `$main::rownum`
-contains the row number (2 means the first data row). `$main::field_idxs` is
-also available for additional information.
+contains the row number (2 means the first data row). `$main::csv` is the
+<pm:Text::CSV_XS> object. `$main::field_idxs` is also available for additional
+information.
 
 Your code is then free to return a string based on some operation against these
 data. This utility will then print out the resulting string.
