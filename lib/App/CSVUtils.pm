@@ -320,7 +320,7 @@ $SPEC{csvutil} = {
                 'list-field-names',
                 'delete-field',
                 'munge-field',
-                'replace-newline',
+                #'replace-newline', # not implemented in csvutil
                 'sort-rows',
                 'sort-fields',
                 'sum',
@@ -330,7 +330,7 @@ $SPEC{csvutil} = {
                 'map',
                 'each-row',
                 'convert-to-hash',
-                'concat',
+                #'concat', # not implemented in csvutil
                 'select-fields',
                 'dump',
             ]],
