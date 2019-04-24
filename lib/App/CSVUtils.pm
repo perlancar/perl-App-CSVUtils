@@ -214,14 +214,48 @@ our %arg_fields_or_field_pat = (
 our %arg_eval_2 = (
     eval => {
         summary => 'Perl code to do munging',
-        schema => 'str*',
+        schema => ['any*', of=>['str*', 'code*']],
         cmdline_aliases => { e=>{} },
         req => 1,
         pos => 2,
     },
 );
 
-our %args_sort = (
+our %args_sort_rows_short = (
+    reverse => {
+        schema => ['bool', is=>1],
+        cmdline_aliases => {r=>{}},
+    },
+    ci => {
+        schema => ['bool', is=>1],
+        cmdline_aliases => {i=>{}},
+    },
+    by_fields => {
+        summary => 'A comma-separated list of field sort specification',
+        description => <<'_',
+
+`+FIELD` to mean sort numerically ascending, `-FIELD` to sort numerically
+descending, `FIELD` to mean sort ascibetically ascending, `~FIELD` to mean sort
+ascibetically descending.
+
+_
+        schema => ['str*'],
+        #completion => \&_complete_sort_field_list,
+    },
+    by_code => {
+        summary => 'Perl code to do sorting',
+        description => <<'_',
+
+`$a` and `$b` (or the first and second argument) will contain the two rows to be
+compared.
+
+_
+        schema => ['any*', of=>['str*', 'code*']],
+        #completion => \&_complete_sort_field_list,
+    },
+);
+
+our %args_sort_fields = (
     sort_reverse => {
         schema => ['bool', is=>1],
     },
@@ -234,7 +268,7 @@ our %args_sort = (
     },
 );
 
-our %args_sort_short = (
+our %args_sort_fields_short = (
     reverse => {
         schema => ['bool', is=>1],
         cmdline_aliases => {r=>{}},
@@ -260,7 +294,7 @@ our %arg_with_data_rows = (
 our %arg_eval = (
     eval => {
         summary => 'Perl code',
-        schema => 'str*',
+        schema => ['any*', of=>['str*', 'code*']],
         cmdline_aliases => { e=>{} },
         req => 1,
     },
@@ -287,6 +321,7 @@ $SPEC{csvutil} = {
                 'delete-field',
                 'munge-field',
                 'replace-newline',
+                'sort-rows',
                 'sort-fields',
                 'sum',
                 'avg',
@@ -812,6 +847,90 @@ sub csv_replace_newline {
     [200, "OK", $res, {"cmdline.skip_format"=>1}];
 }
 
+$SPEC{csv_sort_rows} = {
+    v => 1.1,
+    summary => 'Sort CSV rows',
+    description => <<'_',
+
+This utility sorts the rows in the CSV. Example input CSV:
+
+    name,age
+    Andy,20
+    Dennis,15
+    Ben,30
+    Jerry,30
+
+Example output CSV (using `--by-fields +age` which means by age numerically and
+ascending):
+
+    name,age
+    Dennis,15
+    Andy,20
+    Ben,30
+    Jerry,30
+
+Example output CSV (using `--by-fields -age`, which means by age numerically and
+descending):
+
+    name,age
+    Ben,30
+    Jerry,30
+    Andy,20
+    Dennis,15
+
+Example output CSV (using `--by-fields name`, which means by name ascibetically
+and ascending):
+
+    name,age
+    Andy,20
+    Ben,30
+    Dennis,15
+    Jerry,30
+
+Example output CSV (using `--by-fields ~name`, which means by name ascibetically
+and descending):
+
+    name,age
+    Jerry,30
+    Dennis,15
+    Ben,30
+    Andy,20
+
+Example output CSV (using `--by-fields +age,~name`):
+
+    name,age
+    Dennis,15
+    Andy,20
+    Jerry,30
+    Ben,30
+
+You can also reverse the sort order (`-r`), sort case-insensitively (`-i`), or
+provides the code (`--by-code`, for example `--by-code '$a->[1] <=> $b->[1] ||
+$b->[0] cmp $a->[0]'` which is equivalent to `--by-fields +age,~name`).
+
+_
+    args => {
+        %args_common,
+        %arg_filename_0,
+        %args_sort_rows_short,
+        %arg_hash,
+    },
+};
+sub csv_sort_rows {
+    my %args = @_;
+
+    my %csvutil_args = (
+        filename => $args{filename},
+        action => 'sort-rows',
+        sort_by_fields => $args{by_fields},
+        sort_by_code   => $args{by_code},
+        sort_reverse => $args{reverse},
+        sort_ci => $args{ci},
+    );
+
+    csvutil(%csvutil_args);
+}
+
 $SPEC{csv_sort_fields} = {
     v => 1.1,
     summary => 'Sort CSV fields',
@@ -836,7 +955,7 @@ _
     args => {
         %args_common,
         %arg_filename_0,
-        %args_sort_short,
+        %args_sort_fields_short,
     },
 };
 sub csv_sort_fields {
