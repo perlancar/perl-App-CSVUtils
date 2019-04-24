@@ -999,7 +999,7 @@ _
 sub csv_each_row {
     my %args = @_;
 
-    csvutil(%args, action=>'each_row');
+    csvutil(%args, action=>'each-row');
 }
 
 $SPEC{csv_convert_to_hash} = {
