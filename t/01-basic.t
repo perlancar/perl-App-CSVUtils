@@ -273,4 +273,35 @@ subtest csv_setop => sub {
     };
 };
 
+subtest csv_lookup_fields => sub {
+    write_text("$dir/report.csv", <<'_');
+client_id,followup_staff,followup_note,client_email,client_phone
+101,Jerry,not renewing,
+299,Jerry,still thinking over,
+734,Elaine,renewing,
+_
+
+    write_text("$dir/clients.csv", <<'_');
+id,name,email,client_phone
+101,Andy,andy@example.com,555-2983
+102,Bob,bob@acme.example.com,555-2523
+299,Cindy,cindy@example.com,555-7892
+400,Derek,derek@example.com,555-9018
+701,Edward,edward@example.com,555-5833
+734,Felipe,felipe@example.com,555-9067
+_
+
+    my $res;
+
+    $res = App::CSVUtils::csv_lookup_fields(target=>"$dir/report.csv", source=>"$dir/clients.csv", lookup_fields=>"client_id:id", fill_fields=>"client_email:email,client_phone");
+    is($res->[2], <<'_');
+client_id,followup_staff,followup_note,client_email,client_phone
+101,Jerry,"not renewing",andy@example.com,555-2983
+299,Jerry,"still thinking over",cindy@example.com,555-7892
+734,Elaine,renewing,felipe@example.com,555-9067
+_
+
+    # XXX test opt:ignore_case
+};
+
 done_testing;
