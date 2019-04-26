@@ -1621,6 +1621,11 @@ _
             schema => ['str*'],
             req => 1,
         },
+        count => {
+            summary => 'Do not output rows, just report the number of rows filled',
+            schema => 'bool*',
+            cmdline_aliases => {c=>{}},
+        },
     },
 };
 sub csv_lookup_fields {
@@ -1705,6 +1710,7 @@ sub csv_lookup_fields {
     my $res = "";
     my @target_field_names;
     my %target_field_idxs;
+    my $num_filled = 0;
     {
         my $csv_out = _instantiate_parser_default();
         my $csv = _instantiate_parser(\%args);
@@ -1743,6 +1749,7 @@ sub csv_lookup_fields {
             #say "D:looking up '$key' ...";
             if (defined(my $row_idx = $lookup_table{$key})) {
                 #say "  D:found";
+                my $row_filled;
                 my $source_row = $source_data_rows[$row_idx];
                 for my $field (keys %fill_fields) {
                     my $target_field_idx = $target_field_idxs{$field};
@@ -1751,14 +1758,22 @@ sub csv_lookup_fields {
                     next unless defined $source_field_idx;
                     $row->[$target_field_idx] =
                         $source_row->[$source_field_idx];
+                    $row_filled++;
                 }
+                $num_filled++ if $row_filled;
             }
             $csv_out->combine(@$row);
-            $res .= $csv_out->string . "\n";
+            unless ($args{count}) {
+                $res .= $csv_out->string . "\n";
+            }
         }
     }
 
-    [200, "OK", $res, {"cmdline.skip_format"=>1}];
+    if ($args{count}) {
+        [200, "OK", $num_filled];
+    } else {
+        [200, "OK", $res, {"cmdline.skip_format"=>1}];
+    }
 }
 
 1;
