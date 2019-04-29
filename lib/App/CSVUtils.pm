@@ -1383,14 +1383,13 @@ _
         %arg_filenames_0,
         op => {
             summary => 'Set operation to perform',
-            schema => ['str*', in=>[qw/intersect union diff symdiff cross/]],
+            schema => ['str*', in=>[qw/intersect union diff symdiff/]],
             req => 1,
             cmdline_aliases => {
                 intersect   => {is_flag=>1, summary=>'Shortcut for --op=intersect', code=>sub{ $_[0]{op} = 'intersect' }},
                 union       => {is_flag=>1, summary=>'Shortcut for --op=union'    , code=>sub{ $_[0]{op} = 'union'     }},
                 diff        => {is_flag=>1, summary=>'Shortcut for --op=diff'     , code=>sub{ $_[0]{op} = 'diff'      }},
                 symdiff     => {is_flag=>1, summary=>'Shortcut for --op=symdiff'  , code=>sub{ $_[0]{op} = 'symdiff'   }},
-                cross       => {is_flag=>1, summary=>'Shortcut for --op=cross'    , code=>sub{ $_[0]{op} = 'cross'     }},
             },
         },
         ignore_case => {
@@ -1524,7 +1523,7 @@ sub csv_setop {
             if ($file_idx == 0) {
                 for my $row_idx (0..$#{ $all_data_rows[$file_idx] }) {
                     my $key = $code_get_compare_key->($file_idx, $row_idx);
-                    $res{$key} //= [1, $row_idx];
+                    $res{$key} //= [1, $row_idx]; # [num_of_occurrence, row_idx]
                 }
             } else {
                 for my $row_idx (0..$#{ $all_data_rows[$file_idx] }) {
@@ -1535,7 +1534,7 @@ sub csv_setop {
                 }
             }
 
-            # store result
+            # build result
             if ($file_idx == $num_files-1) {
                 #use DD; dd \%res;
                 $csv->combine(@result_fields);
@@ -1547,9 +1546,78 @@ sub csv_setop {
                 }
             }
         } # for file_idx
-    } # op=intersect
 
-    else {
+    } elsif ($op eq 'union') {
+        $csv->combine(@result_fields);
+        $res .= $csv->string . "\n";
+
+        for my $file_idx (0..$num_files-1) {
+            for my $row_idx (0..$#{ $all_data_rows[$file_idx] }) {
+                my $key = $code_get_compare_key->($file_idx, $row_idx);
+                next if $res{$key}++;
+                my $row = $all_data_rows[$file_idx][$row_idx];
+                $res .= $code_format_result_row->($file_idx, $row);
+            }
+        } # for file_idx
+
+    } elsif ($op eq 'diff') {
+        for my $file_idx (0..$num_files-1) {
+            if ($file_idx == 0) {
+                for my $row_idx (0..$#{ $all_data_rows[$file_idx] }) {
+                    my $key = $code_get_compare_key->($file_idx, $row_idx);
+                    $res{$key} //= [$file_idx, $row_idx];
+                }
+            } else {
+                for my $row_idx (0..$#{ $all_data_rows[$file_idx] }) {
+                    my $key = $code_get_compare_key->($file_idx, $row_idx);
+                    delete $res{$key};
+                }
+            }
+
+            # build result
+            if ($file_idx == $num_files-1) {
+                $csv->combine(@result_fields);
+                $res .= $csv->string . "\n";
+                for my $key (keys %res) {
+                    my ($file_idx, $row_idx) = @{ $res{$key} };
+                    $res .= $code_format_result_row->(
+                        0, $all_data_rows[$file_idx][$row_idx]);
+                }
+            }
+        } # for file_idx
+
+    } elsif ($op eq 'symdiff') {
+        for my $file_idx (0..$num_files-1) {
+            if ($file_idx == 0) {
+                for my $row_idx (0..$#{ $all_data_rows[$file_idx] }) {
+                    my $key = $code_get_compare_key->($file_idx, $row_idx);
+                    $res{$key} //= [1, $file_idx, $row_idx];  # [num_of_occurrence, file_idx, row_idx]
+                }
+            } else {
+                for my $row_idx (0..$#{ $all_data_rows[$file_idx] }) {
+                    my $key = $code_get_compare_key->($file_idx, $row_idx);
+                    if (!$res{$key}) {
+                        $res{$key} = [1, $file_idx, $row_idx];
+                    } else {
+                        $res{$key}[0]++;
+                    }
+                }
+            }
+
+            # build result
+            if ($file_idx == $num_files-1) {
+                $csv->combine(@result_fields);
+                $res .= $csv->string . "\n";
+                for my $key (keys %res) {
+                    my ($num_occur, $file_idx, $row_idx) = @{ $res{$key} };
+                    $res .= $code_format_result_row->(
+                        0, $all_data_rows[$file_idx][$row_idx])
+                        if $num_occur == 1;
+                }
+            }
+        } # for file_idx
+
+    } else {
         return [400, "Unknown/unimplemented op '$op'"];
     }
 

@@ -269,7 +269,49 @@ subtest csv_setop => sub {
         is($res->[2], "f1,f2,f3\nv1,v2,v3\nv4,v5,v6\nv7,v8,v9\n", "opt:ignore_case");
 
         $res = App::CSVUtils::csv_setop(op=>"intersect", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"], result_fields=>"f2,f1");
-        is($res->[2], "f2,f1\nv2,v1\nv8,v7\n");
+        is($res->[2], "f2,f1\nv2,v1\nv8,v7\n", "opt:result_fields");
+    };
+
+    subtest union => sub {
+        $res = App::CSVUtils::csv_setop(op=>"union", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"]);
+        is($res->[2], "f1,f2,f3\nv1,v2,v3\nv4,v5,v6\nv7,v8,v9\nv4,V5,v7\n");
+
+        $res = App::CSVUtils::csv_setop(op=>"union", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"], compare_fields=>"f1");
+        is($res->[2], "f1,f2,f3\nv1,v2,v3\nv4,v5,v6\nv7,v8,v9\n", "opt:compare_fields");
+
+        $res = App::CSVUtils::csv_setop(op=>"union", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"], compare_fields=>"f1,f2", ignore_case=>1);
+        is($res->[2], "f1,f2,f3\nv1,v2,v3\nv4,v5,v6\nv7,v8,v9\n", "opt:ignore_case");
+
+        $res = App::CSVUtils::csv_setop(op=>"union", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"], compare_fields=>"f1", result_fields=>"f2,f1");
+        is($res->[2], "f2,f1\nv2,v1\nv5,v4\nv8,v7\n", "opt:result_fields");
+    };
+
+    subtest diff => sub {
+        $res = App::CSVUtils::csv_setop(op=>"diff", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"]);
+        is($res->[2], "f1,f2,f3\nv4,v5,v6\n");
+
+        $res = App::CSVUtils::csv_setop(op=>"diff", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"], compare_fields=>"f1");
+        is($res->[2], "f1,f2,f3\n", "opt:compare_fields");
+
+        $res = App::CSVUtils::csv_setop(op=>"diff", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"], compare_fields=>"f1,f2", ignore_case=>1);
+        is($res->[2], "f1,f2,f3\n", "opt:ignore_case");
+
+        $res = App::CSVUtils::csv_setop(op=>"diff", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"], result_fields=>"f2,f1");
+        is($res->[2], "f2,f1\nv5,v4\n", "opt:result_fields");
+    };
+
+    subtest symdiff => sub {
+        $res = App::CSVUtils::csv_setop(op=>"symdiff", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"]);
+        is($res->[2], "f1,f2,f3\nv4,v5,v6\nv4,V5,v7\n");
+
+        $res = App::CSVUtils::csv_setop(op=>"symdiff", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"], compare_fields=>"f1");
+        is($res->[2], "f1,f2,f3\n", "opt:compare_fields");
+
+        $res = App::CSVUtils::csv_setop(op=>"symdiff", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"], compare_fields=>"f1,f2", ignore_case=>1);
+        is($res->[2], "f1,f2,f3\n", "opt:ignore_case");
+
+        $res = App::CSVUtils::csv_setop(op=>"symdiff", filenames=>["$dir/setop1.csv", "$dir/setop2.csv"], result_fields=>"f3,f1");
+        is($res->[2], "f3,f1\nv6,v4\nv7,v4\n", "opt:result_fields");
     };
 };
 
