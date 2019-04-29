@@ -1938,4 +1938,6 @@ This distribution contains the following CLI utilities:
 
 =head1 prepend:SEE ALSO
 
+L<App::SerializeUtils>, particularly L<tsv2csv> and L<csv2tsv>.
+
 =cut
