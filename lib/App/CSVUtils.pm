@@ -987,7 +987,9 @@ Example output CSV (using `--by-fields +age,~name`):
 
 You can also reverse the sort order (`-r`), sort case-insensitively (`-i`), or
 provides the code (`--by-code`, for example `--by-code '$a->[1] <=> $b->[1] ||
-$b->[0] cmp $a->[0]'` which is equivalent to `--by-fields +age,~name`).
+$b->[0] cmp $a->[0]'` which is equivalent to `--by-fields +age,~name`). If you
+use `--hash`, your code will receive the rows to be compared as hashref, e.g.
+`--hash --by-code '$a->{age} <=> $b->{age} || $b->{name} cmp $a->{name}'.
 
 _
     args => {
