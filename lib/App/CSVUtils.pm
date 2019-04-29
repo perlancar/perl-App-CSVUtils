@@ -1936,6 +1936,23 @@ This distribution contains the following CLI utilities:
 # INSERT_EXECS_LIST
 
 
+=head1 FAQ
+
+=head2 My CSV does not have a header?
+
+Use the C<--no-header> option. Fields will be named C<field1>, C<field2>, and so
+on.
+
+=head2 My data is TSV, not CSV?
+
+Use the C<--tsv> option.
+
+=head2 I have a big CSV and the utilities are too slow or eat too much RAM!
+
+These utilities are not (yet) optimized, patches welcome. If your CSV is very
+big, perhaps a C-based solution is what you need.
+
+
 =head1 prepend:SEE ALSO
 
 L<App::SerializeUtils>, particularly L<tsv2csv> and L<csv2tsv>.
