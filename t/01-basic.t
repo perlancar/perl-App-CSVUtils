@@ -22,6 +22,8 @@ write_text("$dir/no-header-1.csv", "1,2,3\n4,5,6\n7,8,9\n");
 
 write_text("$dir/1.tsv", "f1\tf2\tf3\n1\t2\t3\n4\t5\t6\n7\t8\t9\n");
 
+write_text("$dir/sort-rows.csv", qq(f1,f2\n2,andy\n1,Andy\n10,Chuck\n));
+
 # XXX test with opt: --no-header
 
 subtest csv_add_field => sub {
@@ -115,6 +117,33 @@ subtest csv_sort_fields => sub {
     # reverse example
     $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", example=>["f2","F3","f1"], reverse=>1);
     is_deeply($res, [200,"OK",qq(f1,F3,f2\n1,2,3\n4,5,6\n),{'cmdline.skip_format'=>1}], "result (reverse example)");
+};
+
+subtest csv_sort_rows => sub {
+    my $res;
+
+    # alphabetical
+    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>"f2");
+    is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n10,Chuck\n2,andy\n),{'cmdline.skip_format'=>1}]);
+    # reverse alphabetical
+    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>"~f2");
+    is_deeply($res, [200,"OK",qq(f1,f2\n2,andy\n10,Chuck\n1,Andy\n),{'cmdline.skip_format'=>1}]);
+    # numeric
+    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>"+f1");
+    is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n2,andy\n10,Chuck\n),{'cmdline.skip_format'=>1}]);
+    # reverse numeric
+    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>"-f1");
+    is_deeply($res, [200,"OK",qq(f1,f2\n10,Chuck\n2,andy\n1,Andy\n),{'cmdline.skip_format'=>1}]);
+    # ci
+    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>"f2,+f1", ci=>1);
+    is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n2,andy\n10,Chuck\n),{'cmdline.skip_format'=>1}]);
+
+    # by code
+    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_code=>'$a->[0] cmp $b->[0]');
+    is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n10,Chuck\n2,andy\n),{'cmdline.skip_format'=>1}]);
+    # by code, hash
+    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_code=>'$a->{f1} cmp $b->{f1}', hash=>1);
+    is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n10,Chuck\n2,andy\n),{'cmdline.skip_format'=>1}]);
 };
 
 subtest csv_sum => sub {

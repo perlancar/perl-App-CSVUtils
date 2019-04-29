@@ -451,6 +451,7 @@ sub csvutil {
             }
             if ($action eq 'grep') {
             } elsif ($action eq 'map') {
+            } elsif ($action eq 'sort-rows') {
             } elsif ($action eq 'each-row') {
             }
         } # if i==1 (header row)
@@ -656,6 +657,8 @@ sub csvutil {
                     $res .= $rowres;
                 }
             }
+        } elsif ($action eq 'sort-rows') {
+            push @$rows, $row unless $i == 1;
         } elsif ($action eq 'convert-to-hash') {
             if ($i == $args{_row_number}) {
                 $selected_row = $row;
@@ -700,6 +703,77 @@ sub csvutil {
 
     if ($action eq 'dump') {
         return [200, "OK", $rows];
+    }
+
+    if ($action eq 'sort-rows') {
+        if ($args{sort_by_code}) {
+            my $code0 = _compile($args{sort_by_code});
+            if ($args{hash}) {
+                $code = sub {
+                    my $rowhash_a = {};
+                    my $rowhash_b = {};
+                    for (0..$#{$fields}) {
+                        $rowhash_a->{ $fields->[$_] } = $a->[$_];
+                        $rowhash_b->{ $fields->[$_] } = $b->[$_];
+                    }
+                    local $main::a = $rowhash_a;
+                    local $main::b = $rowhash_b;
+                    $code0->($a, $b);
+                };
+            } else {
+                $code = $code0;
+            }
+        } elsif ($args{sort_by_fields}) {
+            my @fields;
+            my $code_str = "";
+            for my $field_spec (split /,/, $args{sort_by_fields}) {
+                my ($prefix, $field) = $field_spec =~ /\A([+~-]?)(.+)/;
+                my $field_idx = $field_idxs{$field};
+                return [400, "Unknown field '$field'"]
+                    unless defined $field_idx;
+                $prefix //= "";
+                if ($prefix eq '+') {
+                    $code_str .= ($code_str ? " || " : "") .
+                        "(\$a->[$field_idx] <=> \$b->[$field_idx])";
+                } elsif ($prefix eq '-') {
+                    $code_str .= ($code_str ? " || " : "") .
+                        "(\$b->[$field_idx] <=> \$a->[$field_idx])";
+                } elsif ($prefix eq '') {
+                    if ($args{sort_ci}) {
+                        $code_str .= ($code_str ? " || " : "") .
+                            "(lc(\$a->[$field_idx]) cmp lc(\$b->[$field_idx]))";
+                    } else {
+                        $code_str .= ($code_str ? " || " : "") .
+                            "(\$a->[$field_idx] cmp \$b->[$field_idx])";
+                    }
+                } elsif ($prefix eq '~') {
+                    if ($args{sort_ci}) {
+                        $code_str .= ($code_str ? " || " : "") .
+                            "(lc(\$b->[$field_idx]) cmp lc(\$a->[$field_idx]))";
+                    } else {
+                        $code_str .= ($code_str ? " || " : "") .
+                            "(\$b->[$field_idx] cmp \$a->[$field_idx])";
+                    }
+                }
+            }
+            $code = _compile($code_str);
+        } else {
+            return [400, "Please specify by_fields or by_code"];
+        }
+
+        @$rows = sort {
+            local $main::a = $a;
+            local $main::b = $b;
+            $code->($a, $b);
+        } @$rows;
+
+        if ($has_header) {
+            $csv->combine(@$fields);
+            $res .= $csv->string . "\n";
+        }
+        for my $row (@$rows) {
+            $res .= _get_csv_row($csv, $row, $i, $has_header);
+        }
     }
 
     [200, "OK", $res, {"cmdline.skip_format"=>1}];
@@ -922,6 +996,9 @@ _
         %args_sort_rows_short,
         %arg_hash,
     },
+    args_rels => {
+        req_one => ['by_fields', 'by_code'],
+    },
 };
 sub csv_sort_rows {
     my %args = @_;
@@ -933,6 +1010,7 @@ sub csv_sort_rows {
         sort_by_code   => $args{by_code},
         sort_reverse => $args{reverse},
         sort_ci => $args{ci},
+        hash => $args{hash},
     );
 
     csvutil(%csvutil_args);
