@@ -1,0 +1,39 @@
+#!perl
+
+# DATE
+# VERSION
+
+use 5.010001;
+use strict;
+use warnings;
+
+use Text::CSV_XS;
+use Text::CSV_XS::TSV;
+
+my $csv = Text::CSV_XS->new({binary=>1});
+my $tsv = Text::CSV_XS::TSV->new({binary=>1});
+
+while (my $row = $tsv->getline(\*ARGV)) {
+    $csv->combine(@$row);
+    print $csv->string, "\n";
+}
+
+# ABSTRACT: Convert TSV to CSV
+# PODNAME:
+
+=head1 SYNOPSIS
+
+ % tsv2csv INPUT.tsv > OUTPUT.csv
+
+
+=head1 SEE ALSO
+
+L<csv2tsv>
+
+Other CSV-related utilities in L<App::CSVUtils>.
+
+Other TSV-related utilities in L<App::CSVUtils>.
+
+L<App::TextTableUtils>
+
+L<App::SerializeUtils>
