@@ -1955,6 +1955,10 @@ big, perhaps a C-based solution is what you need.
 
 =head1 prepend:SEE ALSO
 
-L<App::SerializeUtils>, particularly L<tsv2csv> and L<csv2tsv>.
+L<App::TSVUtils>
+
+L<App::LTSVUtils>
+
+L<App::SerializeUtils>
 
 =cut
