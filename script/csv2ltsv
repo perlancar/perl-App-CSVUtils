@@ -1,0 +1,50 @@
+#!perl
+
+# DATE
+# VERSION
+
+use 5.010001;
+use strict;
+use warnings;
+
+use Getopt::Long qw(:config gnu_getopt no_ignore_case);
+use Text::CSV_XS;
+
+my %Opt = (
+    header => 1,
+);
+GetOptions(
+    'no-header' => sub { $Opt{header} = 0 },
+);
+
+my $csv = Text::CSV_XS->new({binary=>1});
+my $i = 0;
+my $header_row;
+while (my $row = $csv->getline(\*ARGV)) {
+    if (++$i == 1) {
+        if ($Opt{header}) {
+            $header_row = $row;
+            for (@$row) { s/:/_/g }
+            next;
+        } else {
+            $header_row = [map { "field".($_+1) } 0..$#{$row}];
+        }
+    }
+    print join("\t", map { "$header_row->[$_]:$row->[$_]" } 0..$#{$row}), "\n";
+}
+
+# ABSTRACT: Convert CSV to LTSV
+# PODNAME:
+
+=head1 SYNOPSIS
+
+ % csv2ltsv INPUT.csv > OUTPUT.ltsv
+
+
+=head1 SEE ALSO
+
+L<ltsv2csv>
+
+L<App::CSVUtils>
+
+L<App::LTSVUtils>
