@@ -326,6 +326,7 @@ $SPEC{csvutil} = {
             schema => ['str*', in=>[
                 'add-field',
                 'list-field-names',
+                'info',
                 'delete-field',
                 'munge-field',
                 #'replace-newline', # not implemented in csvutil
@@ -375,6 +376,8 @@ sub csvutil {
 
     my $res = "";
     my $i = 0;
+    my $header_row_count = 0;
+    my $data_row_count = 0;
     my $fields;
     my %field_idxs;
 
@@ -393,8 +396,10 @@ sub csvutil {
             return unless $row0;
             return [map { "field$_" } 1..@$row0];
         } elsif ($i == 1 && !$has_header) {
+            $header_row_count++;
             return $row0;
         }
+        $data_row_count++;
         $csv->getline($fh);
     };
 
@@ -464,6 +469,7 @@ sub csvutil {
                     [map { {name=>$_, index=>$field_idxs{$_}+1} }
                          sort keys %field_idxs],
                     {'table.fields'=>['name','index']}];
+        } elsif ($action eq 'info') {
         } elsif ($action eq 'munge-field') {
             unless ($i == 1) {
                 unless ($code) {
@@ -682,6 +688,20 @@ sub csvutil {
         }
     } # while getline()
 
+    if ($action eq 'info') {
+        return [200, "OK", {
+            field_count => scalar @$fields,
+            fields      => $fields,
+
+            row_count        => $header_row_count + $data_row_count,
+            header_row_count => $header_row_count,
+            data_row_count   => $data_row_count,
+
+            #file_size  => $chars, # we use csv's getline() so how?
+            file_size   => (-s $fh),
+        }];
+    }
+
     if ($action eq 'convert-to-hash') {
         $selected_row //= [];
         my $hash = {};
@@ -842,6 +862,19 @@ $SPEC{csv_list_field_names} = {
 sub csv_list_field_names {
     my %args = @_;
     csvutil(%args, action=>'list-field-names');
+}
+
+$SPEC{csv_info} = {
+    v => 1.1,
+    summary => 'Show information about CSV file (number of rows, fields, etc)',
+    args => {
+        %args_common,
+        %arg_filename_0,
+    },
+};
+sub csv_info {
+    my %args = @_;
+    csvutil(%args, action=>'info');
 }
 
 $SPEC{csv_delete_field} = {
