@@ -124,8 +124,11 @@ our %args_common = (
         default => 1,
         description => <<'_',
 
-When you declare that CSV does not have header row (`--no-header`), the fields
-will be named `field1`, `field2`, and so on.
+By default (`--header`), the first row of the CSV will be assumed to contain
+field names (and the second row contains the first data row). When you declare
+that CSV does not have header row (`--no-header`), the first row of the CSV is
+assumed to contain the first data row. Fields will be named `field1`, `field2`,
+and so on.
 
 _
     },
