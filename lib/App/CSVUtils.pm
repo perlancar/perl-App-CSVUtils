@@ -335,6 +335,7 @@ $SPEC{csvutil} = {
                 'sum',
                 'avg',
                 'select-row',
+                'split',
                 'grep',
                 'map',
                 'each-row',
@@ -388,6 +389,9 @@ sub csvutil {
     my @summary_row;
     my $selected_row;
     my $row_spec_sub;
+
+    # for action=split
+    my ($split_fh, $split_filename, $split_lines);
 
     my $row0;
     my $code_getline = sub {
@@ -618,6 +622,27 @@ sub csvutil {
             if ($i == 1 || $row_spec_sub->($i)) {
                 $res .= _get_csv_row($csv, $row, $i, $has_header);
             }
+        } elsif ($action eq 'split') {
+            next if $i == 1;
+            unless (defined $split_fh) {
+                $split_filename = "xaa";
+                $split_lines = 0;
+                open $split_fh, ">", $split_filename
+                    or die "Can't open '$split_filename': $!\n";
+            }
+            if ($split_lines >= $args{lines}) {
+                $split_filename++;
+                $split_lines = 0;
+                open $split_fh, ">", $split_filename
+                    or die "Can't open '$split_filename': $!\n";
+            }
+            if ($split_lines == 0 && $has_header) {
+                $csv->print($split_fh, $fields);
+                print $split_fh "\n";
+            }
+            $csv->print($split_fh, $row);
+            print $split_fh "\n";
+            $split_lines++;
         } elsif ($action eq 'grep') {
             unless ($code) {
                 $code = _compile($args{eval});
@@ -1139,11 +1164,54 @@ $SPEC{csv_select_row} = {
             pos => 1,
         },
     },
+    links => [
+        {url=>"prog:csv-split"},
+    ],
 };
 sub csv_select_row {
     my %args = @_;
 
     csvutil(%args, action=>'select-row');
+}
+
+$SPEC{csv_split} = {
+    v => 1.1,
+    summary => 'Split CSV file into several files',
+    description => <<'_',
+
+Will output split files xaa, xab, and so on. Each split file will contain a
+maximum of `lines` rows (options to limit split files' size based on number of
+characters and bytes will be added). Each split file will also contain CSV
+header.
+
+Warning: by default, existing split files xaa, xab, and so on will be
+overwritten.
+
+Interface is loosely based on the `split` Unix utility.
+
+_
+    args => {
+        %args_common,
+        %arg_filename_0,
+        lines => {
+            schema => ['uint*', min=>1],
+            default => 1000,
+            cmdline_aliases => {l=>{}},
+        },
+        # XXX --bytes (-b)
+        # XXX --line-bytes (-C)
+        # XXX -d (numeric suffix)
+        # --suffix-length (-a)
+        # --number, -n (chunks)
+    },
+    links => [
+        {url=>"prog:csv-select-row"},
+    ],
+};
+sub csv_split {
+    my %args = @_;
+
+    csvutil(%args, action=>'split');
 }
 
 $SPEC{csv_grep} = {
