@@ -1,3 +1,9 @@
+0.025   2019-11-29  Released-By: PERLANCAR; Urgency: medium
+
+	- Update coerce rule names in Sah schemas (Data::Sah::Coerce
+	  0.034+).
+
+
 0.024   2019-11-14  Released-By: PERLANCAR; Urgency: medium
 
 	- Add utility: csv-split.
