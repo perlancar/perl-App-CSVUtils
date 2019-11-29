@@ -1,6 +1,8 @@
 package App::CSVUtils;
 
+# AUTHOR
 # DATE
+# DIST
 # VERSION
 
 use 5.010001;
@@ -272,7 +274,7 @@ our %args_sort_fields = (
     },
     sort_example => {
         schema => ['array*', of=>'str*',
-                   'x.perl.coerce_rules' => ['str_comma_sep']],
+                   'x.perl.coerce_rules' => ['From_str::comma_sep']],
     },
 );
 
