@@ -1151,7 +1151,7 @@ sub csv_sort_fields {
     my %args = @_;
 
     my %csvutil_args = (
-        hash_subsort(\%args, \%args_common),
+        hash_subset(\%args, \%args_common),
         filename => $args{filename},
         action => 'sort-fields',
         (sort_example => $args{example}) x !!defined($args{example}),
