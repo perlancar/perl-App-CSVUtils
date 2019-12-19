@@ -9,6 +9,8 @@ use 5.010001;
 use strict;
 use warnings;
 
+use Hash::Subset qw(hash_subset);
+
 our %SPEC;
 
 sub _compile {
@@ -391,6 +393,7 @@ $SPEC{csvutil} = {
 };
 sub csvutil {
     my %args = @_;
+
     my $action = $args{action};
     my $has_header = $args{header} // 1;
     my $add_newline = $args{add_newline} // 1;
@@ -1104,6 +1107,7 @@ sub csv_sort_rows {
     my %args = @_;
 
     my %csvutil_args = (
+        hash_subset(\%args, \%args_common),
         filename => $args{filename},
         action => 'sort-rows',
         sort_by_fields => $args{by_fields},
@@ -1147,6 +1151,7 @@ sub csv_sort_fields {
     my %args = @_;
 
     my %csvutil_args = (
+        hash_subsort(\%args, \%args_common),
         filename => $args{filename},
         action => 'sort-fields',
         (sort_example => $args{example}) x !!defined($args{example}),
