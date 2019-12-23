@@ -104,6 +104,10 @@ sub _complete_field_or_field_list {
     # can the header row be read?
     my $row = $csv->getline($fh) or return [];
 
+    if (defined $args->{header} && !$args->{header}) {
+        $row = [map {"field$_"} 1 .. @$row];
+    }
+
     require Complete::Util;
     if ($which eq 'field') {
         return Complete::Util::complete_array_elem(
@@ -112,6 +116,7 @@ sub _complete_field_or_field_list {
         );
     } else {
         # field_list
+        # XXX sort_field_list: add optional -/~/+ prefix to field name
         return Complete::Util::complete_comma_sep(
             word => $word,
             elems => $row,
@@ -126,6 +131,10 @@ sub _complete_field {
 
 sub _complete_field_list {
     _complete_field_or_field_list('field_list', @_);
+}
+
+sub _complete_sort_field_list {
+    _complete_field_or_field_list('sort_field_list', @_);
 }
 
 our %args_common = (
@@ -275,7 +284,7 @@ ascibetically descending.
 
 _
         schema => ['str*'],
-        #completion => \&_complete_sort_field_list,
+        completion => \&_complete_sort_field_list,
     },
     by_code => {
         summary => 'Perl code to do sorting',
@@ -885,10 +894,12 @@ _
         after => {
             summary => 'Put the new field after specified field',
             schema => 'str*',
+            completion => \&_complete_field,
         },
         before => {
             summary => 'Put the new field before specified field',
             schema => 'str*',
+            completion => \&_complete_field,
         },
         at => {
             summary => 'Put the new field at specific position '.
