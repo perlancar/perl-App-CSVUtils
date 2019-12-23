@@ -1,3 +1,8 @@
+0.027   2019-12-23  Released-By: PERLANCAR; Urgency: medium
+
+	- Tweak tab completion.
+
+
 0.026   2019-12-19  Released-By: PERLANCAR; Urgency: medium
 
 	- Add ability to read CSV from stdin.
