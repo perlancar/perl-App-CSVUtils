@@ -299,6 +299,7 @@ The code will receive the row as the argument.
 
 _
         schema => ['any*', of=>['str*', 'code*']],
+        cmdline_aliases => {k=>{}},
     },
     by_sortsub => {
         schema => 'str*',
