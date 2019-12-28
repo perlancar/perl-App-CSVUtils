@@ -310,7 +310,7 @@ be compared against.
 
 _
         summary => 'Sort using a Sort::Sub routine',
-        'x.completion' => 'sortsub_spec',
+        'x.completion' => ['sortsub_spec'],
     },
     sortsub_args => {
         summary => 'Arguments to pass to Sort::Sub routine',
