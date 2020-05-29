@@ -1,6 +1,6 @@
 package App::CSVUtils;
 
-# AUTHOR
+# AUTHORITY
 # DATE
 # DIST
 # VERSION
@@ -415,6 +415,7 @@ $SPEC{csvutil} = {
                 'map',
                 'each-row',
                 'convert-to-hash',
+                'convert-to-td',
                 #'concat', # not implemented in csvutil
                 'select-fields',
                 'dump',
@@ -765,6 +766,8 @@ sub csvutil {
             if ($i == $args{_row_number}) {
                 $selected_row = $row;
             }
+        } elsif ($action eq 'convert-to-td') {
+            push @$rows, $row unless $i == 1;
         } elsif ($action eq 'dump') {
             if ($args{hash}) {
                 push @$rows, _array2hash($row, $fields) unless $i == 1;
@@ -797,6 +800,10 @@ sub csvutil {
             $hash->{ $fields->[$_] } = $selected_row->[$_];
         }
         return [200, "OK", $hash];
+    }
+
+    if ($action eq 'convert-to-td') {
+        return [200, "OK", $rows, {'table.fields'=>$fields}];
     }
 
     if ($action eq 'sum') {
@@ -1479,6 +1486,26 @@ sub csv_convert_to_hash {
 
     csvutil(%args, action=>'convert-to-hash',
             _row_number=>$args{row_number} // 2);
+}
+
+$SPEC{csv2td} = {
+    v => 1.1,
+    summary => 'Return an enveloped aoaos table data from CSV data',
+    description => <<'_',
+
+Read more about "table data" in <pm:App::td>, which comes with a CLI <prog:td>
+to munge table data.
+
+_
+    args => {
+        %args_common,
+        %arg_filename_0,
+    },
+};
+sub csv2td {
+    my %args = @_;
+
+    csvutil(%args, action=>'convert-to-td');
 }
 
 $SPEC{csv_concat} = {
