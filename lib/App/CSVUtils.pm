@@ -1738,9 +1738,9 @@ example `--union --compare-fields a,b file1.csv file2.csv`:
     4,5,6
     7,8,9
 
-Each field specified in `--compare-fields` can be specified using `F1:F2:...`
-format to refer to different field names or indexes in each file, for example if
-`file3.csv` is:
+Each field specified in `--compare-fields` can be specified using
+`F1:OTHER1,F2:OTHER2,...` format to refer to different field names or indexes in
+each file, for example if `file3.csv` is:
 
     # file3.csv
     Ei,Si,Bi
