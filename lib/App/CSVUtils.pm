@@ -501,7 +501,7 @@ sub csvutil {
     my $i = 0;
     my $header_row_count = 0;
     my $data_row_count = 0;
-    my $fields;
+    my $fields = [];
     my %field_idxs;
 
     my $code;
