@@ -53,7 +53,13 @@ sub _instantiate_parser {
     my $args = shift;
 
     my %tcsv_opts = (binary=>1);
-    if ($args->{tsv}) {
+    if (defined $args->{sep_char} ||
+            defined $args->{quote_char} ||
+            defined $args->{escape_char}) {
+        $tcsv_opts{sep_char}    = $args->{sep_char}    if defined $args->{sep_char};
+        $tcsv_opts{quote_char}  = $args->{quote_char}  if defined $args->{quote_char};
+        $tcsv_opts{escape_char} = $args->{escape_char} if defined $args->{escape_char};
+    } elsif ($args->{tsv}) {
         $tcsv_opts{sep_char}    = "\t";
         $tcsv_opts{quote_char}  = undef;
         $tcsv_opts{escape_char} = undef;
@@ -155,6 +161,39 @@ _
     tsv => {
         summary => "Inform that input file is in TSV (tab-separated) format instead of CSV",
         schema => 'bool*',
+        description => <<'_',
+
+Overriden by `--sep-char`, `--quote-char`, `--escape-char` options. If one of
+those options is specified, then `--tsv` will be ignored.
+
+_
+    },
+    sep_char => {
+        summary => 'Specify field separator character, will be passed to Text::CSV_XS',
+        schema => ['str*', len=>1],
+        description => <<'_',
+
+Defaults to `,` (comma). Overrides `--tsv` option.
+
+_
+    },
+    quote_char => {
+        summary => 'Specify field quote character, will be passed to Text::CSV_XS',
+        schema => ['str*', len=>1],
+        description => <<'_',
+
+Defaults to `"` (double quote). Overrides `--tsv` option.
+
+_
+    },
+    escape_char => {
+        summary => 'Specify character to escape value in field, will be passed to Text::CSV_XS',
+        schema => ['str*', len=>1],
+        description => <<'_',
+
+Defaults to `\\` (backslash). Overrides `--tsv` option.
+
+_
     },
 );
 
