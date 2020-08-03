@@ -34,8 +34,9 @@ sub _get_field_idx {
 }
 
 sub _get_csv_row {
-    my ($csv, $row, $i, $has_header) = @_;
-    return "" if $i == 1 && !$has_header;
+    my ($csv, $row, $i, $outputs_header) = @_;
+    #use DD; print "  "; dd $row;
+    return "" if $i == 1 && !$outputs_header;
     my $status = $csv->combine(@$row)
         or die "Error in line $i: ".$csv->error_input."\n";
     $csv->string . "\n";
@@ -577,6 +578,7 @@ sub csvutil {
 
     my $action = $args{action};
     my $has_header = $args{header} // 1;
+    my $outputs_header = $args{output_header} // $has_header;
     my $add_newline = $args{add_newline} // 1;
 
     my $csv_parser  = _instantiate_parser(\%args);
@@ -625,6 +627,7 @@ sub csvutil {
     my $rows = [];
 
     while (my $row = $code_getline->()) {
+        #use DD; dd $row;
         $i++;
         if ($i == 1) {
             # header row
@@ -707,7 +710,7 @@ sub csvutil {
                     $row->[$field_idx] = $_;
                 }
             }
-            $res .= _get_csv_row($csv_emitter, $row, $i, $has_header);
+            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
         } elsif ($action eq 'add-field') {
             if ($i == 1) {
                 if (defined $args{_at}) {
@@ -762,7 +765,7 @@ sub csvutil {
                     splice @$row, $field_idx, 0, $_;
                 }
             }
-            $res .= _get_csv_row($csv_emitter, $row, $i, $has_header);
+            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
         } elsif ($action eq 'delete-field') {
             if (!defined($field_idxs_array)) {
                 $field_idxs_array = [];
@@ -781,7 +784,7 @@ sub csvutil {
                     splice @$row, $_, 1;
                 }
             }
-            $res .= _get_csv_row($csv_emitter, $row, $i, $has_header);
+            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
         } elsif ($action eq 'select-fields') {
             if (!defined($field_idxs_array)) {
                 $field_idxs_array = [];
@@ -799,7 +802,7 @@ sub csvutil {
                 }
             }
             $row = [map { $row->[$_] } @$field_idxs_array];
-            $res .= _get_csv_row($csv_emitter, $row, $i, $has_header);
+            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
         } elsif ($action eq 'sort-fields') {
             unless ($i == 1) {
                 my @new_row;
@@ -808,34 +811,34 @@ sub csvutil {
                 }
                 $row = \@new_row;
             }
-            $res .= _get_csv_row($csv_emitter, $row, $i, $has_header);
+            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
         } elsif ($action eq 'sum') {
             if ($i == 1) {
-                $res .= _get_csv_row($csv_emitter, $row, $i, $has_header);
+                $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
             } else {
                 require Scalar::Util;
                 for (0..$#{$row}) {
                     next unless Scalar::Util::looks_like_number($row->[$_]);
                     $summary_row[$_] += $row->[$_];
                 }
-                $res .= _get_csv_row($csv_emitter, $row, $i, $has_header)
+                $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header)
                     if $args{_with_data_rows};
             }
         } elsif ($action eq 'avg') {
             if ($i == 1) {
-                $res .= _get_csv_row($csv_emitter, $row, $i, $has_header);
+                $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
             } else {
                 require Scalar::Util;
                 for (0..$#{$row}) {
                     next unless Scalar::Util::looks_like_number($row->[$_]);
                     $summary_row[$_] += $row->[$_];
                 }
-                $res .= _get_csv_row($csv_emitter, $row, $i, $has_header)
+                $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header)
                     if $args{_with_data_rows};
             }
         } elsif ($action eq 'select-row') {
             if ($i == 1 || $row_spec_sub->($i)) {
-                $res .= _get_csv_row($csv_emitter, $row, $i, $has_header);
+                $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
             }
         } elsif ($action eq 'split') {
             next if $i == 1;
@@ -870,7 +873,7 @@ sub csvutil {
                 local $main::field_idxs = \%field_idxs;
                 $code->($row);
             }) {
-                $res .= _get_csv_row($csv_emitter, $row, $i, $has_header);
+                $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
             }
         } elsif ($action eq 'map' || $action eq 'each-row') {
             unless ($code) {
@@ -941,14 +944,14 @@ sub csvutil {
     if ($action eq 'sum') {
         $res .= _get_csv_row($csv_emitter, \@summary_row,
                              $args{_with_data_rows} ? $i+1 : 2,
-                             $has_header);
+                             $outputs_header);
     } elsif ($action eq 'avg') {
         if ($i > 2) {
             for (@summary_row) { $_ /= ($i-1) }
         }
         $res .= _get_csv_row($csv_emitter, \@summary_row,
                              $args{_with_data_rows} ? $i+1 : 2,
-                             $has_header);
+                             $outputs_header);
     }
 
     if ($action eq 'dump') {
@@ -1049,7 +1052,7 @@ sub csvutil {
             $res .= $csv_emitter->string . "\n";
         }
         for my $row (@$rows) {
-            $res .= _get_csv_row($csv_emitter, $row, $i, $has_header);
+            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
         }
     }
 
