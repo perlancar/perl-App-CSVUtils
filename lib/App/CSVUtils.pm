@@ -559,6 +559,7 @@ $SPEC{csvutil} = {
                 #'concat', # not implemented in csvutil
                 'select-fields',
                 'dump',
+                'csv',
                 #'setop', # not implemented in csvutil
                 #'lookup-fields', # not implemented in csvutil
             ]],
@@ -683,6 +684,7 @@ sub csvutil {
             } elsif ($action eq 'map') {
             } elsif ($action eq 'sort-rows') {
             } elsif ($action eq 'each-row') {
+            } elsif ($action eq 'csv') {
             }
         } # if i==1 (header row)
 
@@ -909,6 +911,8 @@ sub csvutil {
             } else {
                 push @$rows, $row;
             }
+        } elsif ($action eq 'csv') {
+            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
         } else {
             return [400, "Unknown action '$action'"];
         }
@@ -1802,6 +1806,27 @@ $SPEC{csv_dump} = {
 sub csv_dump {
     my %args = @_;
     csvutil(%args, action=>'dump');
+}
+
+$SPEC{csv_csv} = {
+    v => 1.1,
+    summary => 'Convert CSV to CSV',
+    description => <<'_',
+
+Why convert CSV to CSV? When you want to change separator/quote/escape
+character, for one.
+
+_
+    args => {
+        %args_common,
+        %args_csv_output,
+        %arg_filename_0,
+        %arg_hash,
+    },
+};
+sub csv_csv {
+    my %args = @_;
+    csvutil(%args, action=>'csv');
 }
 
 $SPEC{csv_setop} = {
