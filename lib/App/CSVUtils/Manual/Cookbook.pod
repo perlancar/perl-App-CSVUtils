@@ -1,0 +1,202 @@
+package App::lcpan::Manual::Cookbook;
+
+# AUTHORITY
+# DATE
+# DIST
+# VERSION
+
+1;
+# ABSTRACT: App::CSVUtils cookbook
+
+=head1 DESCRIPTION
+
+This document lists the various tasks you can do with the scripts included in
+L<App::CSVUtils> distribution.
+
+
+
+
+=head1 ADDING COLUMNS
+
+TODO.
+
+
+
+
+=head1 ADDING ROWS
+
+TODO.
+
+
+
+
+=head1 ADDING SUMMARY ROW (TOTAL, AVERAGE, ETC)
+
+TODO.
+
+
+
+
+=head1 CONVERTING TO OTHER FORMATS
+
+=head2 To CSV
+
+TODO.
+
+=head2 To JSON
+
+TODO.
+
+=head2 To Perl data structure
+
+TODO.
+
+=head2 To TSV
+
+TODO.
+
+=head2 To YAML
+
+TODO.
+
+
+
+
+=head1 DEALING WITH NEWLINES IN CSV
+
+TODO.
+
+
+
+
+=head1 DEALING WITH NON-STANDARD CSV
+
+The utilities allow you to set input's field separator (`--sep-char`), quote
+character (`--quote-char`), and escape character (`--escape-char`), so if you
+have semicolon as the field separator, e.g.:
+
+ name;age;rank
+ andi;20;staff
+ budi;30;manager
+ cinta;17;associate
+
+and you want to sort by age:
+
+ % csv-sort-rows INPUT.CSV --sep-char ';' --by-field age
+
+These parameters will be passed to L<Text::CSV>'s attributes with the
+corresponding names.
+
+Likewise, you can customize output's field separator (`--output-sep-char`),
+quote character (`--output-quote-char`), and escape character
+(`--output-escape-char`).
+
+
+
+
+=head1 FILTERING (SELECTING) COLUMNS
+
+TODO.
+
+
+
+
+=head1 FILTERING (SELECTING) ROWS
+
+TODO.
+
+
+
+
+=head1 GETTING INFORMATION ABOUT CSV
+
+ % csv-info INPUT.CSV
+
+Sample output:
+
+=head2 Listing the column names
+
+TODO.
+
+
+
+
+=head1 MERGING CSV
+
+TODO.
+
+See also L</SPLITTING CSV>.
+
+
+
+
+=head1 MODIFYING COLUMNS
+
+TODO.
+
+
+
+
+=head1 MODIFYING ROWS
+
+TODO.
+
+
+
+
+=head1 PERFORMING SET OPERATIONS WITH CSV
+
+TODO.
+
+
+
+
+=head1 SORTING COLUMNS
+
+TODO.
+
+
+
+
+=head1 SORTING ROWS
+
+TODO.
+
+
+
+
+=head1 SPLITTING CSV
+
+TODO.
+
+See also L</MERGING CSV>.
+
+
+
+
+=head1 TRANSPOSING
+
+Transposing, like in a two-dimensional matrix, means switching row and colum
+indices to produce a new CSV where the columns become rows and vice versa. For
+example:
+
+ name,age
+ andi,20
+ budi,30
+ cinta,17
+
+becomes:
+
+ name,andi,budi,cinta
+ age,20,30,17
+
+To do this:
+
+ % csv-transpose INPUT.CSV
+
+
+
+
+=head1 SEE ALSO
+
+L<Acme::CPANModules::WorkingWithCSV>
