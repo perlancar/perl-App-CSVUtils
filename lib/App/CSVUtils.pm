@@ -562,6 +562,7 @@ $SPEC{csvutil} = {
                 'csv',
                 #'setop', # not implemented in csvutil
                 #'lookup-fields', # not implemented in csvutil
+                'transpose',
             ]],
             req => 1,
             pos => 0,
@@ -597,8 +598,8 @@ sub csvutil {
     my $i = 0;
     my $header_row_count = 0;
     my $data_row_count = 0;
-    my $fields = [];
-    my %field_idxs;
+    my $fields = []; # field names, in order
+    my %field_idxs; # key = field name, val = index (0-based)
 
     my $code;
     my $field_idx;
@@ -685,6 +686,7 @@ sub csvutil {
             } elsif ($action eq 'sort-rows') {
             } elsif ($action eq 'each-row') {
             } elsif ($action eq 'csv') {
+            } elsif ($action eq 'transpose') {
             }
         } # if i==1 (header row)
 
@@ -899,6 +901,8 @@ sub csvutil {
             }
         } elsif ($action eq 'sort-rows') {
             push @$rows, $row unless $i == 1;
+        } elsif ($action eq 'transpose') {
+            push @$rows, $row;
         } elsif ($action eq 'convert-to-hash') {
             if ($i == $args{_row_number}) {
                 $selected_row = $row;
@@ -1057,6 +1061,20 @@ sub csvutil {
         }
         for my $row (@$rows) {
             $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
+        }
+    }
+
+    if ($action eq 'transpose') {
+        my $transposed_rows = [];
+        for my $rownum (0..$#{$rows}) {
+            for my $colnum (0..$#{$fields}) {
+                $transposed_rows->[$colnum][$rownum] =
+                    $rows->[$rownum][$colnum];
+            }
+        }
+        for my $rownum (0..$#{$transposed_rows}) {
+            $res .= _get_csv_row($csv_emitter, $transposed_rows->[$rownum],
+                                 $rownum+1, $outputs_header);
         }
     }
 
@@ -1648,6 +1666,22 @@ sub csv_convert_to_hash {
 
     csvutil(%args, action=>'convert-to-hash',
             _row_number=>$args{row_number} // 2);
+}
+
+$SPEC{csv_transpose} = {
+    v => 1.1,
+    summary => 'Transpose a CSV',
+    args => {
+        %args_common,
+        %args_csv_output,
+        %arg_filename_0,
+    },
+    tags => ['outputs_csv'],
+};
+sub csv_transpose {
+    my %args = @_;
+
+    csvutil(%args, action=>'transpose');
 }
 
 $SPEC{csv2td} = {
@@ -2425,7 +2459,7 @@ These utilities are not (yet) optimized, patches welcome. If your CSV is very
 big, perhaps a C-based solution is what you need.
 
 
-=head1 SEE ALSO
+=head1 prepend:SEE ALSO
 
 L<App::TSVUtils>
 
