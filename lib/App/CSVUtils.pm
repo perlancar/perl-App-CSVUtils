@@ -8,6 +8,7 @@ package App::CSVUtils;
 use 5.010001;
 use strict;
 use warnings;
+use Log::ger;
 
 use Hash::Subset qw(hash_subset);
 
@@ -18,6 +19,7 @@ sub _compile {
     return $str if ref $str eq 'CODE';
     defined($str) && length($str) or die "Please specify code (-e)\n";
     $str = "package main; no strict; no warnings; sub { $str }";
+    log_trace "Compiling Perl code: $str";
     my $code = eval $str;
     die "Can't compile code (-e) '$str': $@\n" if $@;
     $code;
@@ -577,6 +579,7 @@ $SPEC{csvutil} = {
 };
 sub csvutil {
     my %args = @_;
+    #use DD; dd \%args;
 
     my $action = $args{action};
     my $has_header = $args{header} // 1;
