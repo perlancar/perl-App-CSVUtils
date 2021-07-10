@@ -1,6 +1,8 @@
 #!perl
 
+# AUTHORITY
 # DATE
+# DIST
 # VERSION
 
 use 5.010001;
@@ -28,7 +30,7 @@ L<tsv2csv>
 
 Other CSV-related utilities in L<App::CSVUtils>.
 
-Other TSV-related utilities in L<App::CSVUtils>.
+Other TSV-related utilities in L<App::TSVUtils>.
 
 L<App::TextTableUtils>
 

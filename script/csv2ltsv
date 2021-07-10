@@ -1,6 +1,8 @@
 #!perl
 
+# AUTHORITY
 # DATE
+# DIST
 # VERSION
 
 use 5.010001;
@@ -45,6 +47,6 @@ while (my $row = $csv->getline(\*ARGV)) {
 
 L<ltsv2csv>
 
-L<App::CSVUtils>
+Other CSV-related utilities in L<App::CSVUtils>.
 
-L<App::LTSVUtils>
+Other LTSV-related utilities in L<App::LTSVUtils>.
