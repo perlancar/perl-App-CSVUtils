@@ -1,4 +1,4 @@
-package App::lcpan::Manual::Cookbook;
+package App::CSVUtils::Manual::Cookbook;
 
 # AUTHORITY
 # DATE
