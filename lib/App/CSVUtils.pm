@@ -2462,7 +2462,7 @@ These utilities are not (yet) optimized, patches welcome. If your CSV is very
 big, perhaps a C-based solution is what you need.
 
 
-=head1 prepend:SEE ALSO
+=head1 SEE ALSO
 
 L<App::TSVUtils>
 
