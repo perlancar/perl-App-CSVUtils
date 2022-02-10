@@ -974,7 +974,7 @@ sub csvutil {
     }
 
     if ($action eq 'freqtable') {
-        my @freqtable = (["value", "freq"]);
+        my @freqtable;
         for (sort { $freqtable{$b} <=> $freqtable{$a} } keys %freqtable) {
             push @freqtable, [$_, $freqtable{$_}];
         }
