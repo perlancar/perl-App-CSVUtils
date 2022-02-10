@@ -1,14 +1,16 @@
 #!perl
 
-# DATE
-# VERSION
-
 use 5.010001;
 use strict;
 use warnings;
 
 use Text::CSV_XS;
 use Text::CSV_XS::TSV;
+
+# AUTHORITY
+# DATE
+# DIST
+# VERSION
 
 my $csv = Text::CSV_XS->new({binary=>1});
 my $tsv = Text::CSV_XS::TSV->new({binary=>1});

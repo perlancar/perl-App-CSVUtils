@@ -20,7 +20,7 @@ sub _compile {
     defined($str) && length($str) or die "Please specify code (-e)\n";
     $str = "package main; no strict; no warnings; sub { $str }";
     log_trace "Compiling Perl code: $str";
-    my $code = eval $str;
+    my $code = eval $str; ## no critic: BuiltinFunctions::ProhibitStringyEval
     die "Can't compile code (-e) '$str': $@\n" if $@;
     $code;
 }
@@ -88,7 +88,7 @@ sub _complete_field_or_field_list {
     my $r = $args{r};
 
     # we are not called from cmdline, bail
-    return undef unless $cmdline;
+    return undef unless $cmdline; ## no critic: Subroutines::ProhibitExplicitReturnUndef
 
     # let's parse argv first
     my $args;
@@ -104,10 +104,10 @@ sub _complete_field_or_field_list {
     }
 
     # user hasn't specified -f, bail
-    return undef unless defined $args && $args->{filename};
+    return undef unless defined $args && $args->{filename}; ## no critic: Subroutines::ProhibitExplicitReturnUndef
 
     # user wants to read CSV from stdin, bail
-    return undef if $args->{filename} eq '-';
+    return undef if $args->{filename} eq '-'; ## no critic: Subroutines::ProhibitExplicitReturnUndef
 
     # can the file be opened?
     my $csv_parser = _instantiate_parser(\%args);
@@ -683,7 +683,7 @@ sub csvutil {
                         return [400, "Invalid row specification '$spec_item'"];
                     }
                 }
-                $row_spec_sub = eval 'sub { my $i = shift; '.join(" || ", @codestr).' }';
+                $row_spec_sub = eval 'sub { my $i = shift; '.join(" || ", @codestr).' }'; ## no critic: BuiltinFunctions::ProhibitStringyEval
                 return [400, "BUG: Invalid row_spec code: $@"] if $@;
             }
             if ($action eq 'grep') {
