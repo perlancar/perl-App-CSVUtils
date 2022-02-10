@@ -1,16 +1,16 @@
 package App::CSVUtils;
 
-# AUTHORITY
-# DATE
-# DIST
-# VERSION
-
 use 5.010001;
 use strict;
 use warnings;
 use Log::ger;
 
 use Hash::Subset qw(hash_subset);
+
+# AUTHORITY
+# DATE
+# DIST
+# VERSION
 
 our %SPEC;
 
@@ -565,6 +565,7 @@ $SPEC{csvutil} = {
                 #'setop', # not implemented in csvutil
                 #'lookup-fields', # not implemented in csvutil
                 'transpose',
+                'freqtable',
             ]],
             req => 1,
             pos => 0,
@@ -611,6 +612,7 @@ sub csvutil {
     my @summary_row;
     my $selected_row;
     my $row_spec_sub;
+    my %freqtable; # key=value, val=frequency
 
     # for action=split
     my ($split_fh, $split_filename, $split_lines);
@@ -843,6 +845,12 @@ sub csvutil {
                 $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header)
                     if $args{_with_data_rows};
             }
+        } elsif ($action eq 'freqtable') {
+            if ($i == 1) {
+            } else {
+                $field_idx = _get_field_idx($args{field}, \%field_idxs);
+                $freqtable{ $row->[$field_idx] }++;
+            }
         } elsif ($action eq 'select-row') {
             if ($i == 1 || $row_spec_sub->($i)) {
                 $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
@@ -963,6 +971,14 @@ sub csvutil {
         $res .= _get_csv_row($csv_emitter, \@summary_row,
                              $args{_with_data_rows} ? $i+1 : 2,
                              $outputs_header);
+    }
+
+    if ($action eq 'freqtable') {
+        my @freqtable = (["value", "freq"]);
+        for (sort { $freqtable{$b} <=> $freqtable{$a} } keys %freqtable) {
+            push @freqtable, [$_, $freqtable{$_}];
+        }
+        return [200, "OK", \@freqtable, {'table.fields'=>['value','freq']}];
     }
 
     if ($action eq 'dump') {
@@ -1455,6 +1471,21 @@ sub csv_avg {
     my %args = @_;
 
     csvutil(%args, action=>'avg', _with_data_rows=>$args{with_data_rows});
+}
+
+$SPEC{csv_freqtable} = {
+    v => 1.1,
+    summary => 'Output a frequency table of values of a specified field in CSV',
+    args => {
+        %args_common,
+        %arg_filename_0,
+        %arg_field_1,
+    },
+};
+sub csv_freqtable {
+    my %args = @_;
+
+    csvutil(%args, action=>'freqtable');
 }
 
 $SPEC{csv_select_row} = {
