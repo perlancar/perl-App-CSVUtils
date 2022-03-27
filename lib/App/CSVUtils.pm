@@ -1100,10 +1100,17 @@ sub csvutil {
     [200, "OK", $res, {"cmdline.skip_format"=>1}];
 } # csvutil
 
+our $common_desc = <<'_';
+*Common notes for the utilities*
+
+Encoding: The utilities in this module/distribution accept and emit UTF8 text.
+
+_
+
 $SPEC{csv_add_field} = {
     v => 1.1,
     summary => 'Add a field to CSV file',
-    description => <<'_',
+    description => <<'_' . $common_desc,
 
 Your Perl code (-e) will be called for each row (excluding the header row) and
 should return the value for the new field. `$main::row` is available and
@@ -1160,6 +1167,7 @@ $SPEC{csv_list_field_names} = {
         %args_common,
         %arg_filename_0,
     },
+    description => '' . $common_desc,
 };
 sub csv_list_field_names {
     my %args = @_;
@@ -1173,6 +1181,7 @@ $SPEC{csv_info} = {
         %args_common,
         %arg_filename_0,
     },
+    description => '' . $common_desc,
 };
 sub csv_info {
     my %args = @_;
@@ -1188,6 +1197,7 @@ $SPEC{csv_delete_field} = {
         %arg_filename_0,
         %arg_fields_1,
     },
+    description => '' . $common_desc,
     tags => ['outputs_csv'],
 };
 sub csv_delete_field {
@@ -1198,7 +1208,7 @@ sub csv_delete_field {
 $SPEC{csv_munge_field} = {
     v => 1.1,
     summary => 'Munge a field in every row of CSV file',
-    description => <<'_',
+    description => <<'_' . $common_desc,
 
 Perl code (-e) will be called for each row (excluding the header row) and `$_`
 will contain the value of the field, and the Perl code is expected to modify it.
@@ -1224,7 +1234,7 @@ sub csv_munge_field {
 $SPEC{csv_replace_newline} = {
     v => 1.1,
     summary => 'Replace newlines in CSV values',
-    description => <<'_',
+    description => <<'_' . $common_desc,
 
 Some CSV parsers or applications cannot handle multiline CSV values. This
 utility can be used to convert the newline to something else. There are a few
@@ -1282,7 +1292,7 @@ sub csv_replace_newline {
 $SPEC{csv_sort_rows} = {
     v => 1.1,
     summary => 'Sort CSV rows',
-    description => <<'_',
+    description => <<'_' . $common_desc,
 
 This utility sorts the rows in the CSV. Example input CSV:
 
@@ -1398,7 +1408,7 @@ sub csv_sort_rows {
 $SPEC{csv_sort_fields} = {
     v => 1.1,
     summary => 'Sort CSV fields',
-    description => <<'_',
+    description => <<'_' . $common_desc,
 
 This utility sorts the order of fields in the CSV. Example input CSV:
 
@@ -1448,6 +1458,7 @@ $SPEC{csv_sum} = {
         %arg_filename_0,
         %arg_with_data_rows,
     },
+    description => '' . $common_desc,
     tags => ['outputs_csv'],
 };
 sub csv_sum {
@@ -1465,6 +1476,7 @@ $SPEC{csv_avg} = {
         %arg_filename_0,
         %arg_with_data_rows,
     },
+    description => '' . $common_desc,
     tags => ['outputs_csv'],
 };
 sub csv_avg {
@@ -1481,6 +1493,7 @@ $SPEC{csv_freqtable} = {
         %arg_filename_0,
         %arg_field_1,
     },
+    description => '' . $common_desc,
 };
 sub csv_freqtable {
     my %args = @_;
@@ -1503,6 +1516,7 @@ $SPEC{csv_select_row} = {
             pos => 1,
         },
     },
+    description => '' . $common_desc,
     links => [
         {url=>"prog:csv-split"},
     ],
@@ -1517,7 +1531,7 @@ sub csv_select_row {
 $SPEC{csv_split} = {
     v => 1.1,
     summary => 'Split CSV file into several files',
-    description => <<'_',
+    description => <<'_' . $common_desc,
 
 Will output split files xaa, xab, and so on. Each split file will contain a
 maximum of `lines` rows (options to limit split files' size based on number of
@@ -1559,7 +1573,7 @@ sub csv_split {
 $SPEC{csv_grep} = {
     v => 1.1,
     summary => 'Only output row(s) where Perl expression returns true',
-    description => <<'_',
+    description => <<'_' . $common_desc,
 
 This is like Perl's `grep` performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
@@ -1608,7 +1622,7 @@ sub csv_grep {
 $SPEC{csv_map} = {
     v => 1.1,
     summary => 'Return result of Perl code for every row',
-    description => <<'_',
+    description => <<'_' . $common_desc,
 
 This is like Perl's `map` performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
@@ -1653,7 +1667,7 @@ sub csv_map {
 $SPEC{csv_each_row} = {
     v => 1.1,
     summary => 'Run Perl code for every row',
-    description => <<'_',
+    description => <<'_' . $common_desc,
 
 This is like csv_map, except result of code is not printed.
 
@@ -1694,6 +1708,7 @@ $SPEC{csv_convert_to_hash} = {
             pos => 1,
         },
     },
+    description => '' . $common_desc,
 };
 sub csv_convert_to_hash {
     my %args = @_;
@@ -1710,6 +1725,7 @@ $SPEC{csv_transpose} = {
         %args_csv_output,
         %arg_filename_0,
     },
+    description => '' . $common_desc,
     tags => ['outputs_csv'],
 };
 sub csv_transpose {
@@ -1731,6 +1747,7 @@ _
         %args_common,
         %arg_filename_0,
     },
+    description => '' . $common_desc,
 };
 sub csv2td {
     my %args = @_;
@@ -1742,7 +1759,7 @@ $SPEC{csv_concat} = {
     v => 1.1,
     summary => 'Concatenate several CSV files together, '.
         'collecting all the fields',
-    description => <<'_',
+    description => <<'_' . $common_desc,
 
 Example, concatenating this CSV:
 
@@ -1854,6 +1871,7 @@ $SPEC{csv_select_fields} = {
     args_rels => {
         req_one => ['fields', 'field_pat'],
     },
+    description => '' . $common_desc,
     tags => ['outputs_csv'],
 };
 sub csv_select_fields {
@@ -1870,6 +1888,7 @@ $SPEC{csv_dump} = {
         %arg_filename_0,
         %arg_hash,
     },
+    description => '' . $common_desc,
 };
 sub csv_dump {
     my %args = @_;
@@ -1879,7 +1898,7 @@ sub csv_dump {
 $SPEC{csv_csv} = {
     v => 1.1,
     summary => 'Convert CSV to CSV',
-    description => <<'_',
+    description => <<'_' . $common_desc,
 
 Why convert CSV to CSV? When you want to change separator/quote/escape
 character, for one.
@@ -1900,7 +1919,7 @@ sub csv_csv {
 $SPEC{csv_setop} = {
     v => 1.1,
     summary => 'Set operation against several CSV files',
-    description => <<'_',
+    description => <<'_' . $common_desc,
 
 Example input:
 
@@ -2238,7 +2257,7 @@ sub csv_setop {
 $SPEC{csv_lookup_fields} = {
     v => 1.1,
     summary => 'Fill fields of a CSV file from another',
-    description => <<'_',
+    description => <<'_' . $common_desc,
 
 Example input:
 

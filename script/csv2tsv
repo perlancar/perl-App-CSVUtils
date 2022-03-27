@@ -11,6 +11,9 @@ use Text::CSV_XS;
 # DIST
 # VERSION
 
+binmode STDIN, ':encoding(utf8)';
+binmode STDOUT, ':encoding(utf8)';
+
 my $csv = Text::CSV_XS->new({binary=>1});
 while (my $row = $csv->getline(\*ARGV)) {
     print join("\t", @$row), "\n";
@@ -22,6 +25,13 @@ while (my $row = $csv->getline(\*ARGV)) {
 =head1 SYNOPSIS
 
  % csv2tsv INPUT.csv > OUTPUT.tsv
+
+
+=head1 DESCRIPTION
+
+B<Common notes for the utilities:>
+
+Encoding: The utilities in this module/distribution accept and emit UTF8 text.
 
 
 =head1 SEE ALSO

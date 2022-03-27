@@ -12,6 +12,9 @@ use Text::CSV_XS;
 # DIST
 # VERSION
 
+binmode STDIN, ':encoding(utf8)';
+binmode STDOUT, ':encoding(utf8)';
+
 my %Opt = (
     header => 1,
 );
@@ -41,6 +44,13 @@ while (my $row = $csv->getline(\*ARGV)) {
 =head1 SYNOPSIS
 
  % csv2ltsv INPUT.csv > OUTPUT.ltsv
+
+
+=head1 DESCRIPTION
+
+B<Common notes for the utilities:>
+
+Encoding: The utilities in this module/distribution accept and emit UTF8 text.
 
 
 =head1 SEE ALSO
