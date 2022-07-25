@@ -1,3 +1,8 @@
+0.038   2022-07-25  Released-By: PERLANCAR; Urgency: medium
+
+        - Add utility: csv-munge-row.
+
+
 0.037   2022-03-27  Released-By: PERLANCAR; Urgency: medium
 
         - Set input and output encoding to UTF8 and note this in the
