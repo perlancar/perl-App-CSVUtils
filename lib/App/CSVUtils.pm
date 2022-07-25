@@ -389,6 +389,16 @@ our %arg_fields_or_field_pat = (
     },
 );
 
+our %arg_eval_1 = (
+    eval => {
+        summary => 'Perl code to do munging',
+        schema => ['any*', of=>['str*', 'code*']],
+        cmdline_aliases => { e=>{} },
+        req => 1,
+        pos => 1,
+    },
+);
+
 our %arg_eval_2 = (
     eval => {
         summary => 'Perl code to do munging',
@@ -546,6 +556,7 @@ $SPEC{csvutil} = {
                 'info',
                 'delete-field',
                 'munge-field',
+                'munge-row',
                 #'replace-newline', # not implemented in csvutil
                 'sort-rows',
                 'sort-fields',
@@ -717,6 +728,26 @@ sub csvutil {
                     die "Error while munging row ".
                         "#$i field '$args{field}' value '$_': $@\n" if $@;
                     $row->[$field_idx] = $_;
+                }
+            }
+            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
+        } elsif ($action eq 'munge-row') {
+            unless ($i == 1) {
+                unless ($code) {
+                    $code = _compile($args{eval});
+                }
+                local $_ = $args{hash} ? _array2hash($row, $fields) : $row;
+                local $main::row = $row;
+                local $main::rownum = $i;
+                local $main::csv = $csv_parser;
+                local $main::field_idxs = \%field_idxs;
+                eval { $code->($_) };
+                die "Error while munging row ".
+                    "#$i field '$args{field}' value '$_': $@\n" if $@;
+                if ($args{hash}) {
+                    for my $field (keys %$_) {
+                        $row->[$field_idxs{$field}] = $_->{$field};
+                    }
                 }
             }
             $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
@@ -1207,7 +1238,7 @@ sub csv_delete_field {
 
 $SPEC{csv_munge_field} = {
     v => 1.1,
-    summary => 'Munge a field in every row of CSV file',
+    summary => 'Munge a field in every row of CSV file with Perl code',
     description => <<'_' . $common_desc,
 
 Perl code (-e) will be called for each row (excluding the header row) and `$_`
@@ -1229,6 +1260,37 @@ _
 sub csv_munge_field {
     my %args = @_;
     csvutil(%args, action=>'munge-field');
+}
+
+$SPEC{csv_munge_row} = {
+    v => 1.1,
+    summary => 'Munge each data arow of CSV file with Perl code',
+    description => <<'_' . $common_desc,
+
+Perl code (-e) will be called for each row (excluding the header row) and `$_`
+will contain the row (arrayref, or hashref if `-H` is specified). The Perl code
+is expected to modify it.
+
+Aside from `$_`, `$main::row` will contain the current row array.
+`$main::rownum` contains the row number (2 means the first data row).
+`$main::csv` is the <pm:Text::CSV_XS> object. `$main::field_idxs` is also
+available for additional information.
+
+The modified `$_` will be rendered back to CSV row.
+
+_
+    args => {
+        %args_common,
+        %args_csv_output,
+        %arg_filename_0,
+        %arg_eval_1,
+        %arg_hash,
+    },
+    tags => ['outputs_csv'],
+};
+sub csv_munge_row {
+    my %args = @_;
+    csvutil(%args, action=>'munge-row');
 }
 
 $SPEC{csv_replace_newline} = {
