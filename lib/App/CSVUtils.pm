@@ -2576,10 +2576,18 @@ big, perhaps a C-based solution is what you need.
 
 =head1 SEE ALSO
 
-L<App::TSVUtils>
+=head2 Similar CLI bundles for other format
 
-L<App::LTSVUtils>
+L<App::TSVUtils>, L<App::LTSVUtils>, L<App::SerializeUtils>.
 
-L<App::SerializeUtils>
+=head2 Other CSV-related utilities
+
+L<xls2csv> and L<xlsx2csv> from L<Spreadsheet::Read>
+
+L<import-csv-to-sqlite> from L<App::SQLiteUtils>
+
+Query CSV with SQL using L<fsql> from L<App::fsql>
+
+L<csvgrep> from L<csvgrep>
 
 =cut
