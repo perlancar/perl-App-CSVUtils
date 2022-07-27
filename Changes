@@ -1,3 +1,10 @@
+0.039   2022-07-27  Released-By: PERLANCAR; Urgency: low
+
+        - No functional changes.
+
+        - [doc] Mention more CSV-related modules.
+
+
 0.038   2022-07-25  Released-By: PERLANCAR; Urgency: medium
 
         - Add utility: csv-munge-row.
