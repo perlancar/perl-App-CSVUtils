@@ -418,6 +418,10 @@ our %argspecsopt_field_selection = (
         },
         tags => ['category:field-selection'],
     },
+    ignore_unknown_fields => {
+        summary => 'When unknown fields are specified in --include-field (--field) or --exclude_field options, ignore them instead of throwing an error',
+        schema => 'bool*',
+    },
 );
 
 our %arg_eval_1 = (
