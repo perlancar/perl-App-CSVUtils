@@ -360,32 +360,63 @@ our %arg_field_1_nocomp = (
     },
 );
 
-our %arg_fields_1 = (
-    fields => {
-        'x.name.is_plural' => 1,
-        summary => 'Field names',
-        schema => ['array*', of=>'str*'],
-        cmdline_aliases => { F=>{} },
-        req => 1,
-        pos => 1,
-        slurpy => 1,
-        element_completion => \&_complete_field,
-    },
-);
+# let's just use field selection args for consistency
+#our %argspecs1_fields = (
+#    fields => {
+#        'x.name.is_plural' => 1,
+#        'x.name.singular' => 'field',
+#        summary => 'Field names',
+#        schema => ['array*', of=>'str*'],
+#        cmdline_aliases => {
+#            f => {},
+#        },
+#        pos => 1,
+#        slurpy => 1,
+#        element_completion => \&_complete_field,
+#        tags => ['category:field-selection'],
+#    },
+#);
 
-our %arg_fields_or_field_pat = (
-    fields => {
+our %argspecsopt_field_selection = (
+    include_fields => {
         'x.name.is_plural' => 1,
-        summary => 'Field names',
+        'x.name.singular' => 'include_field',
+        summary => 'Field names to include, takes precedence over --exclude-field-pat',
         schema => ['array*', of=>'str*'],
-        cmdline_aliases => { F=>{} },
-        pos => 1,
-        slurpy => 1,
+        cmdline_aliases => {
+            f => {},
+            field => {}, # backward compatibility
+        },
         element_completion => \&_complete_field,
+        tags => ['category:field-selection'],
     },
-    field_pat => {
-        summary => 'Field regex pattern to select',
+    include_field_pat => {
+        summary => 'Field regex pattern to select, overidden by --exclude-field-pat',
         schema => 're*',
+        cmdline_aliases => {
+            field_pat => {}, # backward compatibility
+            include_all_fields => { summary => 'Shortcut for --field-pat=.*, effectively selecting all fields', is_flag=>1, code => sub { $_[0]{field_pat} = '.*' } },
+        },
+        tags => ['category:field-selection'],
+    },
+    exclude_fields => {
+        'x.name.is_plural' => 1,
+        'x.name.singular' => 'exclude_field',
+        summary => 'Field names to exclude, takes precedence over --fields',
+        schema => ['array*', of=>'str*'],
+        cmdline_aliases => {
+            F => {},
+        },
+        element_completion => \&_complete_field,
+        tags => ['category:field-selection'],
+    },
+    exclude_field_pat => {
+        summary => 'Field regex pattern to exclude, takes precedence over --field-pat',
+        schema => 're*',
+        cmdline_aliases => {
+            exclude_all_fields => { summary => 'Shortcut for --field-pat=.*, effectively selecting all fields', is_flag=>1, code => sub { $_[0]{field_pat} = '.*' } },
+        },
+        tags => ['category:field-selection'],
     },
 );
 
@@ -585,6 +616,7 @@ $SPEC{csvutil} = {
         %arg_filename_1,
         %argopt_eval,
         %argopt_field,
+        %argspecsopt_field_selection,
     },
     args_rels => {
     },
@@ -1219,21 +1251,21 @@ sub csv_info {
     csvutil(%args, action=>'info');
 }
 
-$SPEC{csv_delete_field} = {
+$SPEC{csv_delete_fields} = {
     v => 1.1,
     summary => 'Delete one or more fields from CSV file',
     args => {
         %args_common,
         %args_csv_output,
         %arg_filename_0,
-        %arg_fields_1,
+        %argspecs_field_selection,
     },
     description => '' . $common_desc,
     tags => ['outputs_csv'],
 };
 sub csv_delete_field {
     my %args = @_;
-    csvutil(%args, action=>'delete-field', _fields => $args{fields});
+    csvutil(%args, action=>'delete-field');
 }
 
 $SPEC{csv_munge_field} = {
@@ -1928,7 +1960,7 @@ $SPEC{csv_select_fields} = {
         %args_common,
         %args_csv_output,
         %arg_filename_0,
-        %arg_fields_or_field_pat,
+        %argspecs_field_selection,
     },
     args_rels => {
         req_one => ['fields', 'field_pat'],
@@ -1938,8 +1970,7 @@ $SPEC{csv_select_fields} = {
 };
 sub csv_select_fields {
     my %args = @_;
-    csvutil(%args, action=>'select-fields',
-            _fields => $args{fields}, _field_pat => $args{field_pat});
+    csvutil(%args, action=>'select-fields');
 }
 
 $SPEC{csv_dump} = {
