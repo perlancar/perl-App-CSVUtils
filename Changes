@@ -1,3 +1,10 @@
+0.042   2022-08-01  Released-By: PERLANCAR; Urgency: low
+
+        - No functional changes.
+
+        - [doc] Add some examples to App::CSVUtils::Manual::Cookbook.
+
+
 0.041   2022-08-01  Released-By: PERLANCAR; Urgency: medium
 
         - Add utility: csv-get-cells.
