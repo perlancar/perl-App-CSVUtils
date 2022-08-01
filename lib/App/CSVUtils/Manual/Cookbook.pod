@@ -13,14 +13,31 @@ package App::CSVUtils::Manual::Cookbook;
 This document lists the various tasks you can do with the scripts included in
 L<App::CSVUtils> distribution.
 
+Example F<1.csv> content:
 
+ name,age,rank
+ andi,25,120
+ budi,28,115
+ cinta,19,142
+ derry,33,121
 
 
 =head1 ADDING COLUMNS
 
-TODO.
+With L<csv-add-field>, we add a new column named C<foo> with the content
+calculated from Perl code:
 
+ % csv-add-field 1.csv foo '$main::rownum * 2'
+ name,age,rank,foo
+ andi,25,120,4
+ budi,28,115,6
+ cinta,19,142,8
+ derry,33,121,10
 
+You can specify at which position the new column will be using one of the
+options C<--at>, C<--after>, C<--before>:
+
+TODO EXAMPLE.
 
 
 =head1 ADDING ROWS
@@ -96,7 +113,19 @@ quote character (`--output-quote-char`), and escape character
 
 =head1 FILTERING (SELECTING) COLUMNS
 
-TODO.
+With L<csv-select-fields>:
+
+ % csv-select-fields 1.csv -f age -f name
+ age,name
+ 25,andi
+ 28,budi
+ 19,cinta
+ 33,derry
+
+Note that the order of the fields is as specified.
+
+You can select multiple fields using C<--include-field-pat> option. You can
+exclude fields using C<--exclude-field> and C<--exclude-field-pat>.
 
 
 
@@ -110,14 +139,61 @@ TODO.
 
 =head1 GETTING INFORMATION ABOUT CSV
 
- % csv-info INPUT.CSV
+ % csv-info 1.csv
+ {
+    "data_row_count" : 6,
+    "field_count" : 3,
+    "fields" : [
+       "name",
+       "age",
+       "rank"
+    ],
+    "file_size" : 78,
+    "header_row_count" : 0,
+    "row_count" : 6
+ }
 
-Sample output:
+
+
 
 =head2 Listing the column names
 
-TODO.
+ % csv-list-field-names 1.csv
+ +------+-------+
+ | name | index |
+ +------+-------+
+ | age  | 2     |
+ | name | 1     |
+ | rank | 3     |
+ +------+-------+
 
+ % csv-list-field-names 1.csv --json
+ [
+    200,
+    "OK",
+    [
+       {
+          "index" : 2,
+          "name" : "age"
+       },
+       {
+          "index" : 1,
+          "name" : "name"
+       },
+       {
+          "index" : 3,
+          "name" : "rank"
+       }
+    ],
+    {
+       "stream" : 0,
+       "table.fields" : [
+          "name",
+          "index"
+       ],
+       "title" : "csv-list-field-names 1.csv --json"
+    }
+ ]
 
 
 
