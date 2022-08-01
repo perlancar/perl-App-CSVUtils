@@ -22,7 +22,7 @@ Example F<1.csv> content:
  derry,33,121
 
 
-=head1 ADDING COLUMNS
+=head2 ADDING COLUMNS
 
 With L<csv-add-field>, we add a new column named C<foo> with the content
 calculated from Perl code:
@@ -40,53 +40,53 @@ options C<--at>, C<--after>, C<--before>:
 TODO EXAMPLE.
 
 
-=head1 ADDING ROWS
+=head2 ADDING ROWS
 
 TODO.
 
 
 
 
-=head1 ADDING SUMMARY ROW (TOTAL, AVERAGE, ETC)
+=head2 ADDING SUMMARY ROW (TOTAL, AVERAGE, ETC)
 
 TODO.
 
 
 
 
-=head1 CONVERTING TO OTHER FORMATS
+=head2 CONVERTING TO OTHER FORMATS
 
-=head2 To CSV
-
-TODO.
-
-=head2 To JSON
+=head3 To CSV
 
 TODO.
 
-=head2 To Perl data structure
+=head3 To JSON
 
 TODO.
 
-=head2 To TSV
+=head3 To Perl data structure
 
 TODO.
 
-=head2 To YAML
+=head3 To TSV
 
 TODO.
 
-
-
-
-=head1 DEALING WITH NEWLINES IN CSV
+=head3 To YAML
 
 TODO.
 
 
 
 
-=head1 DEALING WITH NON-STANDARD CSV
+=head2 DEALING WITH NEWLINES IN CSV
+
+TODO.
+
+
+
+
+=head2 DEALING WITH NON-STANDARD CSV
 
 The utilities allow you to set input's field separator (`--sep-char`), quote
 character (`--quote-char`), and escape character (`--escape-char`), so if you
@@ -111,7 +111,7 @@ quote character (`--output-quote-char`), and escape character
 
 
 
-=head1 FILTERING (SELECTING) COLUMNS
+=head2 FILTERING (SELECTING) COLUMNS
 
 With L<csv-select-fields>:
 
@@ -130,14 +130,14 @@ exclude fields using C<--exclude-field> and C<--exclude-field-pat>.
 
 
 
-=head1 FILTERING (SELECTING) ROWS
+=head2 FILTERING (SELECTING) ROWS
 
 TODO.
 
 
 
 
-=head1 GETTING INFORMATION ABOUT CSV
+=head2 GETTING INFORMATION ABOUT CSV
 
  % csv-info 1.csv
  {
@@ -156,7 +156,7 @@ TODO.
 
 
 
-=head2 Listing the column names
+=head3 Listing the column names
 
  % csv-list-field-names 1.csv
  +------+-------+
@@ -197,7 +197,7 @@ TODO.
 
 
 
-=head1 MERGING CSV
+=head2 MERGING CSV
 
 TODO.
 
@@ -206,42 +206,42 @@ See also L</SPLITTING CSV>.
 
 
 
-=head1 MODIFYING COLUMNS
+=head2 MODIFYING COLUMNS
 
 TODO.
 
 
 
 
-=head1 MODIFYING ROWS
+=head2 MODIFYING ROWS
 
 TODO.
 
 
 
 
-=head1 PERFORMING SET OPERATIONS WITH CSV
+=head2 PERFORMING SET OPERATIONS WITH CSV
 
 TODO.
 
 
 
 
-=head1 SORTING COLUMNS
+=head2 SORTING COLUMNS
 
 TODO.
 
 
 
 
-=head1 SORTING ROWS
+=head2 SORTING ROWS
 
 TODO.
 
 
 
 
-=head1 SPLITTING CSV
+=head2 SPLITTING CSV
 
 TODO.
 
@@ -250,7 +250,7 @@ See also L</MERGING CSV>.
 
 
 
-=head1 TRANSPOSING
+=head2 TRANSPOSING
 
 Transposing, like in a two-dimensional matrix, means switching row and colum
 indices to produce a new CSV where the columns become rows and vice versa. For
