@@ -664,6 +664,7 @@ $SPEC{csvutil} = {
                 #'lookup-fields', # not implemented in csvutil
                 'transpose',
                 'freqtable',
+                'get-cells',
             ]],
             req => 1,
             pos => 0,
@@ -715,6 +716,7 @@ sub csvutil {
     my $selected_row;
     my $row_spec_sub;
     my %freqtable; # key=value, val=frequency
+    my @cells;
 
     # for action=split
     my ($split_fh, $split_filename, $split_lines);
@@ -789,13 +791,6 @@ sub csvutil {
                 }
                 $row_spec_sub = eval 'sub { my $i = shift; '.join(" || ", @codestr).' }'; ## no critic: BuiltinFunctions::ProhibitStringyEval
                 return [400, "BUG: Invalid row_spec code: $@"] if $@;
-            }
-            if ($action eq 'grep') {
-            } elsif ($action eq 'map') {
-            } elsif ($action eq 'sort-rows') {
-            } elsif ($action eq 'each-row') {
-            } elsif ($action eq 'csv') {
-            } elsif ($action eq 'transpose') {
             }
         } # if i==1 (header row)
 
@@ -1039,6 +1034,26 @@ sub csvutil {
             }
         } elsif ($action eq 'csv') {
             $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
+        } elsif ($action eq 'get-cells') {
+            my $j = -1;
+          COORD:
+            for my $coord (@{ $args{coordinates} }) {
+                $j++;
+                my ($coord_col, $coord_row) = $coord =~ /\A(.+),(.+)\z/
+                    or return [400, "Invalid coordinate '$coord': must be in col,row form"];
+                $coord_row =~ /\A[0-9]+\z/
+                    or return [400, "Invalid coordinate '$coord': invalid row syntax '$coord_row', must be a number"];
+                next COORD unless $i == $coord_row;
+                if ($coord_col =~ /\A[0-9]+\z/) {
+                    $coord_col >= 0 && $coord_col < @$fields-1
+                        or return [400, "Invalid coordinate '$coord': column number '$coord_col' out of bound, must be between 0-".(@$fields-1)];
+                    $cells[$j] = $row->[$coord_col];
+                } else {
+                    exists $field_idxs{$coord_col}
+                        or return [400, "Invalid coordinate '$coord': Unknown column name '$coord_col'"];
+                    $cells[$j] = $row->[$field_idxs{$coord_col}];
+                }
+            }
         } else {
             return [400, "Unknown action '$action'"];
         }
@@ -1205,6 +1220,14 @@ sub csvutil {
         for my $rownum (0..$#{$transposed_rows}) {
             $res .= _get_csv_row($csv_emitter, $transposed_rows->[$rownum],
                                  $rownum+1, $outputs_header);
+        }
+    }
+
+    if ($action eq 'get-cells') {
+        if (@{ $args{coordinates} } == 1) {
+            return [200, "OK", $cells[0]];
+        } else {
+            return [200, "OK", \@cells];
         }
     }
 
@@ -2023,6 +2046,35 @@ $SPEC{csv_select_fields} = {
 sub csv_select_fields {
     my %args = @_;
     csvutil(%args, action=>'select-fields');
+}
+
+$SPEC{csv_get_cells} = {
+    v => 1.1,
+    summary => 'Get one or more cells from CSV',
+    args => {
+        %args_common,
+        %arg_filename_0,
+        coordinates => {
+            'x.name.is_plural' => 1,
+            'x.name.singular' => 'coordinate',
+            summary => 'List of coordinates, each in the form of <col>,<row> e.g. colname,0 or 1,1',
+            schema => ['array*', of=>'str*'],
+            pos => 1,
+            slurpy => 1,
+        },
+    },
+    description => <<'_' . $common_desc,
+
+This utility lets you specify "coordinates" of cell locations to extract. Each
+coordinate is in the form of `<col>,<row>` where `<col>` is the column name or
+position (zero-based, so 0 is the first column) and `<row>` is the row position
+(one-based, so 1 is the header row and 2 is the first data row).
+
+_
+};
+sub csv_get_cells {
+    my %args = @_;
+    csvutil(%args, action=>'get-cells');
 }
 
 $SPEC{csv_dump} = {
