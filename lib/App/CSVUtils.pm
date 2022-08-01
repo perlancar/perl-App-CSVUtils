@@ -27,7 +27,7 @@ sub _compile {
 
 sub _get_field_idx {
     my ($field, $field_idxs) = @_;
-    defined($field) && length($field) or die "Please specify field (-F)\n";
+    defined($field) && length($field) or die "Please specify at least a field\n";
     my $idx = $field_idxs->{$field};
     die "Unknown field '$field' (known fields include: ".
         join(", ", map { "'$_'" } sort {$field_idxs->{$a} <=> $field_idxs->{$b}}
@@ -150,6 +150,66 @@ sub _complete_field_list {
 
 sub _complete_sort_field_list {
     _complete_field_or_field_list('sort_field_list', @_);
+}
+
+sub _array2hash {
+    my ($row, $fields) = @_;
+    my $rowhash = {};
+    for my $i (0..$#{$fields}) {
+        $rowhash->{ $fields->[$i] } = $row->[$i];
+    }
+    $rowhash;
+}
+
+sub _select_fields {
+    my ($fields, $field_idxs, $args) = @_;
+
+    my @selected_fields;
+
+    if (defined $args->{include_field_pat}) {
+        for my $field (@$fields) {
+            if ($field =~ $args->{include_field_pat}) {
+                push @selected_fields, $field;
+            }
+        }
+    }
+    if (defined $args->{exclude_field_pat}) {
+        @selected_fields = grep { $_ !~ $args->{exclude_field_pat} }
+            @selected_fields;
+    }
+    if (defined $args->{include_fields}) {
+      FIELD:
+        for my $field (@{ $args->{include_fields} }) {
+            unless (defined $field_idxs->{$field}) {
+                return [400, "Unknown field '$field'"] unless $args->{ignore_unknown_fields};
+                next FIELD;
+            }
+            next if grep { $field eq $_ } @selected_fields;
+            push @selected_fields, $field;
+        }
+    }
+    if (defined $args->{exclude_fields}) {
+      FIELD:
+        for my $field (@{ $args->{include_fields} }) {
+            unless (defined $field_idxs->{$field}) {
+                return [400, "Unknown field '$field'"] unless $args->{ignore_unknown_fields};
+                next FIELD;
+            }
+            @selected_fields = grep { $field ne $_ } @selected_fields;
+        }
+    }
+
+    if ($args->{show_selected_fields}) {
+        return [200, "OK", \@selected_fields];
+    }
+
+    #my %selected_field_idxs;
+    #$selected_field_idxs{$_} = $fields_idx->{$_} for @selected_fields;
+
+    my @selected_field_idxs_array;
+    push @selected_field_idxs_array, $field_idxs->{$_} for @selected_fields;
+
+    [100, "Continue", [\@selected_fields, \@selected_field_idxs_array]];
 }
 
 our %args_common = (
@@ -292,7 +352,6 @@ _
         schema => 'filename*',
         req => 1,
         pos => 1,
-        cmdline_aliases => {f=>{}},
         tags => ['category:input'],
     },
 );
@@ -308,7 +367,6 @@ _
         schema => 'filename*',
         req => 1,
         pos => 0,
-        cmdline_aliases => {f=>{}},
         tags => ['category:input'],
     },
 );
@@ -326,7 +384,6 @@ _
         req => 1,
         pos => 0,
         slurpy => 1,
-        cmdline_aliases => {f=>{}},
         tags => ['category:input'],
     },
 );
@@ -395,7 +452,7 @@ our %argspecsopt_field_selection = (
         schema => 're*',
         cmdline_aliases => {
             field_pat => {}, # backward compatibility
-            include_all_fields => { summary => 'Shortcut for --field-pat=.*, effectively selecting all fields', is_flag=>1, code => sub { $_[0]{field_pat} = '.*' } },
+            include_all_fields => { summary => 'Shortcut for --field-pat=.*, effectively selecting all fields', is_flag=>1, code => sub { $_[0]{include_field_pat} = '.*' } },
         },
         tags => ['category:field-selection'],
     },
@@ -414,13 +471,17 @@ our %argspecsopt_field_selection = (
         summary => 'Field regex pattern to exclude, takes precedence over --field-pat',
         schema => 're*',
         cmdline_aliases => {
-            exclude_all_fields => { summary => 'Shortcut for --field-pat=.*, effectively selecting all fields', is_flag=>1, code => sub { $_[0]{field_pat} = '.*' } },
+            exclude_all_fields => { summary => 'Shortcut for --field-pat=.*, effectively selecting all fields', is_flag=>1, code => sub { $_[0]{exclude_field_pat} = '.*' } },
         },
         tags => ['category:field-selection'],
     },
     ignore_unknown_fields => {
         summary => 'When unknown fields are specified in --include-field (--field) or --exclude_field options, ignore them instead of throwing an error',
         schema => 'bool*',
+    },
+    show_selected_fields => {
+        summary => 'Show selected fields and then immediately exit',
+        schema => 'true*',
     },
 );
 
@@ -569,15 +630,6 @@ our %arg_hash = (
     },
 );
 
-sub _array2hash {
-    my ($row, $fields) = @_;
-    my $rowhash = {};
-    for my $i (0..$#{$fields}) {
-        $rowhash->{ $fields->[$i] } = $row->[$i];
-    }
-    $rowhash;
-}
-
 $SPEC{csvutil} = {
     v => 1.1,
     summary => 'Perform action on a CSV file',
@@ -649,12 +701,15 @@ sub csvutil {
     my $i = 0;
     my $header_row_count = 0;
     my $data_row_count = 0;
+
     my $fields = []; # field names, in order
     my %field_idxs; # key = field name, val = index (0-based)
 
+    my $selected_fields;
+    my $selected_field_idxs_array;
+    my $selected_field_idxs_array_sorted;
     my $code;
     my $field_idx;
-    my $field_idxs_array;
     my $sorted_fields;
     my @summary_row;
     my $selected_row;
@@ -692,11 +747,13 @@ sub csvutil {
                     #return [412, "Empty field name in field #$j"];
                     next;
                 }
-                if (defined $field_idxs{$row->[$j]}) {
+                if (defined $field_idxs{ $row->[$j] }) {
                     return [412, "Duplicate field name '$row->[$j]'"];
                 }
                 $field_idxs{$row->[$j]} = $j;
             }
+
+
             if ($action eq 'sort-fields') {
                 if (my $eg = $args{sort_example}) {
                     $eg = [split /\s*,\s*/, $eg] unless ref($eg) eq 'ARRAY';
@@ -843,41 +900,26 @@ sub csvutil {
             }
             $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
         } elsif ($action eq 'delete-field') {
-            if (!defined($field_idxs_array)) {
-                $field_idxs_array = [];
-                for my $f (@{ $args{_fields} }) {
-                    push @$field_idxs_array, _get_field_idx($f, \%field_idxs);
-                }
-                $field_idxs_array = [sort {$b<=>$a} @$field_idxs_array];
-                for (@$field_idxs_array) {
-                    splice @$row, $_, 1;
-                    unless (@$row) {
-                        return [412, "Can't delete field(s) because CSV will have zero fields"];
-                    }
-                }
-            } else {
-                for (@$field_idxs_array) {
-                    splice @$row, $_, 1;
-                }
+            unless ($selected_fields) {
+                my $res = _select_fields($fields, \%field_idxs, \%args);
+                return $res unless $res->[0] == 100;
+                $selected_fields = $res->[2][0];
+                $selected_field_idxs_array = $res->[2][1];
+                $selected_field_idxs_array_sorted = [sort { $b <=> $a } @$selected_field_idxs_array];
+            }
+            for (@$selected_field_idxs_array_sorted) {
+                splice @$row, $_, 1;
             }
             $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
         } elsif ($action eq 'select-fields') {
-            if (!defined($field_idxs_array)) {
-                $field_idxs_array = [];
-                my %seen;
-                if ($args{_fields}) {
-                    for my $f (@{ $args{_fields} }) {
-                        return [400, "Duplicate field '$f'"] if $seen{$f}++;
-                        push @$field_idxs_array, _get_field_idx($f, \%field_idxs);
-                    }
-                } else {
-                    for my $f (@$fields) {
-                        next unless $f =~ $args{_field_pat};
-                        push @$field_idxs_array, $field_idxs{$f};
-                    }
-                }
+            unless ($selected_fields) {
+                my $res = _select_fields($fields, \%field_idxs, \%args);
+                return $res unless $res->[0] == 100;
+                $selected_fields = $res->[2][0];
+                return [412, "At least one field must be selected"] unless @$selected_fields;
+                $selected_field_idxs_array = $res->[2][1];
             }
-            $row = [map { $row->[$_] } @$field_idxs_array];
+            $row = [@{$row}[@$selected_field_idxs_array]];
             $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
         } elsif ($action eq 'sort-fields') {
             unless ($i == 1) {
@@ -1262,12 +1304,12 @@ $SPEC{csv_delete_fields} = {
         %args_common,
         %args_csv_output,
         %arg_filename_0,
-        %argspecs_field_selection,
+        %argspecsopt_field_selection,
     },
     description => '' . $common_desc,
     tags => ['outputs_csv'],
 };
-sub csv_delete_field {
+sub csv_delete_fields {
     my %args = @_;
     csvutil(%args, action=>'delete-field');
 }
@@ -1964,10 +2006,7 @@ $SPEC{csv_select_fields} = {
         %args_common,
         %args_csv_output,
         %arg_filename_0,
-        %argspecs_field_selection,
-    },
-    args_rels => {
-        req_one => ['fields', 'field_pat'],
+        %argspecsopt_field_selection,
     },
     description => '' . $common_desc,
     tags => ['outputs_csv'],
