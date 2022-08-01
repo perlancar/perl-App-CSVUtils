@@ -839,6 +839,7 @@ sub csvutil {
                     "#$i field '$args{field}' value '$_': $@\n" if $@;
                 if ($args{hash}) {
                     for my $field (keys %$_) {
+                        next unless exists $field_idxs{$field};
                         $row->[$field_idxs{$field}] = $_->{$field};
                     }
                 }
@@ -1326,6 +1327,8 @@ will contain the value of the field, and the Perl code is expected to modify it.
 row number (2 means the first data row). `$main::csv` is the <pm:Text::CSV_XS>
 object. `$main::field_idxs` is also available for additional information.
 
+To munge multiple fields, use <prog:csv-munge-row>.
+
 _
     args => {
         %args_common,
@@ -1356,6 +1359,11 @@ Aside from `$_`, `$main::row` will contain the current row array.
 available for additional information.
 
 The modified `$_` will be rendered back to CSV row.
+
+You can also munge a single field using <prog:csv-munge-field>.
+
+You cannot add new fields using this utility. To do so, use
+<prog:csv-add-field>.
 
 _
     args => {
