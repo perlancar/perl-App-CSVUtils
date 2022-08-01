@@ -190,7 +190,7 @@ sub _select_fields {
     }
     if (defined $args->{exclude_fields}) {
       FIELD:
-        for my $field (@{ $args->{include_fields} }) {
+        for my $field (@{ $args->{exclude_fields} }) {
             unless (defined $field_idxs->{$field}) {
                 return [400, "Unknown field '$field'"] unless $args->{ignore_unknown_fields};
                 next FIELD;
@@ -641,7 +641,7 @@ $SPEC{csvutil} = {
                 'add-field',
                 'list-field-names',
                 'info',
-                'delete-field',
+                'delete-fields',
                 'munge-field',
                 'munge-row',
                 #'replace-newline', # not implemented in csvutil
@@ -899,12 +899,13 @@ sub csvutil {
                 }
             }
             $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
-        } elsif ($action eq 'delete-field') {
+        } elsif ($action eq 'delete-fields') {
             unless ($selected_fields) {
                 my $res = _select_fields($fields, \%field_idxs, \%args);
                 return $res unless $res->[0] == 100;
                 $selected_fields = $res->[2][0];
                 $selected_field_idxs_array = $res->[2][1];
+                return [412, "At least one field must remain"] if @$selected_fields == @$fields;
                 $selected_field_idxs_array_sorted = [sort { $b <=> $a } @$selected_field_idxs_array];
             }
             for (@$selected_field_idxs_array_sorted) {
@@ -1311,7 +1312,7 @@ $SPEC{csv_delete_fields} = {
 };
 sub csv_delete_fields {
     my %args = @_;
-    csvutil(%args, action=>'delete-field');
+    csvutil(%args, action=>'delete-fields');
 }
 
 $SPEC{csv_munge_field} = {

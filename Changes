@@ -1,3 +1,30 @@
+0.040   2022-08-01  Released-By: PERLANCAR; Urgency: medium; Backward-Incompatible: yes
+
+        [Incompatible changes]
+
+        - Rename csv-delete-field to csv-select-fields to reflect the fact that
+          it can now select multiple fields.
+
+        - Short option -f now becomes shortcut for --include-field (a.k.a.
+          --field) instead of for --filename.
+
+        [clis csv-delete-fields, csv-select-fields]
+
+        - Improve field selection ability by adding --exclude-field (-F),
+          --exclude-field-pat to exclude fields. We know have four options
+          to select fields: --include-field (--field, -f),
+          --include-field-pat, --exclude-field (-F), and --exclude-field-pat.
+          In addition to that, we also have --include-all-fields and
+          --exclude-all-fields as alias for --include-field-pat .* and
+          --exclude-field-pat .*, respectively.
+
+        - Add option --ignore-unknown-fields to ignore unknown field specified
+          via --include-field (--field, -f) or --exclude-field (-F).
+
+        - Add option --show-selected-fields to show selected fields and
+          immediately exit.
+
+
 0.039   2022-07-27  Released-By: PERLANCAR; Urgency: low
 
         - No functional changes.
