@@ -665,6 +665,7 @@ $SPEC{csvutil} = {
                 'transpose',
                 'freqtable',
                 'get-cells',
+                'fill-template',
             ]],
             req => 1,
             pos => 0,
@@ -1032,6 +1033,8 @@ sub csvutil {
             } else {
                 push @$rows, $row;
             }
+        } elsif ($action eq 'fill-template') {
+            push @$rows, _array2hash($row, $fields) unless $i == 1;
         } elsif ($action eq 'csv') {
             $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
         } elsif ($action eq 'get-cells') {
@@ -1229,6 +1232,19 @@ sub csvutil {
         } else {
             return [200, "OK", \@cells];
         }
+    }
+
+    if ($action eq 'fill-template') {
+        require File::Slurper::Dash;
+
+        my $output = '';
+        my $template = File::Slurper::Dash::read_text($args{template_filename});
+        for my $row (@$rows) {
+            my $text = $template;
+            $text =~ s/\[\[(.+?)\]\]/defined $row->{$1} ? $row->{$1} : "[[UNDEFINED:$1]]"/eg;
+            $output .= (length $output ? "\n---\n" : "") . $text;
+        }
+        return [200, "OK", $output];
     }
 
     [200, "OK", $res, {"cmdline.skip_format"=>1}];
@@ -2075,6 +2091,35 @@ _
 sub csv_get_cells {
     my %args = @_;
     csvutil(%args, action=>'get-cells');
+}
+
+$SPEC{csv_fill_template} = {
+    v => 1.1,
+    summary => 'Substitute template values in a text file with fields from CSV rows',
+    args => {
+        %args_common,
+        %arg_filename_0,
+        template_filename => {
+            schema => 'filename*',
+            req => 1,
+            pos => 1,
+        },
+        # XXX whether to output multiple files or combined
+        # XXX row selection?
+    },
+    description => <<'_' . $common_desc,
+
+Templates are text that contain `[[NAME]]` field placeholders. The field
+placeholders will be replaced by values from the CSV file. This is a simple
+alternative to mail-merge. (I first wrote this utility because LibreOffice
+Writer, as always, has all the annoying bugs; this time, it prevents mail merge
+from working.)
+
+_
+};
+sub csv_fill_template {
+    my %args = @_;
+    csvutil(%args, action=>'fill-template');
 }
 
 $SPEC{csv_dump} = {
