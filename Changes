@@ -1,3 +1,10 @@
+0.041   2022-08-08  Released-By: PERLANCAR; Urgency: medium
+
+        - Add utilities: csv-fill-template, csv-get-cells.
+
+        - [cli cli-munge-row] Avoid warning when perl code adds a new field.
+
+
 0.040   2022-08-01  Released-By: PERLANCAR; Urgency: medium; Backward-Incompatible: yes
 
         [Incompatible changes]
