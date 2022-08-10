@@ -39,7 +39,7 @@
 
         [Incompatible changes]
 
-        - Rename csv-delete-field to csv-select-fields to reflect the fact that
+        - Rename csv-delete-field to csv-delete-fields to reflect the fact that
           it can now select multiple fields.
 
         - Short option -f now becomes shortcut for --include-field (a.k.a.
