@@ -1,8 +1,33 @@
-0.041   2022-08-08  Released-By: PERLANCAR; Urgency: medium
+0.041.2 2022-08-08  Released-By: PERLANCAR; Urgency: medium
 
         - Add utilities: csv-fill-template, csv-get-cells.
 
         - [cli cli-munge-row] Avoid warning when perl code adds a new field.
+
+        - UPDATE: rename release from 0.041 to 0.041.2 due to conflict.
+
+
+0.043   2022-08-01  Released-By: PERLANCAR; Urgency: low
+
+        - No functional changes.
+
+        - Tweak POD formatting.
+
+
+0.042   2022-08-01  Released-By: PERLANCAR; Urgency: low
+
+        - No functional changes.
+
+        - [doc] Add some examples to App::CSVUtils::Manual::Cookbook.
+
+
+
+0.041   2022-08-01  Released-By: PERLANCAR; Urgency: medium
+
+        - Add utility: csv-get-cells.
+
+        - [cli cli-munge-row] Avoid warning when perl code adds a new
+          field.
 
 
 0.040   2022-08-01  Released-By: PERLANCAR; Urgency: medium; Backward-Incompatible: yes
