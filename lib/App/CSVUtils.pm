@@ -14,6 +14,69 @@ use Hash::Subset qw(hash_subset);
 
 our %SPEC;
 
+sub _read_file {
+    my $filename = shift;
+
+    my ($fh, $err);
+    if ($filename eq '-') {
+        $fh = *STDIN;
+    } elsif ($filename =~ /\A\w+:/) {
+        require LWP::UserAgent;
+        my $ua = LWP::UserAgent->new;
+        my $resp = $ua->get($filename);
+        unless ($resp->is_success) {
+            $err = [$resp->code, "Can't get URL $filename: ".$resp->message];
+            goto RETURN;
+        }
+        require IO::Scalar;
+        my $content = $resp->content;
+        $fh = IO::Scalar->new(\$content);
+    } else {
+        open $fh, "<", $filename or do {
+            $err = [500, "Can't open input filename '$filename': $!"];
+            goto RETURN;
+        };
+    }
+    binmode $fh, ":encoding(utf8)";
+
+  RETURN:
+    ($fh, $err);
+}
+
+sub _return_or_write_file {
+    my ($res, $filename, $overwrite) = @_;
+    return $res if !defined($filename);
+    if ($filename =~ /\A\w+:/) {
+        require LWP::UserAgent;
+        my $ua = LWP::UserAgent->new;
+        my $resp = $ua->put($filename, Content=>$res->[2]);
+        unless ($resp->is_success) {
+            return [$resp->code, "Can't put URL $filename: ".$resp->message];
+        }
+        return [200, "OK"];
+    } else {
+        my $fh;
+        if ($filename eq '-') {
+            $fh = \*STDIN;
+        } else {
+            if (-f $filename) {
+                if ($overwrite) {
+                    log_info "Overwriting output file $filename";
+                } else {
+                    return [412, "Refusing to ovewrite existing output file '$filename', please select another path or specify --overwrite"];
+                }
+            }
+            open my $fh, ">", $filename or do {
+                return [500, "Can't open output file '$filename': $!"];
+            };
+            binmode $fh, ":encoding(utf8)";
+            print $fh $res->[2];
+            close $fh or warn "Can't write to '$filename': $!";
+            return [$res->[0], $res->[1]];
+        }
+    }
+}
+
 sub _compile {
     my $str = shift;
     return $str if ref $str eq 'CODE';
@@ -104,10 +167,13 @@ sub _complete_field_or_field_list {
     }
 
     # user hasn't specified -f, bail
-    return undef unless defined $args && $args->{filename}; ## no critic: Subroutines::ProhibitExplicitReturnUndef
+    return {message=>"Please specify -f first"} unless defined $args && $args->{filename};
 
     # user wants to read CSV from stdin, bail
-    return undef if $args->{filename} eq '-'; ## no critic: Subroutines::ProhibitExplicitReturnUndef
+    return {message=>"Can't get field list when input is stdin"} if $args->{filename} eq '-';
+
+    # user wants to read from url, bail
+    return {message=>"Can't get field list when input is URL"} if $args->{filename} =~ /\A\w:/;
 
     # can the file be opened?
     my $csv_parser = _instantiate_parser(\%args);
@@ -343,10 +409,10 @@ _
 
 our %arg_filename_1 = (
     filename => {
-        summary => 'Input CSV file',
+        summary => 'Input CSV file or URL',
         description => <<'_',
 
-Use `-` to read from stdin.
+Use `-` to read from stdin, use `clipboard:` to read from clipboard.
 
 _
         schema => 'filename*',
@@ -358,10 +424,10 @@ _
 
 our %arg_filename_0 = (
     filename => {
-        summary => 'Input CSV file',
+        summary => 'Input CSV file or URL',
         description => <<'_',
 
-Use `-` to read from stdin.
+Use `-` to read from stdin, use `clipboard:` to read from clipboard.
 
 _
         schema => 'filename*',
@@ -374,10 +440,10 @@ _
 our %arg_filenames_0 = (
     filenames => {
         'x.name.is_plural' => 1,
-        summary => 'Input CSV files',
+        summary => 'Input CSV files or URLs',
         description => <<'_',
 
-Use `-` to read from stdin.
+Use `-` to read from stdin, use `clipboard:` to read from clipboard.
 
 _
         schema => ['array*', of=>'filename*'],
@@ -385,6 +451,62 @@ _
         pos => 0,
         slurpy => 1,
         tags => ['category:input'],
+    },
+);
+
+our %argspecopt_overwrite = (
+    overwrite => {
+        summary => 'Whether to override existing output file',
+        schema => 'bool*',
+        cmdline_aliases=>{O=>{}},
+        tags => ['category:output'],
+    },
+);
+
+our %argspecopt_output_filename = (
+    output_filename => {
+        summary => 'Output filename or URL',
+        description => <<'_',
+
+Use `-` to output to stdout (the default if you don't specify this option), use
+`clipboard:` to write to clipboard.
+
+_
+        schema => 'filename*',
+        cmdline_aliases=>{o=>{}},
+        tags => ['category:output'],
+    },
+);
+
+our %argspecopt_output_filename_1 = (
+    output_filename => {
+        summary => 'Output filename or URL',
+        description => <<'_',
+
+Use `-` to output to stdout (the default if you don't specify this option), use
+`clipboard:` to write to clipboard.
+
+_
+        schema => 'filename*',
+        pos => 1,
+        cmdline_aliases=>{o=>{}},
+        tags => ['category:output'],
+    },
+);
+
+our %argspecopt_output_filename_2 = (
+    output_filename => {
+        summary => 'Output filename or URL',
+        description => <<'_',
+
+Use `-` to output to stdout (the default if you don't specify this option), use
+`clipboard:` to write to clipboard.
+
+_
+        schema => 'filename*',
+        pos => 2,
+        cmdline_aliases=>{o=>{}},
+        tags => ['category:output'],
     },
 );
 
@@ -672,6 +794,8 @@ $SPEC{csvutil} = {
             cmdline_aliases => {a=>{}},
         },
         %arg_filename_1,
+        %argspecopt_output_filename_2,
+        %argspecopt_overwrite,
         %argopt_eval,
         %argopt_field,
         %argspecsopt_field_selection,
@@ -690,14 +814,9 @@ sub csvutil {
 
     my $csv_parser  = _instantiate_parser(\%args);
     my $csv_emitter = _instantiate_emitter(\%args);
-    my $fh;
-    if ($args{filename} eq '-') {
-        $fh = *STDIN;
-    } else {
-        open $fh, "<", $args{filename} or
-            return [500, "Can't open input filename '$args{filename}': $!"];
-    }
-    binmode $fh, ":encoding(utf8)";
+
+    my ($fh, $err) = _read_file($args{filename});
+    return $err if $err;
 
     my $res = "";
     my $i = 0;
@@ -969,6 +1088,7 @@ sub csvutil {
                 $split_lines = 0;
                 open $split_fh, ">", $split_filename
                     or die "Can't open '$split_filename': $!\n";
+                binmode $split_fh, ":encoding(utf8)";
             }
             if ($split_lines >= $args{lines}) {
                 $split_filename++;
@@ -1247,7 +1367,7 @@ sub csvutil {
         return [200, "OK", $output];
     }
 
-    [200, "OK", $res, {"cmdline.skip_format"=>1}];
+    _return_or_write_file([200, "OK", $res, {"cmdline.skip_format"=>1}], $args{output_filename}, $args{overwrite});
 } # csvutil
 
 our $common_desc = <<'_';
@@ -1277,6 +1397,8 @@ _
         %args_common,
         %args_csv_output,
         %arg_filename_0,
+        %argspecopt_output_filename,
+        %argspecopt_overwrite,
         %arg_field_1_nocomp,
         %arg_eval_2,
         after => {
@@ -1346,6 +1468,8 @@ $SPEC{csv_delete_fields} = {
         %args_csv_output,
         %arg_filename_0,
         %argspecsopt_field_selection,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
     },
     description => '' . $common_desc,
     tags => ['outputs_csv'],
@@ -1373,6 +1497,8 @@ _
         %args_common,
         %args_csv_output,
         %arg_filename_0,
+        %argspecopt_output_filename,
+        %argspecopt_overwrite,
         %arg_field_1,
         %arg_eval_2,
     },
@@ -1409,6 +1535,8 @@ _
         %args_common,
         %args_csv_output,
         %arg_filename_0,
+        %argspecopt_output_filename,
+        %argspecopt_overwrite,
         %arg_eval_1,
         %arg_hash,
     },
@@ -1435,6 +1563,10 @@ _
         %args_common,
         %args_csv_output,
         %arg_filename_0,
+        %argspecopt_output_filename,
+        %argspecopt_overwrite,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
         with => {
             schema => 'str*',
             default => ' ',
@@ -1453,14 +1585,8 @@ sub csv_replace_newline {
 
     my $csv_parser  = _instantiate_parser(\%args);
     my $csv_emitter = _instantiate_emitter(\%args);
-    my $fh;
-    if ($args{filename} eq '-') {
-        $fh = *STDIN;
-    } else {
-        open $fh, "<", $args{filename} or
-            return [500, "Can't open input filename '$args{filename}': $!"];
-    }
-    binmode $fh, ":encoding(utf8)";
+
+    my ($fh, $err) = _read_file($args{filename});
 
     my $res = "";
     my $i = 0;
@@ -1474,7 +1600,7 @@ sub csv_replace_newline {
         $res .= $csv_emitter->string . "\n";
     }
 
-    [200, "OK", $res, {"cmdline.skip_format"=>1}];
+    _return_or_write_file([200, "OK", $res, {"cmdline.skip_format"=>1}], $args{output_filename}, $args{overwrite});
 }
 
 $SPEC{csv_sort_rows} = {
@@ -1565,6 +1691,8 @@ _
         %args_common,
         %args_csv_output,
         %arg_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
         %args_sort_rows_short,
         %arg_hash,
     },
@@ -1618,6 +1746,8 @@ _
         %args_common,
         %args_csv_output,
         %arg_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
         %args_sort_fields_short,
     },
     tags => ['outputs_csv'],
@@ -1644,6 +1774,8 @@ $SPEC{csv_sum} = {
         %args_common,
         %args_csv_output,
         %arg_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
         %arg_with_data_rows,
     },
     description => '' . $common_desc,
@@ -1662,6 +1794,8 @@ $SPEC{csv_avg} = {
         %args_common,
         %args_csv_output,
         %arg_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
         %arg_with_data_rows,
     },
     description => '' . $common_desc,
@@ -1696,6 +1830,8 @@ $SPEC{csv_select_row} = {
         %args_common,
         %args_csv_output,
         %arg_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
         row_spec => {
             schema => 'str*',
             summary => 'Row number (e.g. 2 for first data row), '.
@@ -1778,6 +1914,8 @@ _
         %args_common,
         %args_csv_output,
         %arg_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
         %arg_eval,
         %arg_hash,
     },
@@ -1826,6 +1964,8 @@ _
     args => {
         %args_common,
         %arg_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
         %arg_eval,
         %arg_hash,
         add_newline => {
@@ -1912,6 +2052,8 @@ $SPEC{csv_transpose} = {
         %args_common,
         %args_csv_output,
         %arg_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
     },
     description => '' . $common_desc,
     tags => ['outputs_csv'],
@@ -1984,6 +2126,8 @@ _
         %args_common,
         %args_csv_output,
         %arg_filenames_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
     },
     tags => ['outputs_csv'],
 };
@@ -1995,14 +2139,9 @@ sub csv_concat {
 
     for my $filename (@{ $args{filenames} }) {
         my $csv_parser  = _instantiate_parser(\%args);
-        my $fh;
-        if ($filename eq '-') {
-            $fh = *STDIN;
-        } else {
-            open $fh, "<", $filename or
-            return [500, "Can't open input filename '$filename': $!"];
-        }
-        binmode $fh, ":encoding(utf8)";
+
+        my ($fh, $err) = _read_file($filename);
+        return $err if $err;
 
         my $i = 0;
         my $fields;
@@ -2054,6 +2193,8 @@ $SPEC{csv_select_fields} = {
         %args_common,
         %args_csv_output,
         %arg_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
         %argspecsopt_field_selection,
     },
     description => '' . $common_desc,
@@ -2099,6 +2240,8 @@ $SPEC{csv_fill_template} = {
     args => {
         %args_common,
         %arg_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
         template_filename => {
             schema => 'filename*',
             req => 1,
@@ -2150,6 +2293,8 @@ _
         %args_common,
         %args_csv_output,
         %arg_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
         %arg_hash,
     },
 };
@@ -2239,6 +2384,8 @@ _
         %args_common,
         %args_csv_output,
         %arg_filenames_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
         op => {
             summary => 'Set operation to perform',
             schema => ['str*', in=>[qw/intersect union diff symdiff/]],
@@ -2289,14 +2436,10 @@ sub csv_setop {
     # read all csv
     for my $filename (@{ $args{filenames} }) {
         my $csv = _instantiate_parser(\%args);
-        my $fh;
-        if ($filename eq '-') {
-            $fh = *STDIN;
-        } else {
-            open $fh, "<", $filename or
-            return [500, "Can't open input filename '$filename': $!"];
-        }
-        binmode $fh, ":encoding(utf8)";
+
+        my ($fh, $err) = _read_file($filename);
+        return $err if $err;
+
         my $i = 0;
         my @data_rows;
         my $field_idxs = {};
@@ -2493,7 +2636,7 @@ sub csv_setop {
     #    all_data_rows=>\@all_data_rows,
     #};
 
-    [200, "OK", $res, {"cmdline.skip_format"=>1}];
+    _return_or_write_file([200, "OK", $res, {"cmdline.skip_format"=>1}], $args{output_filename}, $args{overwrite});
 }
 
 $SPEC{csv_lookup_fields} = {
@@ -2531,6 +2674,8 @@ _
     args => {
         %args_common,
         %args_csv_output,
+        %argspecopt_output_filename,
+        %argspecopt_overwrite,
         target => {
             summary => 'CSV file to fill fields of',
             schema => 'filename*',
@@ -2601,14 +2746,9 @@ sub csv_lookup_fields {
     my @source_field_names;
     {
         my $csv = _instantiate_parser(\%args);
-        my $fh;
-        if ($args{source} eq '-') {
-            $fh = *STDIN;
-        } else {
-            open $fh, "<", $args{source} or
-            return [500, "Can't open source '$args{source}': $!"];
-        }
-        binmode $fh, ":encoding(utf8)";
+
+        my ($fh, $err) = _read_file($args{source});
+        return $err if $err;
 
         my $i = 0;
         while (my $row = $csv->getline($fh)) {
@@ -2656,14 +2796,9 @@ sub csv_lookup_fields {
     {
         my $csv_out = _instantiate_parser_default();
         my $csv = _instantiate_parser(\%args);
-        my $fh;
-        if ($args{target} eq '-') {
-            $fh = *STDIN;
-        } else {
-            open $fh, "<", $args{target} or
-                return [500, "Can't open target '$args{target}': $!"];
-        }
-        binmode $fh, ":encoding(utf8)";
+
+        my ($fh, $err) = _read_file($args{target});
+        return $err if $err;
 
         my $i = 0;
         while (my $row = $csv->getline($fh)) {
@@ -2721,7 +2856,7 @@ sub csv_lookup_fields {
     if ($args{count}) {
         [200, "OK", $num_filled];
     } else {
-        [200, "OK", $res, {"cmdline.skip_format"=>1}];
+        _return_or_write_file([200, "OK", $res, {"cmdline.skip_format"=>1}], $args{output_filename}, $args{overwrite});
     }
 }
 
