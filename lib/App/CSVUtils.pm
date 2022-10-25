@@ -607,6 +607,21 @@ our %argspecsopt_field_selection = (
     },
 );
 
+our %argspecsopt_vcf = (
+    name_vcf_field => {
+        summary => 'Select field to use as VCF N (name) field',
+        schema => 'str*',
+    },
+    cell_vcf_field => {
+        summary => 'Select field to use as VCF CELL field',
+        schema => 'str*',
+    },
+    email_vcf_field => {
+        summary => 'Select field to use as VCF EMAIL field',
+        schema => 'str*',
+    },
+);
+
 our %arg_eval_1 = (
     eval => {
         summary => 'Perl code to do munging',
@@ -788,6 +803,7 @@ $SPEC{csvutil} = {
                 'freqtable',
                 'get-cells',
                 'fill-template',
+                'convert-to-vcf',
             ]],
             req => 1,
             pos => 0,
@@ -799,6 +815,7 @@ $SPEC{csvutil} = {
         %argopt_eval,
         %argopt_field,
         %argspecsopt_field_selection,
+        %argspecsopt_vcf,
     },
     args_rels => {
     },
@@ -840,6 +857,12 @@ sub csvutil {
 
     # for action=split
     my ($split_fh, $split_filename, $split_lines);
+
+    # for action convert-to-vcf
+    my %fields_for;
+    $fields_for{N}     = $args{name_vcf_field};
+    $fields_for{CELL}  = $args{cell_vcf_field};
+    $fields_for{EMAIL} = $args{email_vcf_field};
 
     my $row0;
     my $code_getline = sub {
@@ -911,6 +934,31 @@ sub csvutil {
                 }
                 $row_spec_sub = eval 'sub { my $i = shift; '.join(" || ", @codestr).' }'; ## no critic: BuiltinFunctions::ProhibitStringyEval
                 return [400, "BUG: Invalid row_spec code: $@"] if $@;
+            }
+            if ($action eq 'convert-to-vcf') {
+                for my $field (@$fields) {
+                    if ($field =~ /name/i && !defined($fields_for{N})) {
+                        log_info "Will be using field '$field' for VCF field 'N' (name)";
+                        $fields_for{N} = $field;
+                    }
+                    if ($field =~ /(e-?)?mail/i && !defined($fields_for{EMAIL})) {
+                        log_info "Will be using field '$field' for VCF field 'EMAIL'";
+                        $fields_for{EMAIL} = $field;
+                    }
+                    if ($field =~ /cell|hp|phone|wa|whatsapp/i && !defined($fields_for{CELL})) {
+                        log_info "Will be using field '$field' for VCF field 'CELL' (cellular phone)";
+                        $fields_for{CELL} = $field;
+                    }
+                }
+                if (!defined($fields_for{N})) {
+                    return [412, "Can't convert to VCF because we cannot determine which field to use as the VCF N (name) field"];
+                }
+                if (!defined($fields_for{EMAIL})) {
+                    log_warn "We cannot determine which field to use as the VCF EMAIL field";
+                }
+                if (!defined($fields_for{CELL})) {
+                    log_warn "We cannot determine which field to use as the VCF CELL (cellular phone) field";
+                }
             }
         } # if i==1 (header row)
 
@@ -1177,6 +1225,19 @@ sub csvutil {
                     $cells[$j] = $row->[$field_idxs{$coord_col}];
                 }
             }
+        } elsif ($action eq 'convert-to-vcf') {
+            unless ($i == 1) {
+                my $vcard = join(
+                    "",
+                    "BEGIN:VCARD\n",
+                    "VERSION:3.0\n",
+                    "N:", $row->[$field_idxs{ $fields_for{N} }], "\n",
+                    (defined $fields_for{EMAIL} ? ("EMAIL;type=INTERNET;type=WORK;pref:", $row->[$field_idxs{ $fields_for{EMAIL} }], "\n") : ()),
+                    (defined $fields_for{CELL} ? ("TEL;type=CELL:", $row->[$field_idxs{ $fields_for{CELL} }], "\n") : ()),
+                    "END:VCARD\n\n",
+                );
+                push @$rows, $vcard;
+            }
         } else {
             return [400, "Unknown action '$action'"];
         }
@@ -1205,8 +1266,16 @@ sub csvutil {
         return [200, "OK", $hash];
     }
 
+    if ($action eq 'convert-to-hash') {
+        return [200, "OK", join("", @$rows)];
+    }
+
     if ($action eq 'convert-to-td') {
         return [200, "OK", $rows, {'table.fields'=>$fields}];
+    }
+
+    if ($action eq 'convert-to-vcf') {
+        return [200, "OK", join("", @$rows)];
     }
 
     if ($action eq 'sum') {
@@ -2083,6 +2152,28 @@ sub csv2td {
     my %args = @_;
 
     csvutil(%args, action=>'convert-to-td');
+}
+
+$SPEC{csv2vcf} = {
+    v => 1.1,
+    summary => 'Create a VCF from selected fields of the CSV',
+    description => <<'_',
+
+You can set which CSV fields to use for name, cell phone, and email. If unset,
+will guess from the field name. If that also fails, will warn/bail out.
+
+_
+    args => {
+        %args_common,
+        %arg_filename_0,
+        %argspecsopt_vcf,
+    },
+    description => '' . $common_desc,
+};
+sub csv2vcf {
+    my %args = @_;
+
+    csvutil(%args, action=>'convert-to-vcf');
 }
 
 $SPEC{csv_concat} = {
