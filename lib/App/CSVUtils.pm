@@ -1776,6 +1776,7 @@ sub csv_sort_rows {
     my %csvutil_args = (
         hash_subset(\%args, \%args_common, \%args_csv_output),
         filename => $args{filename},
+        output_filename => $args{output_filename},
         action => 'sort-rows',
         sort_reverse => $args{reverse},
         sort_ci => $args{ci},
