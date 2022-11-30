@@ -625,8 +625,7 @@ our %argspecsopt_vcf = (
 our %arg_eval_1 = (
     eval => {
         summary => 'Perl code to do munging',
-        #schema => ['any*', of=>['str*', 'code*']],
-        schema => 'str*', # temporary fix, if set to 'any', perisga-argv's per_arg_json will attempt to parse using json and sometimes will wrongly succeed
+        schema => ['any*', of=>['str*', 'code*']],
         cmdline_aliases => { e=>{} },
         req => 1,
         pos => 1,
@@ -636,8 +635,7 @@ our %arg_eval_1 = (
 our %arg_eval_2 = (
     eval => {
         summary => 'Perl code to do munging',
-        #schema => ['any*', of=>['str*', 'code*']],
-        schema => 'str*', # temporary fix, if set to 'any', perisga-argv's per_arg_json will attempt to parse using json and sometimes will wrongly succeed
+        schema => ['any*', of=>['str*', 'code*']],
         cmdline_aliases => { e=>{} },
         req => 1,
         pos => 2,
@@ -747,8 +745,7 @@ our %arg_with_data_rows = (
 our %arg_eval = (
     eval => {
         summary => 'Perl code',
-        #schema => ['any*', of=>['str*', 'code*']],
-        schema => 'str*', # temporary fix, if set to 'any', perisga-argv's per_arg_json will attempt to parse using json and sometimes will wrongly succeed
+        schema => ['any*', of=>['str*', 'code*']],
         cmdline_aliases => { e=>{} },
         req => 1,
     },
@@ -757,8 +754,7 @@ our %arg_eval = (
 our %argopt_eval = (
     eval => {
         summary => 'Perl code to do munging',
-        #schema => ['any*', of=>['str*', 'code*']],
-        schema => 'str*', # temporary fix, if set to 'any', perisga-argv's per_arg_json will attempt to parse using json and sometimes will wrongly succeed
+        schema => ['any*', of=>['str*', 'code*']],
         cmdline_aliases => { e=>{} },
     },
 );
