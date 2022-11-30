@@ -2475,7 +2475,7 @@ _
         %args_common,
         %args_csv_output,
         %arg_filenames_0,
-        %argspecopt_output_filename_1,
+        %argspecopt_output_filename,
         %argspecopt_overwrite,
         op => {
             summary => 'Set operation to perform',
