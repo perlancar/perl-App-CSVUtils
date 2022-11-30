@@ -1,3 +1,12 @@
+0.047   2022-12-01  Released-By: PERLANCAR; Urgency: medium; Unreleased: yes
+
+        - [bugfix] [cli csv-sort, csv-sort-rows] output_filename was not
+          passed to csvutil() (RT#145267).
+
+        - [bugfix] [cli csv-setop] Fix argument parsing (output_filename
+          clashes with filename) (RT#145275).
+
+
 0.046   2022-10-25  Released-By: PERLANCAR; Urgency: medium
 
         - Add utility: csv2vcf.
