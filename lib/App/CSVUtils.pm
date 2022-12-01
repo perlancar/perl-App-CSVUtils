@@ -1499,8 +1499,8 @@ position of each new field. But you can later reorder fields using
 <prog:csv-sort-fields>.
 
 If supplied, your Perl code (`-e`) will be called for each row (excluding the
-header row) and should return the value for (either as a list or as an
-arrayref). `$main::row` is available and contains the current row.
+header row) and should return the value for the new fields (either as a list or
+as an arrayref). `$main::row` is available and contains the current row.
 `$main::rownum` contains the row number (2 means the first data row). `$csv` is
 the <pm:Text::CSV_XS> object. `$main::field_idxs` is also available for
 additional information.
@@ -1536,6 +1536,32 @@ _
     args_rels => {
         choose_one => [qw/after before at/],
     },
+    examples => [
+        {
+            summary => 'Add a few new blank fields at the end',
+            argv => ['file.csv', 'field4', 'field6', 'field5'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+        {
+            summary => 'Add a few new blank fields after a certain field',
+            argv => ['file.csv', 'field4', 'field6', 'field5', '--after', 'field2'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+        {
+            summary => 'Add a new field and set its value',
+            argv => ['file.csv', 'after_tax', '-He', '$_->{subtotal} * 1.11'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+        {
+            summary => 'Add a couple new fields and set their values',
+            argv => ['file.csv', 'tax_rate', 'after_tax', '-He', '(0.11, $_->{subtotal} * 1.11)'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+    ],
     tags => ['outputs_csv'],
 };
 sub csv_add_fields {
