@@ -2397,7 +2397,7 @@ sub csv_csv {
 
 $SPEC{csv_setop} = {
     v => 1.1,
-    summary => 'Set operation against several CSV files',
+    summary => 'Set operation (union/unique concatenation of rows, intersection/common rows, difference of rows) against several CSV files',
     description => <<'_' . $common_desc,
 
 Example input:
