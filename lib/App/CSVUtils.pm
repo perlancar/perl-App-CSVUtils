@@ -1089,6 +1089,7 @@ sub csvutil {
                     }
                 }
                 {
+                    local $_ = $args{hash} ? _array2hash($row, $fields) : $row;
                     local $main::row = $row;
                     local $main::rownum = $i;
                     local $main::csv = $csv_parser;
@@ -1500,10 +1501,11 @@ position of each new field. But you can later reorder fields using
 
 If supplied, your Perl code (`-e`) will be called for each row (excluding the
 header row) and should return the value for the new fields (either as a list or
-as an arrayref). `$main::row` is available and contains the current row.
-`$main::rownum` contains the row number (2 means the first data row). `$csv` is
-the <pm:Text::CSV_XS> object. `$main::field_idxs` is also available for
-additional information.
+as an arrayref). `$_` contains the current row (as arrayref, or if you specify
+`-H`, as a hashref). `$main::row` is available and contains the current row
+(always as an arrayref). `$main::rownum` contains the row number (2 means the
+first data row). `$csv` is the <pm:Text::CSV_XS> object. `$main::field_idxs` is
+also available for additional information.
 
 If `-e` is not supplied, the new fields will be getting the default value of
 empty string (`''`).
@@ -1517,6 +1519,7 @@ _
         %argspecopt_overwrite,
         %argspec_fields_1plus_nocomp,
         %argspecopt_eval,
+        %arg_hash,
         after => {
             summary => 'Put the new field after specified field',
             schema => 'str*',
