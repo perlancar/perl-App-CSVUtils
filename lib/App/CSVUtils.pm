@@ -1495,7 +1495,7 @@ The new fields by default will be added at the end, unless you specify one of
 `--after` (to put after a certain field), `--before` (to put before a certain
 field), or `--at` (to put at specific position, 1 means as the first field). The
 new fields will be clustered together though, you currently cannot set the
-position of the each new field. But you can later reorder fields using
+position of each new field. But you can later reorder fields using
 <prog:csv-sort-fields>.
 
 If supplied, your Perl code (`-e`) will be called for each row (excluding the
