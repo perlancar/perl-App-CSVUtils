@@ -1551,13 +1551,13 @@ _
         },
         {
             summary => 'Add a new field and set its value',
-            argv => ['file.csv', 'after_tax', '-He', '$_->{subtotal} * 1.11'],
+            argv => ['file.csv', 'after_tax', '-e', '$main::row->[5] * 1.11'],
             test => 0,
             'x.doc.show_result' => 0,
         },
         {
             summary => 'Add a couple new fields and set their values',
-            argv => ['file.csv', 'tax_rate', 'after_tax', '-He', '(0.11, $_->{subtotal} * 1.11)'],
+            argv => ['file.csv', 'tax_rate', 'after_tax', '-e', '(0.11, $main::row_->[5] * 1.11)'],
             test => 0,
             'x.doc.show_result' => 0,
         },
