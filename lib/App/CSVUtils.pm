@@ -1557,7 +1557,7 @@ _
         },
         {
             summary => 'Add a couple new fields and set their values',
-            argv => ['file.csv', 'tax_rate', 'after_tax', '-e', '(0.11, $main::row_->[5] * 1.11)'],
+            argv => ['file.csv', 'tax_rate', 'after_tax', '-e', '(0.11, $main::row->[5] * 1.11)'],
             test => 0,
             'x.doc.show_result' => 0,
         },
