@@ -437,7 +437,7 @@ _
     },
 );
 
-our %arg_filenames_0 = (
+our %argspec_filenames_0plus = (
     filenames => {
         'x.name.is_plural' => 1,
         summary => 'Input CSV files or URLs',
@@ -529,6 +529,7 @@ our %arg_field_1 = (
     },
 );
 
+# without completion, for adding new field
 our %arg_field_1_nocomp = (
     field => {
         summary => 'Field name',
@@ -536,6 +537,21 @@ our %arg_field_1_nocomp = (
         cmdline_aliases => { F=>{} },
         req => 1,
         pos => 1,
+    },
+);
+
+# without completion, for adding new fields
+our %argspec_fields_1plus_nocomp = (
+    fields => {
+        'x.name.is_plural' => 1,
+        'x.name.singular' => 'field',
+        summary => 'Field names',
+        'summary.alt.plurality.singular' => 'Field name',
+        schema => ['array*', of=>['str*', min_len=>1], min_len=>1],
+        cmdline_aliases => { F=>{} },
+        req => 1,
+        pos => 1,
+        slurpy => 1,
     },
 );
 
@@ -632,12 +648,29 @@ our %arg_eval_1 = (
     },
 );
 
-our %arg_eval_2 = (
+our %argspec_eval_2 = (
     eval => {
         summary => 'Perl code to do munging',
         schema => ['any*', of=>['str*', 'code*']],
         cmdline_aliases => { e=>{} },
         req => 1,
+        pos => 2,
+    },
+);
+
+our %argspecopt_eval = (
+    eval => {
+        summary => 'Perl code to do munging',
+        schema => ['any*', of=>['str*', 'code*']],
+        cmdline_aliases => { e=>{} },
+    },
+);
+
+our %argspecopt_eval_2 = (
+    eval => {
+        summary => 'Perl code to do munging',
+        schema => ['any*', of=>['str*', 'code*']],
+        cmdline_aliases => { e=>{} },
         pos => 2,
     },
 );
@@ -775,7 +808,7 @@ $SPEC{csvutil} = {
         %args_common,
         action => {
             schema => ['str*', in=>[
-                'add-field',
+                'add-fields',
                 'list-field-names',
                 'info',
                 'delete-fields',
@@ -1008,7 +1041,7 @@ sub csvutil {
                 }
             }
             $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
-        } elsif ($action eq 'add-field') {
+        } elsif ($action eq 'add-fields') {
             if ($i == 1) {
                 if (defined $args{_at}) {
                     $field_idx = $args{_at}-1;
@@ -1019,7 +1052,7 @@ sub csvutil {
                             last;
                         }
                     }
-                    return [400, "Field '$args{before}' not found"]
+                    return [400, "Field '$args{before}' (to add new fields before) not found"]
                         unless defined $field_idx;
                 } elsif (defined $args{after}) {
                     for (0..$#{$row}) {
@@ -1028,12 +1061,12 @@ sub csvutil {
                             last;
                         }
                     }
-                    return [400, "Field '$args{after}' not found"]
+                    return [400, "Field '$args{after}' (to add new fields after) not found"]
                         unless defined $field_idx;
                 } else {
                     $field_idx = @$row;
                 }
-                splice @$row, $field_idx, 0, $args{field};
+                splice @$row, $field_idx, 0, @{ $args{fields} };
                 for (keys %field_idxs) {
                     if ($field_idxs{$_} >= $field_idx) {
                         $field_idxs{$_}++;
@@ -1042,24 +1075,31 @@ sub csvutil {
                 $fields = $row;
             } else {
                 unless ($code) {
-                    $code = _compile($args{eval});
-                    if (!defined($args{field}) || !length($args{field})) {
-                        return [400, "Please specify field (-F)"];
+                    $code = _compile($args{eval} // 'return');
+                    if (!defined($args{fields}) || !@{ $args{fields} }) {
+                        return [400, "Please specify one or more fields (-F)"];
                     }
-                    if (defined $field_idxs{$args{field}}) {
-                        return [412, "Field '$args{field}' already exists"];
+                    for (@{ $args{fields} }) {
+                        unless (length $_) {
+                            return [400, "New field name cannot be empty"];
+                        }
+                        if (defined $field_idxs{$_}) {
+                            return [412, "Field '$_' already exists"];
+                        }
                     }
                 }
                 {
-                    local $_;
                     local $main::row = $row;
                     local $main::rownum = $i;
                     local $main::csv = $csv_parser;
                     local $main::field_idxs = \%field_idxs;
-                    eval { $_ = $code->() };
-                    die "Error while adding field '$args{field}' for row #$i: $@\n"
+                    my @vals;
+                    eval { @vals = $code->() };
+                    die "Error while adding field(s) '".join(",", @{$args{fields}})."' for row #$i: $@\n"
                         if $@;
-                    splice @$row, $field_idx, 0, $_;
+                    if (ref $vals[0] eq 'ARRAY') { @vals = @{ $vals[0] } }
+                    splice @$row, $field_idx, 0,
+                        (map { $_ // '' } @vals[0 .. $#{$args{fields}} ]);
                 }
             }
             $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
@@ -1446,20 +1486,27 @@ Encoding: The utilities in this module/distribution accept and emit UTF8 text.
 
 _
 
-$SPEC{csv_add_field} = {
+$SPEC{csv_add_fields} = {
     v => 1.1,
-    summary => 'Add a field to CSV file',
+    summary => 'Add one or more fields to CSV file',
     description => <<'_' . $common_desc,
 
-Your Perl code (-e) will be called for each row (excluding the header row) and
-should return the value for the new field. `$main::row` is available and
-contains the current row. `$main::rownum` contains the row number (2 means the
-first data row). `$csv` is the <pm:Text::CSV_XS> object. `$main::field_idxs` is
-also available for additional information.
-
-Field by default will be added as the last field, unless you specify one of
+The new fields by default will be added at the end, unless you specify one of
 `--after` (to put after a certain field), `--before` (to put before a certain
-field), or `--at` (to put at specific position, 1 means as the first field).
+field), or `--at` (to put at specific position, 1 means as the first field). The
+new fields will be clustered together though, you currently cannot set the
+position of the each new field. But you can later reorder fields using
+<prog:csv-sort-fields>.
+
+If supplied, your Perl code (`-e`) will be called for each row (excluding the
+header row) and should return the value for (either as a list or as an
+arrayref). `$main::row` is available and contains the current row.
+`$main::rownum` contains the row number (2 means the first data row). `$csv` is
+the <pm:Text::CSV_XS> object. `$main::field_idxs` is also available for
+additional information.
+
+If `-e` is not supplied, the new fields will be getting the default value of
+empty string (`''`).
 
 _
     args => {
@@ -1468,8 +1515,8 @@ _
         %arg_filename_0,
         %argspecopt_output_filename,
         %argspecopt_overwrite,
-        %arg_field_1_nocomp,
-        %arg_eval_2,
+        %argspec_fields_1plus_nocomp,
+        %argspecopt_eval,
         after => {
             summary => 'Put the new field after specified field',
             schema => 'str*',
@@ -1491,10 +1538,10 @@ _
     },
     tags => ['outputs_csv'],
 };
-sub csv_add_field {
+sub csv_add_fields {
     my %args = @_;
     csvutil(
-        %args, action=>'add-field',
+        %args, action=>'add-fields',
         _after  => $args{after},
         _before => $args{before},
         _at     => $args{at},
@@ -1569,7 +1616,7 @@ _
         %argspecopt_output_filename,
         %argspecopt_overwrite,
         %arg_field_1,
-        %arg_eval_2,
+        %argspec_eval_2,
     },
     tags => ['outputs_csv'],
 };
@@ -1597,7 +1644,7 @@ The modified `$_` will be rendered back to CSV row.
 You can also munge a single field using <prog:csv-munge-field>.
 
 You cannot add new fields using this utility. To do so, use
-<prog:csv-add-field>.
+<prog:csv-add-fields>.
 
 _
     args => {
@@ -2217,7 +2264,7 @@ _
     args => {
         %args_common,
         %args_csv_output,
-        %arg_filenames_0,
+        %argspec_filenames_0plus,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
     },
@@ -2475,7 +2522,7 @@ _
     args => {
         %args_common,
         %args_csv_output,
-        %arg_filenames_0,
+        %argspec_filenames_0plus,
         %argspecopt_output_filename,
         %argspecopt_overwrite,
         op => {
