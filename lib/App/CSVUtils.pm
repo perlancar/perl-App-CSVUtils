@@ -1765,7 +1765,7 @@ This utility sorts the rows in the CSV. Example input CSV:
     Ben,30
     Jerry,30
 
-Example output CSV (using `--by-fields +age` which means by age numerically and
+Example output CSV (using `--by-field +age` which means by age numerically and
 ascending):
 
     name,age
@@ -1774,7 +1774,7 @@ ascending):
     Ben,30
     Jerry,30
 
-Example output CSV (using `--by-fields -age`, which means by age numerically and
+Example output CSV (using `--by-field -age`, which means by age numerically and
 descending):
 
     name,age
@@ -1783,7 +1783,7 @@ descending):
     Andy,20
     Dennis,15
 
-Example output CSV (using `--by-fields name`, which means by name ascibetically
+Example output CSV (using `--by-field name`, which means by name ascibetically
 and ascending):
 
     name,age
@@ -1792,7 +1792,7 @@ and ascending):
     Dennis,15
     Jerry,30
 
-Example output CSV (using `--by-fields ~name`, which means by name ascibetically
+Example output CSV (using `--by-field ~name`, which means by name ascibetically
 and descending):
 
     name,age
@@ -1801,7 +1801,7 @@ and descending):
     Ben,30
     Andy,20
 
-Example output CSV (using `--by-fields +age,~name`):
+Example output CSV (using `--by-field +age --by-field ~name`):
 
     name,age
     Dennis,15
@@ -1811,10 +1811,10 @@ Example output CSV (using `--by-fields +age,~name`):
 
 You can also reverse the sort order (`-r`) or sort case-insensitively (`-i`).
 
-For more flexibility, instead of `--by-fields` you can use `--by-code`:
+For more flexibility, instead of `--by-field` you can use `--by-code`:
 
 Example output `--by-code '$a->[1] <=> $b->[1] || $b->[0] cmp $a->[0]'` (which
-is equivalent to `--by-fields +age,~name`):
+is equivalent to `--by-field +age --by-field ~name`):
 
     name,age
     Dennis,15
