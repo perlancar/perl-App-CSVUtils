@@ -1933,6 +1933,33 @@ sub csv_sort_rows {
     csvutil(%csvutil_args);
 }
 
+$SPEC{csv_shuf_rows} = {
+    v => 1.1,
+    summary => 'Shuffle CSV rows',
+    description => <<'_' . $common_desc,
+
+This is basically like Unix command `shuf` except it does not shuffle the header
+row.
+
+_
+    args => {
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
+    },
+    tags => ['outputs_csv'],
+};
+sub csv_shuf_rows {
+    my %args = @_;
+    csvutil(
+        %args,
+        action => 'sort-rows',
+        sort_by_code => sub { int(rand 3)-1 }, # return -1,0,1 randomly
+    );
+}
+
 $SPEC{csv_sort_fields} = {
     v => 1.1,
     summary => 'Sort CSV fields',
