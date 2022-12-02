@@ -14,6 +14,8 @@ use Hash::Subset qw(hash_subset);
 
 our %SPEC;
 
+our $sch_req_str_or_code = ['any*', of=>['str*', 'code*']];
+
 sub _read_file {
     my $filename = shift;
 
@@ -644,10 +646,27 @@ our %argspecsopt_vcf = (
     },
 );
 
-our %arg_eval_1 = (
+our %argspec_eval = (
     eval => {
-        summary => 'Perl code to do munging',
-        schema => ['any*', of=>['str*', 'code*']],
+        summary => 'Perl code',
+        schema => $sch_req_str_or_code,
+        cmdline_aliases => { e=>{} },
+        req => 1,
+    },
+);
+
+our %argspecopt_eval = (
+    eval => {
+        summary => 'Perl code',
+        schema => $sch_req_str_or_code,
+        cmdline_aliases => { e=>{} },
+    },
+);
+
+our %argspec_eval_1 = (
+    eval => {
+        summary => 'Perl code',
+        schema => $sch_req_str_or_code,
         cmdline_aliases => { e=>{} },
         req => 1,
         pos => 1,
@@ -656,26 +675,18 @@ our %arg_eval_1 = (
 
 our %argspec_eval_2 = (
     eval => {
-        summary => 'Perl code to do munging',
-        schema => ['any*', of=>['str*', 'code*']],
+        summary => 'Perl code',
+        schema => $sch_req_str_or_code,
         cmdline_aliases => { e=>{} },
         req => 1,
         pos => 2,
     },
 );
 
-our %argspecopt_eval = (
-    eval => {
-        summary => 'Perl code to do munging',
-        schema => ['any*', of=>['str*', 'code*']],
-        cmdline_aliases => { e=>{} },
-    },
-);
-
 our %argspecopt_eval_2 = (
     eval => {
-        summary => 'Perl code to do munging',
-        schema => ['any*', of=>['str*', 'code*']],
+        summary => 'Perl code',
+        schema => $sch_req_str_or_code,
         cmdline_aliases => { e=>{} },
         pos => 2,
     },
@@ -718,7 +729,7 @@ sort against.
 The code will receive the row as the argument.
 
 _
-        schema => ['any*', of=>['str*', 'code*']],
+        schema => $sch_req_str_or_code,
         cmdline_aliases => {k=>{}},
     },
     by_sortsub => {
@@ -738,7 +749,7 @@ _
     },
     by_code => {
         summary => 'Sort using Perl code',
-        schema => ['any*', of=>['str*', 'code*']],
+        schema => $sch_req_str_or_code,
         description => <<'_',
 
 `$a` and `$b` (or the first and second argument) will contain the two rows to be
@@ -782,23 +793,6 @@ our %arg_with_data_rows = (
     with_data_rows => {
         summary => 'Whether to also output data rows',
         schema => 'bool',
-    },
-);
-
-our %arg_eval = (
-    eval => {
-        summary => 'Perl code',
-        schema => ['any*', of=>['str*', 'code*']],
-        cmdline_aliases => { e=>{} },
-        req => 1,
-    },
-);
-
-our %argopt_eval = (
-    eval => {
-        summary => 'Perl code to do munging',
-        schema => ['any*', of=>['str*', 'code*']],
-        cmdline_aliases => { e=>{} },
     },
 );
 
@@ -855,7 +849,7 @@ $SPEC{csvutil} = {
         %arg_filename_1,
         %argspecopt_output_filename_2,
         %argspecopt_overwrite,
-        %argopt_eval,
+        %argspecopt_eval,
         %argopt_field,
         %argspecsopt_field_selection,
         %argspecsopt_vcf,
@@ -1692,7 +1686,7 @@ _
         %arg_filename_0,
         %argspecopt_output_filename,
         %argspecopt_overwrite,
-        %arg_eval_1,
+        %argspec_eval_1,
         %arg_hash,
     },
     tags => ['outputs_csv'],
@@ -2072,7 +2066,7 @@ _
         %arg_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
-        %arg_eval,
+        %argspec_eval,
         %arg_hash,
     },
     examples => [
@@ -2122,7 +2116,7 @@ _
         %arg_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
-        %arg_eval,
+        %argspec_eval,
         %arg_hash,
         add_newline => {
             summary => 'Whether to make sure each string ends with newline',
@@ -2159,7 +2153,7 @@ _
     args => {
         %args_common,
         %arg_filename_0,
-        %arg_eval,
+        %argspec_eval,
         %arg_hash,
     },
     examples => [
