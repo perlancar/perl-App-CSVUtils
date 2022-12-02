@@ -286,7 +286,7 @@ sub _select_fields {
     [100, "Continue", [\@selected_fields, \@selected_field_idxs_array]];
 }
 
-our %args_common = (
+our %argspecs_common = (
     header => {
         summary => 'Whether input CSV has a header row',
         schema => 'bool*',
@@ -347,7 +347,7 @@ _
     },
 );
 
-our %args_csv_output = (
+our %argspecs_csv_output = (
     output_header => {
         summary => 'Whether output CSV should have a header row',
         schema => 'bool*',
@@ -415,7 +415,7 @@ _
     },
 );
 
-our %arg_filename_1 = (
+our %argspec_filename_1 = (
     filename => {
         summary => 'Input CSV file or URL',
         description => <<'_',
@@ -430,7 +430,7 @@ _
     },
 );
 
-our %arg_filename_0 = (
+our %argspec_filename_0 = (
     filename => {
         summary => 'Input CSV file or URL',
         description => <<'_',
@@ -518,7 +518,7 @@ _
     },
 );
 
-our %argopt_field = (
+our %argspecopt_field = (
     field => {
         summary => 'Field name',
         schema => 'str*',
@@ -526,7 +526,7 @@ our %argopt_field = (
     },
 );
 
-our %arg_field_1 = (
+our %argspec_field_1 = (
     field => {
         summary => 'Field name',
         schema => 'str*',
@@ -538,7 +538,7 @@ our %arg_field_1 = (
 );
 
 # without completion, for adding new field
-our %arg_field_1_nocomp = (
+our %argspec_field_1_nocomp = (
     field => {
         summary => 'Field name',
         schema => 'str*',
@@ -692,7 +692,7 @@ our %argspecopt_eval_2 = (
     },
 );
 
-our %args_sort_rows_short = (
+our %argspecs_sort_rows_short = (
     reverse => {
         schema => ['bool', is=>1],
         cmdline_aliases => {r=>{}},
@@ -760,7 +760,7 @@ _
     },
 );
 
-our %args_sort_fields = (
+our %argspecs_sort_fields = (
     sort_reverse => {
         schema => ['bool', is=>1],
     },
@@ -773,7 +773,7 @@ our %args_sort_fields = (
     },
 );
 
-our %args_sort_fields_short = (
+our %argspecs_sort_fields_short = (
     reverse => {
         schema => ['bool', is=>1],
         cmdline_aliases => {r=>{}},
@@ -789,14 +789,14 @@ our %args_sort_fields_short = (
     },
 );
 
-our %arg_with_data_rows = (
+our %argspec_with_data_rows = (
     with_data_rows => {
         summary => 'Whether to also output data rows',
         schema => 'bool',
     },
 );
 
-our %arg_hash = (
+our %argspec_hash = (
     hash => {
         summary => 'Provide row in $_ as hashref instead of arrayref',
         schema => ['bool*', is=>1],
@@ -809,7 +809,7 @@ $SPEC{csvutil} = {
     summary => 'Perform action on a CSV file',
     'x.no_index' => 1,
     args => {
-        %args_common,
+        %argspecs_common,
         action => {
             schema => ['str*', in=>[
                 'add-fields',
@@ -846,11 +846,11 @@ $SPEC{csvutil} = {
             pos => 0,
             cmdline_aliases => {a=>{}},
         },
-        %arg_filename_1,
+        %argspec_filename_1,
         %argspecopt_output_filename_2,
         %argspecopt_overwrite,
         %argspecopt_eval,
-        %argopt_field,
+        %argspecopt_field,
         %argspecsopt_field_selection,
         %argspecsopt_vcf,
     },
@@ -1516,14 +1516,14 @@ empty string (`''`).
 
 _
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         %argspecopt_output_filename,
         %argspecopt_overwrite,
         %argspec_fields_1plus_nocomp,
         %argspecopt_eval,
-        %arg_hash,
+        %argspec_hash,
         after => {
             summary => 'Put the new field after specified field',
             schema => 'str*',
@@ -1585,8 +1585,8 @@ $SPEC{csv_list_field_names} = {
     v => 1.1,
     summary => 'List field names of CSV file',
     args => {
-        %args_common,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspec_filename_0,
     },
     description => '' . $common_desc,
 };
@@ -1599,8 +1599,8 @@ $SPEC{csv_info} = {
     v => 1.1,
     summary => 'Show information about CSV file (number of rows, fields, etc)',
     args => {
-        %args_common,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspec_filename_0,
     },
     description => '' . $common_desc,
 };
@@ -1613,9 +1613,9 @@ $SPEC{csv_delete_fields} = {
     v => 1.1,
     summary => 'Delete one or more fields from CSV file',
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         %argspecsopt_field_selection,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
@@ -1643,12 +1643,12 @@ To munge multiple fields, use <prog:csv-munge-row>.
 
 _
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         %argspecopt_output_filename,
         %argspecopt_overwrite,
-        %arg_field_1,
+        %argspec_field_1,
         %argspec_eval_2,
     },
     tags => ['outputs_csv'],
@@ -1681,13 +1681,13 @@ You cannot add new fields using this utility. To do so, use
 
 _
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         %argspecopt_output_filename,
         %argspecopt_overwrite,
         %argspec_eval_1,
-        %arg_hash,
+        %argspec_hash,
     },
     tags => ['outputs_csv'],
 };
@@ -1709,9 +1709,9 @@ newline (`--with-nothing`), replace with encoded representation
 
 _
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         %argspecopt_output_filename,
         %argspecopt_overwrite,
         %argspecopt_output_filename_1,
@@ -1837,13 +1837,13 @@ descending length of name):
 
 _
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
-        %args_sort_rows_short,
-        %arg_hash,
+        %argspecs_sort_rows_short,
+        %argspec_hash,
     },
     args_rels => {
         req_one => ['by_fields', 'by_code', 'by_sortsub'],
@@ -1854,7 +1854,7 @@ sub csv_sort_rows {
     my %args = @_;
 
     my %csvutil_args = (
-        hash_subset(\%args, \%args_common, \%args_csv_output),
+        hash_subset(\%args, \%argspecs_common, \%argspecs_csv_output),
         filename => $args{filename},
         output_filename => $args{output_filename},
         action => 'sort-rows',
@@ -1893,12 +1893,12 @@ provides the ordering, e.g. `--example a,c,b`.
 
 _
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
-        %args_sort_fields_short,
+        %argspecs_sort_fields_short,
     },
     tags => ['outputs_csv'],
 };
@@ -1906,7 +1906,7 @@ sub csv_sort_fields {
     my %args = @_;
 
     my %csvutil_args = (
-        hash_subset(\%args, \%args_common, \%args_csv_output),
+        hash_subset(\%args, \%argspecs_common, \%argspecs_csv_output),
         filename => $args{filename},
         action => 'sort-fields',
         (sort_example => $args{example}) x !!defined($args{example}),
@@ -1921,12 +1921,12 @@ $SPEC{csv_sum} = {
     v => 1.1,
     summary => 'Output a summary row which are arithmetic sums of data rows',
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
-        %arg_with_data_rows,
+        %argspec_with_data_rows,
     },
     description => '' . $common_desc,
     tags => ['outputs_csv'],
@@ -1941,12 +1941,12 @@ $SPEC{csv_avg} = {
     v => 1.1,
     summary => 'Output a summary row which are arithmetic averages of data rows',
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
-        %arg_with_data_rows,
+        %argspec_with_data_rows,
     },
     description => '' . $common_desc,
     tags => ['outputs_csv'],
@@ -1961,9 +1961,9 @@ $SPEC{csv_freqtable} = {
     v => 1.1,
     summary => 'Output a frequency table of values of a specified field in CSV',
     args => {
-        %args_common,
-        %arg_filename_0,
-        %arg_field_1,
+        %argspecs_common,
+        %argspec_filename_0,
+        %argspec_field_1,
     },
     description => '' . $common_desc,
 };
@@ -1977,9 +1977,9 @@ $SPEC{csv_select_row} = {
     v => 1.1,
     summary => 'Only output specified row(s)',
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
         row_spec => {
@@ -2019,9 +2019,9 @@ Interface is loosely based on the `split` Unix utility.
 
 _
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         lines => {
             schema => ['uint*', min=>1],
             default => 1000,
@@ -2061,13 +2061,13 @@ where Perl expression returns true will be included in the result.
 
 _
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
         %argspec_eval,
-        %arg_hash,
+        %argspec_hash,
     },
     examples => [
         {
@@ -2112,12 +2112,12 @@ data. This utility will then print out the resulting string.
 
 _
     args => {
-        %args_common,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspec_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
         %argspec_eval,
-        %arg_hash,
+        %argspec_hash,
         add_newline => {
             summary => 'Whether to make sure each string ends with newline',
             schema => 'bool*',
@@ -2151,10 +2151,10 @@ This is like csv_map, except result of code is not printed.
 
 _
     args => {
-        %args_common,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspec_filename_0,
         %argspec_eval,
-        %arg_hash,
+        %argspec_hash,
     },
     examples => [
         {
@@ -2177,8 +2177,8 @@ $SPEC{csv_convert_to_hash} = {
     v => 1.1,
     summary => 'Return a hash of field names as keys and first row as values',
     args => {
-        %args_common,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspec_filename_0,
         row_number => {
             schema => ['int*', min=>2],
             default => 2,
@@ -2199,9 +2199,9 @@ $SPEC{csv_transpose} = {
     v => 1.1,
     summary => 'Transpose a CSV',
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
     },
@@ -2224,8 +2224,8 @@ to munge table data.
 
 _
     args => {
-        %args_common,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspec_filename_0,
     },
     description => '' . $common_desc,
 };
@@ -2245,8 +2245,8 @@ will guess from the field name. If that also fails, will warn/bail out.
 
 _
     args => {
-        %args_common,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspec_filename_0,
         %argspecsopt_vcf,
     },
     description => '' . $common_desc,
@@ -2295,8 +2295,8 @@ will result in:
 
 _
     args => {
-        %args_common,
-        %args_csv_output,
+        %argspecs_common,
+        %argspecs_csv_output,
         %argspec_filenames_0plus,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
@@ -2362,9 +2362,9 @@ $SPEC{csv_select_fields} = {
     v => 1.1,
     summary => 'Only output selected field(s)',
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
         %argspecsopt_field_selection,
@@ -2381,8 +2381,8 @@ $SPEC{csv_get_cells} = {
     v => 1.1,
     summary => 'Get one or more cells from CSV',
     args => {
-        %args_common,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspec_filename_0,
         coordinates => {
             'x.name.is_plural' => 1,
             'x.name.singular' => 'coordinate',
@@ -2410,8 +2410,8 @@ $SPEC{csv_fill_template} = {
     v => 1.1,
     summary => 'Substitute template values in a text file with fields from CSV rows',
     args => {
-        %args_common,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspec_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
         template_filename => {
@@ -2441,9 +2441,9 @@ $SPEC{csv_dump} = {
     v => 1.1,
     summary => 'Dump CSV as data structure (array of array/hash)',
     args => {
-        %args_common,
-        %arg_filename_0,
-        %arg_hash,
+        %argspecs_common,
+        %argspec_filename_0,
+        %argspec_hash,
     },
     description => '' . $common_desc,
 };
@@ -2462,12 +2462,12 @@ character, for one.
 
 _
     args => {
-        %args_common,
-        %args_csv_output,
-        %arg_filename_0,
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
-        %arg_hash,
+        %argspec_hash,
     },
 };
 sub csv_csv {
@@ -2553,8 +2553,8 @@ Finally you can print out certain fields using `--result-fields`.
 
 _
     args => {
-        %args_common,
-        %args_csv_output,
+        %argspecs_common,
+        %argspecs_csv_output,
         %argspec_filenames_0plus,
         %argspecopt_output_filename,
         %argspecopt_overwrite,
@@ -2844,8 +2844,8 @@ client_email:email,client_phone:phone`. The result will be:
 
 _
     args => {
-        %args_common,
-        %args_csv_output,
+        %argspecs_common,
+        %argspecs_csv_output,
         %argspecopt_output_filename,
         %argspecopt_overwrite,
         target => {
