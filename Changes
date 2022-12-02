@@ -4,6 +4,17 @@
 
         - Rename csv-select-row to csv-select-rows for consistency.
 
+        - [cli csv-sort-fields] Rename by_example to by_examples argument
+          and make it an array, on CLI specify one example at a time with
+          --by-example, to allow header name that contains comma.
+
+        [Enhancements]
+
+        - Add utilities csv-pick-rows, csv-pick-fields, csv-shuf-rows,
+          csv-shuf-fields.
+
+        - [cli csv-sort-fields] Add options --by-code, --by-sortsub.
+
 
 0.050   2022-12-02  Released-By: PERLANCAR; Urgency: low
 
