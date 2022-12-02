@@ -1956,6 +1956,7 @@ sub csv_shuf_rows {
     csvutil(
         %args,
         action => 'sort-rows',
+        # TODO: this feels less shuffled
         sort_by_code => sub { int(rand 3)-1 }, # return -1,0,1 randomly
     );
 }
@@ -2005,9 +2006,32 @@ sub csv_sort_fields {
         (sort_by_code => $args{by_code}) x !!defined($args{by_code}),
         (sort_by_sortsub => $args{by_sortsub}) x !!defined($args{by_sortsub}),
     );
-
-    use DD; dd \%csvutil_args;
     csvutil(%csvutil_args);
+}
+
+$SPEC{csv_shuf_fields} = {
+    v => 1.1,
+    summary => 'Shuffle CSV fields',
+    description => <<'_' . $common_desc,
+
+_
+    args => {
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
+    },
+    tags => ['outputs_csv'],
+};
+sub csv_shuf_fields {
+    my %args = @_;
+    csvutil(
+        %args,
+        action => 'sort-fields',
+        # TODO: this feels less shuffled
+        sort_by_code => sub { int(rand 3)-1 }, # return -1,0,1 randomly
+    );
 }
 
 $SPEC{csv_sum} = {
