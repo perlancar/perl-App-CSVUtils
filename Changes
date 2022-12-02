@@ -1,3 +1,11 @@
+0.050   2022-12-02  Released-By: PERLANCAR; Urgency: low
+
+        - No functional changes.
+
+        - [build] Rebuild to work around bug in my toolchain that still uses the
+          old module to generate POD.
+
+
 0.049   2022-12-02  Released-By: PERLANCAR; Urgency: low
 
         - No functional changes.
