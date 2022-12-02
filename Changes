@@ -3,8 +3,8 @@
         [Incompatible changes]
 
         - [cli csv-sort-rows] Make by_fields argument an array and specify on
-          CLI one at a time with --by-field to allow header name which contains
-          comma (RT#145282).
+          CLI one field at a time with --by-field to allow header name which
+          contains comma (RT#145282).
 
         [Enhancements]
 
