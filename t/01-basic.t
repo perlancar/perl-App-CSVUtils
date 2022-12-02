@@ -155,19 +155,19 @@ subtest csv_sort_rows => sub {
     my $res;
 
     # alphabetical
-    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>"f2");
+    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>["f2"]);
     is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n10,Chuck\n2,andy\n),{'cmdline.skip_format'=>1}]);
     # reverse alphabetical
-    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>"~f2");
+    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>["~f2"]);
     is_deeply($res, [200,"OK",qq(f1,f2\n2,andy\n10,Chuck\n1,Andy\n),{'cmdline.skip_format'=>1}]);
     # numeric
-    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>"+f1");
+    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>["+f1"]);
     is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n2,andy\n10,Chuck\n),{'cmdline.skip_format'=>1}]);
     # reverse numeric
-    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>"-f1");
+    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>["-f1"]);
     is_deeply($res, [200,"OK",qq(f1,f2\n10,Chuck\n2,andy\n1,Andy\n),{'cmdline.skip_format'=>1}]);
     # ci
-    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>"f2,+f1", ci=>1);
+    $res = App::CSVUtils::csv_sort_rows(filename=>"$dir/sort-rows.csv", by_fields=>["f2","+f1"], ci=>1);
     is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n2,andy\n10,Chuck\n),{'cmdline.skip_format'=>1}]);
 
     # by code

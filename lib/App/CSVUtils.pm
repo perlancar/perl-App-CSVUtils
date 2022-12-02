@@ -189,19 +189,21 @@ sub _complete_field_or_field_list {
         $row = [map {"field$_"} 1 .. @$row];
     }
 
+    if ($which =~ /sort/) {
+        $row = [map {($_,"-$_","+$_","~$_")} @$row];
+    }
+
     require Complete::Util;
-    if ($which eq 'field') {
-        return Complete::Util::complete_array_elem(
-            word => $word,
-            array => $row,
-        );
-    } else {
-        # field_list
-        # XXX sort_field_list: add optional -/~/+ prefix to field name
+    if ($which =~ /field_list/) {
         return Complete::Util::complete_comma_sep(
             word => $word,
             elems => $row,
             uniq => 1,
+        );
+    } else {
+        return Complete::Util::complete_array_elem(
+            word => $word,
+            array => $row,
         );
     }
 }
@@ -216,6 +218,10 @@ sub _complete_field_list {
 
 sub _complete_sort_field_list {
     _complete_field_or_field_list('sort_field_list', @_);
+}
+
+sub _complete_sort_field {
+    _complete_field_or_field_list('sort_field', @_);
 }
 
 sub _array2hash {
@@ -685,16 +691,20 @@ our %args_sort_rows_short = (
         cmdline_aliases => {i=>{}},
     },
     by_fields => {
-        summary => 'Sort by a comma-separated list of field specification',
+        summary => 'Sort by a list of field specifications',
+        'summary.alt.plurality.singular' => 'Add a sort field specification',
+        'x.name.is_plural' => 1,
+        'x.name.singular' => 'by_field',
         description => <<'_',
 
-`+FIELD` to mean sort numerically ascending, `-FIELD` to sort numerically
-descending, `FIELD` to mean sort ascibetically ascending, `~FIELD` to mean sort
-ascibetically descending.
+Each field specification is a field name with an optional prefix. `FIELD`
+(without prefix) means sort asciibetically ascending (smallest to largest),
+`~FIELD` means sort asciibetically descending (largest to smallest), `+FIELD`
+means sort numerically ascending, `-FIELD` means sort numerically descending.
 
 _
-        schema => ['str*'],
-        completion => \&_complete_sort_field_list,
+        schema => ['array*', of=>'str*'],
+        element_completion => \&_complete_sort_field,
     },
     key => {
         summary => 'Generate sort keys with this Perl code',
@@ -1396,7 +1406,7 @@ sub csvutil {
         } elsif ($args{sort_by_fields}) {
             my @fields;
             my $code_str = "";
-            for my $field_spec (split /,/, $args{sort_by_fields}) {
+            for my $field_spec (@{ $args{sort_by_fields} }) {
                 my ($prefix, $field) = $field_spec =~ /\A([+~-]?)(.+)/;
                 my $field_idx = $field_idxs{$field};
                 return [400, "Unknown field '$field' (known fields include: ".
