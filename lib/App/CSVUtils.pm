@@ -240,6 +240,14 @@ sub _select_fields {
 
     my @selected_fields;
 
+    if ($args->{pick_num}) {
+        require List::Util;
+        @selected_fields = List::Util::shuffle(@$fields);
+        if ($args->{pick_num} < @selected_fields) {
+            splice @selected_fields, 0, (@selected_fields-$args->{pick_num});
+        }
+    }
+
     if (defined $args->{include_field_pat}) {
         for my $field (@$fields) {
             if ($field =~ $args->{include_field_pat}) {
@@ -857,7 +865,7 @@ $SPEC{csvutil} = {
                 'sort-fields',
                 'sum',
                 'avg',
-                'select-row',
+                'select-rows',
                 'split',
                 'grep',
                 'map',
@@ -875,6 +883,7 @@ $SPEC{csvutil} = {
                 'get-cells',
                 'fill-template',
                 'convert-to-vcf',
+                'pick-rows',
             ]],
             req => 1,
             pos => 0,
@@ -1002,7 +1011,7 @@ sub csvutil {
                 @summary_row = map {0} @$row;
             }
 
-            if ($action eq 'select-row') {
+            if ($action eq 'select-rows') {
                 my $spec = $args{row_spec};
                 my @codestr;
                 for my $spec_item (split /\s*,\s*/, $spec) {
@@ -1216,7 +1225,7 @@ sub csvutil {
                 $field_idx = _get_field_idx($args{field}, \%field_idxs);
                 $freqtable{ $row->[$field_idx] }++;
             }
-        } elsif ($action eq 'select-row') {
+        } elsif ($action eq 'select-rows') {
             if ($i == 1 || $row_spec_sub->($i)) {
                 $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
             }
@@ -1278,6 +1287,25 @@ sub csvutil {
             }
         } elsif ($action eq 'sort-rows') {
             push @$rows, $row unless $i == 1;
+        } elsif ($action eq 'pick-rows') {
+            if ($i > 1) {
+                if ($args{pick_num} == 1) {
+                    # algorithm from Learning Perl
+                    $rows->[0] = $row if rand($i-1) < 1;
+                } else {
+                    # algorithm from Learning Perl, modified
+                    if (@$rows < $args{pick_num}) {
+                        # we haven't reached $pick_num, put row to result in a
+                        # random position
+                        splice @$rows, rand(@$rows+1), 0, $row;
+                    } else {
+                        # we have reached $pick_num, just replace an item
+                        # randomly, using algorithm from Learning Perl, slightly
+                        # modified
+                        rand($i-1) < @$rows and splice @$rows, rand(@$rows), 1, $row;
+                    }
+                }
+            }
         } elsif ($action eq 'transpose') {
             push @$rows, $row;
         } elsif ($action eq 'convert-to-hash') {
@@ -1394,6 +1422,16 @@ sub csvutil {
         return [200, "OK", $rows];
     }
 
+    if ($action eq 'pick-rows') {
+        if ($has_header) {
+            $csv_emitter->combine(@$fields);
+            $res .= $csv_emitter->string . "\n";
+        }
+        for my $row (@$rows) {
+            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
+        }
+    }
+
     if ($action eq 'sort-rows') {
 
         # whether we should compute keys
@@ -1499,6 +1537,7 @@ sub csvutil {
 
         }
 
+        # output csv
         if ($has_header) {
             $csv_emitter->combine(@$fields);
             $res .= $csv_emitter->string . "\n";
@@ -2090,7 +2129,7 @@ sub csv_freqtable {
     csvutil(%args, action=>'freqtable');
 }
 
-$SPEC{csv_select_row} = {
+$SPEC{csv_select_rows} = {
     v => 1.1,
     summary => 'Only output specified row(s)',
     args => {
@@ -2113,10 +2152,10 @@ $SPEC{csv_select_row} = {
     ],
     tags => ['outputs_csv'],
 };
-sub csv_select_row {
+sub csv_select_rows {
     my %args = @_;
 
-    csvutil(%args, action=>'select-row');
+    csvutil(%args, action=>'select-rows');
 }
 
 $SPEC{csv_split} = {
@@ -2151,7 +2190,7 @@ _
         # --number, -n (chunks)
     },
     links => [
-        {url=>"prog:csv-select-row"},
+        {url=>"prog:csv-select-rows"},
     ],
     tags => ['outputs_csv'],
 };
@@ -2210,6 +2249,34 @@ sub csv_grep {
     my %args = @_;
 
     csvutil(%args, action=>'grep');
+}
+
+$SPEC{csv_pick_rows} = {
+    v => 1.1,
+    summary => 'Return one or more random rows from CSV',
+    args => {
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
+        num => {
+            summary => 'Number of rows to pick',
+            schema => 'posint*',
+            default => 1,
+            cmdline_aliases => {n=>{}},
+        },
+    },
+    description => '' . $common_desc,
+    tags => ['outputs_csv'],
+};
+sub csv_pick_rows {
+    my %args = @_;
+    csvutil(
+        %args,
+        action=>'pick-rows',
+        pick_num => $args{num} // 1,
+    );
 }
 
 $SPEC{csv_map} = {
@@ -2492,6 +2559,34 @@ $SPEC{csv_select_fields} = {
 sub csv_select_fields {
     my %args = @_;
     csvutil(%args, action=>'select-fields');
+}
+
+$SPEC{csv_pick_fields} = {
+    v => 1.1,
+    summary => 'Select one or more random fields from CSV',
+    args => {
+        %argspecs_common,
+        %argspecs_csv_output,
+        %argspec_filename_0,
+        %argspecopt_output_filename_1,
+        %argspecopt_overwrite,
+        num => {
+            summary => 'Number of fields to pick',
+            schema => 'posint*',
+            default => 1,
+            cmdline_aliases => {n=>{}},
+        },
+    },
+    description => '' . $common_desc,
+    tags => ['outputs_csv'],
+};
+sub csv_pick_fields {
+    my %args = @_;
+    csvutil(
+        %args,
+        action=>'select-fields',
+        pick_num => $args{num} // 1,
+    );
 }
 
 $SPEC{csv_get_cells} = {
