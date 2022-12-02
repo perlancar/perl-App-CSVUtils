@@ -1,3 +1,10 @@
+0.049   2022-12-02  Released-By: PERLANCAR; Urgency: low
+
+        - No functional changes.
+
+        - [cli csv-sort-rows] Update documentation (no more --by-fields).
+
+
 0.048   2022-12-02  Released-By: PERLANCAR; Urgency: medium; Backward-Incompatible: yes
 
         [Incompatible changes]
