@@ -767,9 +767,8 @@ our %argspecs_sort_fields = (
     sort_ci => {
         schema => ['bool', is=>1],
     },
-    sort_example => {
-        schema => ['array*', of=>'str*',
-                   'x.perl.coerce_rules' => ['From_str::comma_sep']],
+    sort_examples => {
+        schema => ['array*', of=>'str*'],
     },
 );
 
@@ -782,10 +781,13 @@ our %argspecs_sort_fields_short = (
         schema => ['bool', is=>1],
         cmdline_aliases => {i=>{}},
     },
-    example => {
-        summary => 'A comma-separated list of field names',
-        schema => ['str*'],
-        completion => \&_complete_field_list,
+    by_examples => {
+        summary => 'A list of field names to sort by example',
+        'summary.alt.plurality.singular' => 'Add a field to sort by example',
+        'x.name.is_plural' => 1,
+        'x.name.singular' => 'by_example',
+        schema => ['array*', of=>'str*'],
+        element_completion => \&_complete_field,
     },
 );
 
@@ -937,8 +939,7 @@ sub csvutil {
 
 
             if ($action eq 'sort-fields') {
-                if (my $eg = $args{sort_example}) {
-                    $eg = [split /\s*,\s*/, $eg] unless ref($eg) eq 'ARRAY';
+                if (my $eg = $args{sort_examples}) {
                     require Sort::ByExample;
                     my $sorter = Sort::ByExample::sbe($eg);
                     $sorted_fields = [$sorter->(@$row)];
@@ -1909,7 +1910,7 @@ sub csv_sort_fields {
         hash_subset(\%args, \%argspecs_common, \%argspecs_csv_output),
         filename => $args{filename},
         action => 'sort-fields',
-        (sort_example => $args{example}) x !!defined($args{example}),
+        (sort_examples => $args{by_examples}) x !!defined($args{by_examples}),
         sort_reverse => $args{reverse},
         sort_ci => $args{ci},
     );
@@ -3076,5 +3077,11 @@ L<import-csv-to-sqlite> from L<App::SQLiteUtils>
 Query CSV with SQL using L<fsql> from L<App::fsql>
 
 L<csvgrep> from L<csvgrep>
+
+=head2 Other non-Perl-based CSV utilities
+
+=head3 Python
+
+B<csvkit>, L<https://csvkit.readthedocs.io/en/latest/>
 
 =cut

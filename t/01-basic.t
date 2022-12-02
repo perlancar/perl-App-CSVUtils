@@ -144,10 +144,10 @@ subtest csv_sort_fields => sub {
     $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", ci=>1);
     is_deeply($res, [200,"OK",qq(f1,f2,F3\n1,3,2\n4,6,5\n),{'cmdline.skip_format'=>1}], "result (ci alphabetical)");
     # example
-    $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", example=>["f2","F3","f1"]);
+    $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", by_examples=>["f2","F3","f1"]);
     is_deeply($res, [200,"OK",qq(f2,F3,f1\n3,2,1\n6,5,4\n),{'cmdline.skip_format'=>1}], "result (example)");
     # reverse example
-    $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", example=>["f2","F3","f1"], reverse=>1);
+    $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", by_examples=>["f2","F3","f1"], reverse=>1);
     is_deeply($res, [200,"OK",qq(f1,F3,f2\n1,2,3\n4,5,6\n),{'cmdline.skip_format'=>1}], "result (reverse example)");
 };
 
