@@ -692,6 +692,85 @@ our %argspecopt_eval_2 = (
     },
 );
 
+our %argspecopt_by_code = (
+    by_code => {
+        summary => 'Sort using Perl code',
+        schema => $sch_req_str_or_code,
+        description => <<'_',
+
+`$a` and `$b` (or the first and second argument) will contain the two rows to be
+compared. Which are arrayrefs; or if `--hash` (`-H`) is specified, hashrefs; or
+if `--key` is specified, whatever the code in `--key` returns.
+
+_
+    },
+);
+
+our %argspecsopt_sortsub = (
+    by_sortsub => {
+        schema => 'str*',
+        description => <<'_',
+
+When sorting rows, usually combined with `--key` because most Sort::Sub routine
+expects a string to be compared against.
+
+When sorting fields, the Sort::Sub routine will get the field name as argument.
+
+_
+        summary => 'Sort using a Sort::Sub routine',
+        'x.completion' => ['sortsub_spec'],
+    },
+    sortsub_args => {
+        summary => 'Arguments to pass to Sort::Sub routine',
+        schema => ['hash*', of=>'str*'],
+    },
+);
+
+our %argspecopt_key = (
+    key => {
+        summary => 'Generate sort keys with this Perl code',
+        description => <<'_',
+
+If specified, then will compute sort keys using Perl code and sort using the
+keys. Relevant when sorting using `--by-code` or `--by-sortsub`. If specified,
+then instead of row when sorting rows, the code (or Sort::Sub routine) will
+receive these sort keys to sort against.
+
+Tthe code will receive the row (arrayref) as the argument.
+
+_
+        schema => $sch_req_str_or_code,
+        cmdline_aliases => {k=>{}},
+    },
+);
+
+# argspecs for csvutil
+our %argspecsopt_sort = (
+    sort_reverse => {
+        schema => ['bool', is=>1],
+    },
+    sort_ci => {
+        schema => ['bool', is=>1],
+    },
+    sort_by_sortsub => {
+        schema => 'str*',
+    },
+    sort_sortsub_args => {
+        schema => ['hash*'],
+    },
+    sort_by_code => {
+        schema => $sch_req_str_or_code,
+    },
+    sort_key => {
+        schema => $sch_req_str_or_code,
+    },
+    # for csv-sort-fields
+    sort_examples => {
+        schema => ['array*', of=>'str*'],
+    },
+);
+
+# argspecs for csv-sort-rows
 our %argspecs_sort_rows_short = (
     reverse => {
         schema => ['bool', is=>1],
@@ -717,61 +796,12 @@ _
         schema => ['array*', of=>'str*'],
         element_completion => \&_complete_sort_field,
     },
-    key => {
-        summary => 'Generate sort keys with this Perl code',
-        description => <<'_',
-
-If specified, then will compute sort keys using Perl code and sort using the
-keys. Relevant when sorting using `--by-code` or `--by-sortsub`. If specified,
-then instead of rows the code/Sort::Sub routine will receive these sort keys to
-sort against.
-
-The code will receive the row as the argument.
-
-_
-        schema => $sch_req_str_or_code,
-        cmdline_aliases => {k=>{}},
-    },
-    by_sortsub => {
-        schema => 'str*',
-        description => <<'_',
-
-Usually combined with `--key` because most Sort::Sub routine expects a string to
-be compared against.
-
-_
-        summary => 'Sort using a Sort::Sub routine',
-        'x.completion' => ['sortsub_spec'],
-    },
-    sortsub_args => {
-        summary => 'Arguments to pass to Sort::Sub routine',
-        schema => ['hash*', of=>'str*'],
-    },
-    by_code => {
-        summary => 'Sort using Perl code',
-        schema => $sch_req_str_or_code,
-        description => <<'_',
-
-`$a` and `$b` (or the first and second argument) will contain the two rows to be
-compared. Which are arrayrefs; or if `--hash` (`-H`) is specified, hashrefs; or
-if `--key` is specified, whatever the code in `--key` returns.
-
-_
-    },
+    %argspecopt_key,
+    %argspecsopt_sortsub,
+    %argspecopt_by_code,
 );
 
-our %argspecs_sort_fields = (
-    sort_reverse => {
-        schema => ['bool', is=>1],
-    },
-    sort_ci => {
-        schema => ['bool', is=>1],
-    },
-    sort_examples => {
-        schema => ['array*', of=>'str*'],
-    },
-);
-
+# argspecs for csv-sort-fields
 our %argspecs_sort_fields_short = (
     reverse => {
         schema => ['bool', is=>1],
@@ -789,6 +819,8 @@ our %argspecs_sort_fields_short = (
         schema => ['array*', of=>'str*'],
         element_completion => \&_complete_field,
     },
+    %argspecopt_by_code,
+    %argspecsopt_sortsub,
 );
 
 our %argspec_with_data_rows = (
@@ -855,6 +887,7 @@ $SPEC{csvutil} = {
         %argspecopt_field,
         %argspecsopt_field_selection,
         %argspecsopt_vcf,
+        %argspecsopt_sort,
     },
     args_rels => {
     },
@@ -937,12 +970,21 @@ sub csvutil {
                 $field_idxs{$row->[$j]} = $j;
             }
 
-
             if ($action eq 'sort-fields') {
                 if (my $eg = $args{sort_examples}) {
                     require Sort::ByExample;
                     my $sorter = Sort::ByExample::sbe($eg);
                     $sorted_fields = [$sorter->(@$row)];
+                } elsif ($args{sort_by_code} || $args{sort_by_sortsub}) {
+                    my $code;
+                    if ($args{sort_by_code}) {
+                        $code = _compile($args{sort_by_code});
+                    } elsif (defined $args{sort_by_sortsub}) {
+                        require Sort::Sub;
+                        $code = Sort::Sub::get_sorter(
+                            $args{sort_by_sortsub}, $args{sort_sortsub_args});
+                    }
+                    $sorted_fields = [sort { local $main::a=$a; local $main::b=$b; $code->($main::a,$main::b) } @$fields];
                 } else {
                     # alphabetical
                     if ($args{sort_ci}) {
@@ -955,9 +997,11 @@ sub csvutil {
                     if $args{sort_reverse};
                 $row = $sorted_fields;
             }
+
             if ($action eq 'sum' || $action eq 'avg') {
                 @summary_row = map {0} @$row;
             }
+
             if ($action eq 'select-row') {
                 my $spec = $args{row_spec};
                 my @codestr;
@@ -973,6 +1017,7 @@ sub csvutil {
                 $row_spec_sub = eval 'sub { my $i = shift; '.join(" || ", @codestr).' }'; ## no critic: BuiltinFunctions::ProhibitStringyEval
                 return [400, "BUG: Invalid row_spec code: $@"] if $@;
             }
+
             if ($action eq 'convert-to-vcf') {
                 for my $field (@$fields) {
                     if ($field =~ /name/i && !defined($fields_for{N})) {
@@ -1355,13 +1400,22 @@ sub csvutil {
         my @keys;
         if ($args{sort_key}) {
             my $code_gen_key = _compile($args{sort_key});
-            for my $row (@$rows) {
-                local $_ = $args{hash} ? _array2hash($row, $fields) : $row;
-                push @keys, $code_gen_key->($_);
+            if ($action eq 'sort-rows') {
+                for my $row (@$rows) {
+                    local $_ = $args{hash} ? _array2hash($row, $fields) : $row;
+                    push @keys, $code_gen_key->($_);
+                }
+            } else {
+                # sort-fields
+                for my $field (@$fields) {
+                    local $_ = $field;
+                    push @keys, $code_gen_key->($_);
+                }
             }
         }
 
         if ($args{sort_by_code} || $args{sort_by_sortsub}) {
+
             my $code0;
             if ($args{sort_by_code}) {
                 $code0 = _compile($args{sort_by_code});
@@ -1378,27 +1432,31 @@ sub csvutil {
                     local $main::b = $keys[$b];
                     $code0->($main::a, $main::b);
                 };
-            } elsif ($args{hash}) {
-                # compare two rowhashes
-                $code = sub {
-                    local $main::a = _array2hash($a, $fields);
-                    local $main::b = _array2hash($b, $fields);
-                    $code0->($main::a, $main::b);
-                };
             } else {
-                # compare two arrayref rows
-                $code = $code0;
+                if ($args{hash}) {
+                    # compare two rowhashes
+                    $code = sub {
+                        local $main::a = _array2hash($a, $fields);
+                        local $main::b = _array2hash($b, $fields);
+                        $code0->($main::a, $main::b);
+                    };
+                } else {
+                    # compare two arrayref rows
+                    $code = $code0;
+                }
             }
 
             if (@keys) {
-                # sort indices according to keys first, then return sorted rows
-                # according to indices
+                # sort indices according to keys first, then return sorted
+                # rows according to indices
                 my @sorted_indices = sort { local $main::a=$a; local $main::b=$b; $code->($main::a,$main::b) } 0..$#{$rows};
                 $rows = [map {$rows->[$_]} @sorted_indices];
             } else {
                 $rows = [sort { local $main::a=$a; local $main::b=$b; $code->($main::a,$main::b) } @$rows];
             }
+
         } elsif ($args{sort_by_fields}) {
+
             my @fields;
             my $code_str = "";
             for my $field_spec (@{ $args{sort_by_fields} }) {
@@ -1434,8 +1492,11 @@ sub csvutil {
             }
             $code = _compile($code_str);
             $rows = [sort { local $main::a = $a; local $main::b = $b; $code->($main::a, $main::b) } @$rows];
+
         } else {
+
             return [400, "Please specify by_fields or by_sortsub or by_code"];
+
         }
 
         if ($has_header) {
@@ -1890,7 +1951,8 @@ Example output CSV:
     6,4,5
 
 You can also reverse the sort order (`-r`), sort case-insensitively (`-i`), or
-provides the ordering, e.g. `--example a,c,b`.
+provides the ordering example, e.g. `--by-examples-json '["a","c","b"]'`, or use
+`--by-code` or `--by-sortsub`.
 
 _
     args => {
@@ -1910,11 +1972,14 @@ sub csv_sort_fields {
         hash_subset(\%args, \%argspecs_common, \%argspecs_csv_output),
         filename => $args{filename},
         action => 'sort-fields',
-        (sort_examples => $args{by_examples}) x !!defined($args{by_examples}),
         sort_reverse => $args{reverse},
         sort_ci => $args{ci},
+        (sort_examples => $args{by_examples}) x !!defined($args{by_examples}),
+        (sort_by_code => $args{by_code}) x !!defined($args{by_code}),
+        (sort_by_sortsub => $args{by_sortsub}) x !!defined($args{by_sortsub}),
     );
 
+    use DD; dd \%csvutil_args;
     csvutil(%csvutil_args);
 }
 

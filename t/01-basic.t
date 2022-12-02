@@ -26,6 +26,7 @@ write_text("$dir/1.tsv", "f1\tf2\tf3\n1\t2\t3\n4\t5\t6\n7\t8\t9\n");
 write_text("$dir/sep_char-semicolon.csv", "f1;f2\n1;2\n3;4\n");
 
 write_text("$dir/sort-rows.csv", qq(f1,f2\n2,andy\n1,Andy\n10,Chuck\n));
+write_text("$dir/sort-fields.csv", qq(four,two,eighteen\n4,2,18));
 
 # XXX test with opt: --no-header
 
@@ -143,12 +144,21 @@ subtest csv_sort_fields => sub {
     # ci alphabetical
     $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", ci=>1);
     is_deeply($res, [200,"OK",qq(f1,f2,F3\n1,3,2\n4,6,5\n),{'cmdline.skip_format'=>1}], "result (ci alphabetical)");
-    # example
+    # by_examples
     $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", by_examples=>["f2","F3","f1"]);
-    is_deeply($res, [200,"OK",qq(f2,F3,f1\n3,2,1\n6,5,4\n),{'cmdline.skip_format'=>1}], "result (example)");
-    # reverse example
+    is_deeply($res, [200,"OK",qq(f2,F3,f1\n3,2,1\n6,5,4\n),{'cmdline.skip_format'=>1}], "result (by_examples)");
+    # reverse by_examples
     $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", by_examples=>["f2","F3","f1"], reverse=>1);
-    is_deeply($res, [200,"OK",qq(f1,F3,f2\n1,2,3\n4,5,6\n),{'cmdline.skip_format'=>1}], "result (reverse example)");
+    is_deeply($res, [200,"OK",qq(f1,F3,f2\n1,2,3\n4,5,6\n),{'cmdline.skip_format'=>1}], "result (reverse by_example)");
+    # by_code
+    $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/4.csv", by_code=>sub { lc($a) cmp lc($b) });
+    is_deeply($res, [200,"OK",qq(f1,f2,F3\n1,3,2\n4,6,5\n),{'cmdline.skip_format'=>1}], "result (by_code)");
+    # by_sortsub
+    subtest by_sortsub => sub {
+        test_needs 'Sort::Sub', 'Sort::Sub::by_length';
+        $res = App::CSVUtils::csv_sort_fields(filename=>"$dir/sort-fields.csv", by_sortsub=>"by_length");
+        is_deeply($res, [200,"OK",qq(two,four,eighteen\n2,4,18\n),{'cmdline.skip_format'=>1}], "result (by sortsub)");
+    };
 };
 
 subtest csv_sort_rows => sub {
