@@ -1599,7 +1599,7 @@ $SPEC{csv_add_fields} = {
 
 The new fields by default will be added at the end, unless you specify one of
 `--after` (to put after a certain field), `--before` (to put before a certain
-field), or `--at` (to put at specific position, 1 means as the first field). The
+field), or `--at` (to put at specific position, 1 means the first field). The
 new fields will be clustered together though, you currently cannot set the
 position of each new field. But you can later reorder fields using
 <prog:csv-sort-fields>.
@@ -1637,7 +1637,7 @@ _
         },
         at => {
             summary => 'Put the new field at specific position '.
-                '(1 means as first field)',
+                '(1 means first field)',
             schema => ['int*', min=>1],
         },
     },
