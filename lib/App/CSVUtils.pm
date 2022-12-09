@@ -2154,7 +2154,7 @@ $SPEC{csv_select_rows} = {
             summary => 'Row number (e.g. 2 for first data row), '.
                 'range (2-7), or comma-separated list of such (2-7,10,20-23)',
             req => 1,
-            pos => 1,
+            pos => 2,
         },
     },
     description => '' . $common_desc,
