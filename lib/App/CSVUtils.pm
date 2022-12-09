@@ -2640,7 +2640,7 @@ $SPEC{csv_fill_template} = {
         template_filename => {
             schema => 'filename*',
             req => 1,
-            pos => 1,
+            pos => 2,
         },
         # XXX whether to output multiple files or combined
         # XXX row selection?
