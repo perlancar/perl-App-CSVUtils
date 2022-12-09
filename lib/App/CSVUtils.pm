@@ -2493,7 +2493,7 @@ _
         %argspecs_common,
         %argspecs_csv_output,
         %argspec_filenames_0plus,
-        %argspecopt_output_filename_1,
+        %argspecopt_output_filename,
         %argspecopt_overwrite,
     },
     tags => ['outputs_csv'],
