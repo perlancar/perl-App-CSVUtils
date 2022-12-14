@@ -2669,7 +2669,7 @@ Example:
     a(n) [[adjective2]] [[noun2]] and waved the thing [[adverb1]] towards it.
     [[adverb2]], when it arrived at my feet, it [[verb1]] and [[verb2]] me
     instead. I was relieved, the [[noun1]] was a friendly creature after all.
-    After we [[verb3]] for a little while, I went home with a [[noun3]] on my
+    After we [[verb3]] for a little while, I went home with a(n) [[noun3]] on my
     face. That was an unforgettable day indeed.
 
     % cat values.csv
@@ -2683,7 +2683,7 @@ Example:
     a(n) gigantic lollipop and waved the thing angrily towards it.
     hesitantly, when it arrived at my feet, it threw and kissed me
     instead. I was relieved, the six-wheeler truck was a friendly creature after all.
-    After we stared for a little while, I went home with a piece of tissue on my
+    After we stared for a little while, I went home with a(n) piece of tissue on my
     face. That was an unforgettable day indeed.
 
     ---
@@ -2692,8 +2692,9 @@ Example:
     a(n) delicious bottle of parfume and waved the thing confidently towards it.
     passively, when it arrived at my feet, it exercised and jumped me
     instead. I was relieved, the pelican was a friendly creature after all.
-    After we slept for a little while, I went home with a desk on my
+    After we slept for a little while, I went home with a(n) desk on my
     face. That was an unforgettable day indeed.
+
 _
 };
 sub csv_fill_template {
