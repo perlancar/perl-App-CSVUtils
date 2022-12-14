@@ -2529,6 +2529,10 @@ sub csv_concat {
             }
             my $res_row = [];
             for my $j (0..$#{$row}) {
+                if ($j >= @$fields) {
+                    log_warn "File %s line %d contains more than %d fields, skipped", $filename, $i, scalar(@$fields);
+                    last;
+                }
                 my $field = $fields->[$j];
                 $res_row->[ $res_field_idxs{$field} ] = $row->[$j];
             }
