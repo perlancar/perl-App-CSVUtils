@@ -2658,8 +2658,8 @@ $SPEC{csv_fill_template} = {
 Templates are text that contain `[[NAME]]` field placeholders. The field
 placeholders will be replaced by values from the CSV file. This is a simple
 alternative to mail-merge. (I first wrote this utility because LibreOffice
-Writer, as always, has all the annoying bugs; this time, it prevents mail merge
-from working.)
+Writer, as always, has all the annoying bugs; that particular time, one that
+prevented mail merge from working.)
 
 _
 };
