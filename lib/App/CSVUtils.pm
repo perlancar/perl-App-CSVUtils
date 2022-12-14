@@ -952,11 +952,15 @@ sub csvutil {
             return unless $row0;
             return [map { "field$_" } 1..@$row0];
         } elsif ($i == 1 && !$has_header) {
-            $header_row_count++;
+            $data_row_count++ if $row0;
             return $row0;
         }
-        $data_row_count++;
-        $csv_parser->getline($fh);
+        my $res = $csv_parser->getline($fh);
+        if ($res) {
+            $header_row_count++ if $i==0;
+            $data_row_count++ if $i;
+        }
+        $res;
     };
 
     my $rows = [];
