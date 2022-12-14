@@ -2661,6 +2661,39 @@ alternative to mail-merge. (I first wrote this utility because LibreOffice
 Writer, as always, has all the annoying bugs; that particular time, one that
 prevented mail merge from working.)
 
+Example:
+
+    % cat madlib.txt
+    Today I went to the park. I saw a(n) [[adjective1]] [[noun1]] running
+    towards me. It looked hungry, really hungry. Horrified and terrified, I took
+    a(n) [[adjective2]] [[noun2]] and waved the thing [[adverb1]] towards it.
+    [[adverb2]], when it arrived at my feet, it [[verb1]] and [[verb2]] me
+    instead. I was relieved, the [[noun1]] was a friendly creature after all.
+    After we [[verb3]] for a little while, I went home with a [[noun3]] on my
+    face. That was an unforgettable day indeed.
+
+    % cat values.csv
+    adjective1,adjective2,adjective3,noun1,noun2,noun3,verb1,verb2,verb3,adverb1,adverb2
+    slow,gigantic,sticky,smartphone,six-wheeler truck,lollipop,piece of tissue,threw,kissed,stared,angrily,hesitantly
+    sweet,delicious,red,pelican,bottle of parfume,desk,exercised,jumped,slept,confidently,passively
+
+    % csv-fill-template values.csv - madlib.txt
+    Today I went to the park. I saw a(n) slow six-wheeler truck running
+    towards me. It looked hungry, really hungry. Horrified and terrified, I took
+    a(n) gigantic lollipop and waved the thing angrily towards it.
+    hesitantly, when it arrived at my feet, it threw and kissed me
+    instead. I was relieved, the six-wheeler truck was a friendly creature after all.
+    After we stared for a little while, I went home with a piece of tissue on my
+    face. That was an unforgettable day indeed.
+
+    ---
+    Today I went to the park. I saw a(n) sweet pelican running
+    towards me. It looked hungry, really hungry. Horrified and terrified, I took
+    a(n) delicious bottle of parfume and waved the thing confidently towards it.
+    passively, when it arrived at my feet, it exercised and jumped me
+    instead. I was relieved, the pelican was a friendly creature after all.
+    After we slept for a little while, I went home with a desk on my
+    face. That was an unforgettable day indeed.
 _
 };
 sub csv_fill_template {
