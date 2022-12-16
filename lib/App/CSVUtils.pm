@@ -128,7 +128,7 @@ sub _instantiate_parser {
         $tcsv_opts{"sep_char"}    = $args->{"${prefix}sep_char"}    if defined $args->{"${prefix}sep_char"};
         $tcsv_opts{"quote_char"}  = $args->{"${prefix}quote_char"}  if defined $args->{"${prefix}quote_char"};
         $tcsv_opts{"escape_char"} = $args->{"${prefix}escape_char"} if defined $args->{"${prefix}escape_char"};
-    } elsif ($args->{tsv}) {
+    } elsif ($args->{"${prefix}tsv"}) {
         $tcsv_opts{"sep_char"}    = "\t";
         $tcsv_opts{"quote_char"}  = undef;
         $tcsv_opts{"escape_char"} = undef;
@@ -178,7 +178,7 @@ sub _complete_field_or_field_list {
     return {message=>"Can't get field list when input is URL"} if $args->{filename} =~ /\A\w:/;
 
     # can the file be opened?
-    my $csv_parser = _instantiate_parser(\%args);
+    my $csv_parser = _instantiate_parser(\%args, 'input_');
     open my($fh), "<encoding(utf8)", $args->{filename} or do {
         #warn "csvutils: Cannot open file '$args->{filename}': $!\n";
         return [];
@@ -187,7 +187,7 @@ sub _complete_field_or_field_list {
     # can the header row be read?
     my $row = $csv_parser->getline($fh) or return [];
 
-    if (defined $args->{header} && !$args->{header}) {
+    if (defined $args->{input_header} && !$args->{input_header}) {
         $row = [map {"field$_"} 1 .. @$row];
     }
 
@@ -294,61 +294,62 @@ sub _select_fields {
     [100, "Continue", [\@selected_fields, \@selected_field_idxs_array]];
 }
 
-our %argspecs_common = (
-    header => {
+our %argspecs_csv_input = (
+    input_header => {
         summary => 'Whether input CSV has a header row',
         schema => 'bool*',
         default => 1,
         description => <<'_',
 
-By default (`--header`), the first row of the CSV will be assumed to contain
-field names (and the second row contains the first data row). When you declare
-that CSV does not have header row (`--no-header`), the first row of the CSV is
-assumed to contain the first data row. Fields will be named `field1`, `field2`,
-and so on.
+By default, the first row of the input CSV will be assumed to contain field
+names (and the second row contains the first data row). When you declare that
+input CSV does not have header row (`--no-input-header`), the first row of the
+CSV is assumed to contain the first data row. Fields will be named `field1`,
+`field2`, and so on.
 
 _
-        cmdline_aliases => {input_header=>{}},
+        cmdline_aliases => {
+        },
         tags => ['category:input'],
     },
-    tsv => {
+    input_tsv => {
         summary => "Inform that input file is in TSV (tab-separated) format instead of CSV",
-        schema => 'bool*',
+        schema => 'true*',
         description => <<'_',
 
-Overriden by `--sep-char`, `--quote-char`, `--escape-char` options. If one of
-those options is specified, then `--tsv` will be ignored.
+Overriden by `--input-sep-char`, `--input-quote-char`, `--input-escape-char`
+options. If one of those options is specified, then `--input-tsv` will be
+ignored.
 
 _
-        cmdline_aliases => {input_tsv=>{}},
         tags => ['category:input'],
     },
-    sep_char => {
+    input_sep_char => {
         summary => 'Specify field separator character in input CSV, will be passed to Text::CSV_XS',
         schema => ['str*', len=>1],
         description => <<'_',
 
-Defaults to `,` (comma). Overrides `--tsv` option.
+Defaults to `,` (comma). Overrides `--input-tsv` option.
 
 _
         tags => ['category:input'],
     },
-    quote_char => {
+    input_quote_char => {
         summary => 'Specify field quote character in input CSV, will be passed to Text::CSV_XS',
         schema => ['str*', len=>1],
         description => <<'_',
 
-Defaults to `"` (double quote). Overrides `--tsv` option.
+Defaults to `"` (double quote). Overrides `--input-tsv` option.
 
 _
         tags => ['category:input'],
     },
-    escape_char => {
+    input_escape_char => {
         summary => 'Specify character to escape value in field in input CSV, will be passed to Text::CSV_XS',
         schema => ['str*', len=>1],
         description => <<'_',
 
-Defaults to `\\` (backslash). Overrides `--tsv` option.
+Defaults to `\\` (backslash). Overrides `--input-tsv` option.
 
 _
         tags => ['category:input'],
@@ -376,7 +377,7 @@ _
         schema => 'bool*',
         description => <<'_',
 
-This is like `--tsv` option but for output instead of input.
+This is like `--input-tsv` option but for output instead of input.
 
 Overriden by `--output-sep-char`, `--output-quote-char`, `--output-escape-char`
 options. If one of those options is specified, then `--output-tsv` will be
@@ -390,7 +391,7 @@ _
         schema => ['str*', len=>1],
         description => <<'_',
 
-This is like `--sep-char` option but for output instead of input.
+This is like `--input-sep-char` option but for output instead of input.
 
 Defaults to `,` (comma). Overrides `--output-tsv` option.
 
@@ -402,7 +403,7 @@ _
         schema => ['str*', len=>1],
         description => <<'_',
 
-This is like `--quote-char` option but for output instead of input.
+This is like `--input-quote-char` option but for output instead of input.
 
 Defaults to `"` (double quote). Overrides `--output-tsv` option.
 
@@ -414,7 +415,7 @@ _
         schema => ['str*', len=>1],
         description => <<'_',
 
-This is like `--escape-char` option but for output instead of input.
+This is like `--input-escape-char` option but for output instead of input.
 
 Defaults to `\\` (backslash). Overrides `--output-tsv` option.
 
@@ -851,7 +852,7 @@ $SPEC{csvutil} = {
     summary => 'Perform action on a CSV file',
     'x.no_index' => 1,
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         action => {
             schema => ['str*', in=>[
                 'add-fields',
@@ -906,11 +907,11 @@ sub csvutil {
     #use DD; dd \%args;
 
     my $action = $args{action};
-    my $has_header = $args{header} // 1;
+    my $has_header = $args{input_header} // 1;
     my $outputs_header = $args{output_header} // $has_header;
     my $add_newline = $args{add_newline} // 1;
 
-    my $csv_parser  = _instantiate_parser(\%args);
+    my $csv_parser  = _instantiate_parser(\%args, 'input_');
     my $csv_emitter = _instantiate_emitter(\%args);
 
     my ($fh, $err) = _read_file($args{filename});
@@ -1621,7 +1622,7 @@ empty string (`''`).
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename,
@@ -1690,7 +1691,7 @@ $SPEC{csv_list_field_names} = {
     v => 1.1,
     summary => 'List field names of CSV file',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspec_filename_0,
     },
     description => '' . $common_desc,
@@ -1704,7 +1705,7 @@ $SPEC{csv_info} = {
     v => 1.1,
     summary => 'Show information about CSV file (number of rows, fields, etc)',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspec_filename_0,
     },
     description => '' . $common_desc,
@@ -1718,7 +1719,7 @@ $SPEC{csv_delete_fields} = {
     v => 1.1,
     summary => 'Delete one or more fields from CSV file',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecsopt_field_selection,
@@ -1748,7 +1749,7 @@ To munge multiple fields, use <prog:csv-munge-row>.
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename,
@@ -1786,7 +1787,7 @@ You cannot add new fields using this utility. To do so, use
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename,
@@ -1814,7 +1815,7 @@ newline (`--with-nothing`), replace with encoded representation
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename,
@@ -1837,7 +1838,7 @@ sub csv_replace_newline {
     my %args = @_;
     my $with = $args{with};
 
-    my $csv_parser  = _instantiate_parser(\%args);
+    my $csv_parser  = _instantiate_parser(\%args, 'input_');
     my $csv_emitter = _instantiate_emitter(\%args);
 
     my ($fh, $err) = _read_file($args{filename});
@@ -1942,7 +1943,7 @@ descending length of name):
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
 
         %argspec_filename_0,
@@ -1961,7 +1962,7 @@ sub csv_sort_rows {
     my %args = @_;
 
     my %csvutil_args = (
-        hash_subset(\%args, \%argspecs_common, \%argspecs_csv_output),
+        hash_subset(\%args, \%argspecs_csv_input, \%argspecs_csv_output),
         action => 'sort-rows',
 
         filename => $args{filename},
@@ -1991,7 +1992,7 @@ row.
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename_1,
@@ -2032,7 +2033,7 @@ provides the ordering example, e.g. `--by-examples-json '["a","c","b"]'`, or use
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
 
         %argspec_filename_0,
@@ -2047,7 +2048,7 @@ sub csv_sort_fields {
     my %args = @_;
 
     my %csvutil_args = (
-        hash_subset(\%args, \%argspecs_common, \%argspecs_csv_output),
+        hash_subset(\%args, \%argspecs_csv_input, \%argspecs_csv_output),
         action => 'sort-fields',
 
         filename => $args{filename},
@@ -2070,7 +2071,7 @@ $SPEC{csv_shuf_fields} = {
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename_1,
@@ -2092,7 +2093,7 @@ $SPEC{csv_sum} = {
     v => 1.1,
     summary => 'Output a summary row which are arithmetic sums of data rows',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename_1,
@@ -2112,7 +2113,7 @@ $SPEC{csv_avg} = {
     v => 1.1,
     summary => 'Output a summary row which are arithmetic averages of data rows',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename_1,
@@ -2132,7 +2133,7 @@ $SPEC{csv_freqtable} = {
     v => 1.1,
     summary => 'Output a frequency table of values of a specified field in CSV',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspec_filename_0,
         %argspec_field_1,
     },
@@ -2148,7 +2149,7 @@ $SPEC{csv_select_rows} = {
     v => 1.1,
     summary => 'Only output specified row(s)',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename_1,
@@ -2190,7 +2191,7 @@ Interface is loosely based on the `split` Unix utility.
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         lines => {
@@ -2232,7 +2233,7 @@ where Perl expression returns true will be included in the result.
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename_1,
@@ -2270,7 +2271,7 @@ $SPEC{csv_pick_rows} = {
     v => 1.1,
     summary => 'Return one or more random rows from CSV',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename_1,
@@ -2311,7 +2312,7 @@ data. This utility will then print out the resulting string.
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspec_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
@@ -2350,7 +2351,7 @@ This is like csv_map, except result of code is not printed.
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspec_filename_0,
         %argspec_eval,
         %argspec_hash,
@@ -2376,7 +2377,7 @@ $SPEC{csv_convert_to_hash} = {
     v => 1.1,
     summary => 'Return a hash of field names as keys and first row as values',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspec_filename_0,
         row_number => {
             schema => ['int*', min=>2],
@@ -2398,7 +2399,7 @@ $SPEC{csv_transpose} = {
     v => 1.1,
     summary => 'Transpose a CSV',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename_1,
@@ -2423,7 +2424,7 @@ to munge table data.
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspec_filename_0,
     },
     description => '' . $common_desc,
@@ -2444,7 +2445,7 @@ will guess from the field name. If that also fails, will warn/bail out.
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspec_filename_0,
         %argspecsopt_vcf,
     },
@@ -2494,7 +2495,7 @@ will result in:
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filenames_0plus,
         %argspecopt_output_filename,
@@ -2509,7 +2510,7 @@ sub csv_concat {
     my @rows;
 
     for my $filename (@{ $args{filenames} }) {
-        my $csv_parser  = _instantiate_parser(\%args);
+        my $csv_parser  = _instantiate_parser(\%args, 'input_');
 
         my ($fh, $err) = _read_file($filename);
         return $err if $err;
@@ -2565,7 +2566,7 @@ $SPEC{csv_select_fields} = {
     v => 1.1,
     summary => 'Only output selected field(s)',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename_1,
@@ -2584,7 +2585,7 @@ $SPEC{csv_pick_fields} = {
     v => 1.1,
     summary => 'Select one or more random fields from CSV',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename_1,
@@ -2612,7 +2613,7 @@ $SPEC{csv_get_cells} = {
     v => 1.1,
     summary => 'Get one or more cells from CSV',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspec_filename_0,
         coordinates => {
             'x.name.is_plural' => 1,
@@ -2641,7 +2642,7 @@ $SPEC{csv_fill_template} = {
     v => 1.1,
     summary => 'Substitute template values in a text file with fields from CSV rows',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspec_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
@@ -2706,7 +2707,7 @@ $SPEC{csv_dump} = {
     v => 1.1,
     summary => 'Dump CSV as data structure (array of array/hash)',
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspec_filename_0,
         %argspec_hash,
     },
@@ -2727,7 +2728,7 @@ character, for one.
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filename_0,
         %argspecopt_output_filename_1,
@@ -2818,7 +2819,7 @@ Finally you can print out certain fields using `--result-fields`.
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspec_filenames_0plus,
         %argspecopt_output_filename,
@@ -2872,7 +2873,7 @@ sub csv_setop {
 
     # read all csv
     for my $filename (@{ $args{filenames} }) {
-        my $csv = _instantiate_parser(\%args);
+        my $csv = _instantiate_parser(\%args, 'input_');
 
         my ($fh, $err) = _read_file($filename);
         return $err if $err;
@@ -2883,7 +2884,7 @@ sub csv_setop {
         while (my $row = $csv->getline($fh)) {
             $i++;
             if ($i == 1) {
-                if ($args{header} // 1) {
+                if ($args{input_header} // 1) {
                     my $fields = $row;
                     for my $field (@$fields) {
                         unless (exists $field_idxs->{$field}) {
@@ -3109,7 +3110,7 @@ client_email:email,client_phone:phone`. The result will be:
 
 _
     args => {
-        %argspecs_common,
+        %argspecs_csv_input,
         %argspecs_csv_output,
         %argspecopt_output_filename,
         %argspecopt_overwrite,
@@ -3182,7 +3183,7 @@ sub csv_lookup_fields {
     my %source_field_idxs;
     my @source_field_names;
     {
-        my $csv = _instantiate_parser(\%args);
+        my $csv = _instantiate_parser(\%args, 'input_');
 
         my ($fh, $err) = _read_file($args{source});
         return $err if $err;
@@ -3191,7 +3192,7 @@ sub csv_lookup_fields {
         while (my $row = $csv->getline($fh)) {
             $i++;
             if ($i == 1) {
-                if ($args{header} // 1) {
+                if ($args{input_header} // 1) {
                     @source_field_names = @$row;
                     for my $field (@source_field_names) {
                         unless (exists $source_field_idxs{$field}) {
@@ -3232,7 +3233,7 @@ sub csv_lookup_fields {
     my $num_filled = 0;
     {
         my $csv_out = _instantiate_parser_default();
-        my $csv = _instantiate_parser(\%args);
+        my $csv = _instantiate_parser(\%args, 'input_');
 
         my ($fh, $err) = _read_file($args{target});
         return $err if $err;
@@ -3241,7 +3242,7 @@ sub csv_lookup_fields {
         while (my $row = $csv->getline($fh)) {
             $i++;
             if ($i == 1) {
-                if ($args{header} // 1) {
+                if ($args{input_header} // 1) {
                     $csv_out->combine(@$row);
                     $res .= $csv_out->string . "\n";
                     @target_field_names = @$row;
@@ -3295,6 +3296,129 @@ sub csv_lookup_fields {
     } else {
         _return_or_write_file([200, "OK", $res, {"cmdline.skip_format"=>1}], $args{output_filename}, $args{overwrite});
     }
+}
+
+$SPEC{gen_csv_util} = {
+    v => 1.1,
+    summary => 'Generate a CSV utility',
+    args => {
+        name => {
+            schema => 'perl::identifier::unqualified_ascii*',
+            req => 1,
+        },
+        summary => {
+            schema => 'str*',
+        },
+        description => {
+            schema => 'str*',
+        },
+        links => {
+            schema => ['array*', of=>'hash*'], # XXX defhashes
+        },
+
+        accepts_csv => {
+            summary => 'Whether utility accepts CSV data',
+            schema => 'bool*',
+            description => <<'_',
+
+If unset, will be inferred from whether `on_input_csv_header_row` or
+`on_input_csv_header_row` is specified.
+
+_
+        },
+        on_input_csv_header_row => {
+            schema => 'code*',
+        },
+        on_input_csv_data_row => {
+            schema => 'code*',
+        },
+    },
+    naked_result => 1,
+};
+sub gen_csv_util {
+    my %gen_args = @_;
+
+    my $name = delete($gen_args{name}) or die "Please specify name";
+    my $summary = delete($gen_args{summary}) // '(No summary)';
+    my $description = delete($gen_args{description}) // '(No description)';
+    my $links = delete($gen_args{links}) // [];
+    my $accepts_csv = delete($gen_args{accepts_csv}) //
+        ($gen_args{on_input_csv_data_row} || $gen_args{on_input_csv_data_row} ? 1:0);
+    scalar(keys %gen_args) and die "Unknown argument(s): ".join(", ", keys %gen_args);
+
+    my $code;
+  CREATE_CODE: {
+        $code = sub {
+            my %util_args = @_;
+
+            my $has_header = $util_args{input_header} // 1;
+            my $outputs_header = $util_args{output_header} // $has_header;
+
+            my $input_parser = $accepts_csv ? _instantiate_parser(\%util_args, 'input_') : undef;
+            my $r = {
+                util_args => \%util_args,
+                input_parser => $input_parser,
+            };
+
+          READ_CSV: {
+                last unless $accepts_csv;
+
+                my ($fh, $err) = _read_file($util_args{filename});
+                return $err if $err;
+
+                my $i = 0;
+                $r->{input_header_row_count} = 0;
+                $r->{input_data_row_count} = 0;
+                my $row0;
+                my $code_getline = sub {
+                    if ($i == 0 && !$has_header) {
+                        $row0 = $input_parser->getline($fh);
+                        return unless $row0;
+                        return [map { "field$_" } 1..@$row0];
+                    } elsif ($i == 1 && !$has_header) {
+                        $r->{input_data_row_count}++ if $row0;
+                        return $row0;
+                    }
+                    my $res = $input_parser->getline($fh);
+                    if ($res) {
+                        $r->{input_header_row_count}++ if $i==0;
+                        $r->{input_data_row_count}++ if $i;
+                    }
+                    $res;
+                };
+
+                while (my $row = $code_getline->()) {
+                }
+            } # READ_CSV
+
+            [200];
+        };
+    } # CREATE_CODE
+
+    my $meta;
+  CREATE_META: {
+        my %util_argspecs;
+        if ($accepts_csv) {
+            $util_argspecs{$_} = $argspecs_csv_input{$_} for keys %argspecs_csv_input;
+        }
+
+        $meta = {
+            v => 1.1,
+            summary => $summary,
+            description => $description,
+            args => \%util_argspecs,
+            links => $links,
+        };
+    } # CREATE_META
+
+    {
+        my $package = caller();
+        no strict 'refs';
+        *{"$package\::$name"} = $code;
+        ${"$package\::SPEC"}{$name} = $meta;
+    }
+
+    1;
 }
 
 1;
