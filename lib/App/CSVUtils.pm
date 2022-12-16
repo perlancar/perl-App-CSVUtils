@@ -971,7 +971,7 @@ sub csvutil {
     my $rows = [];
 
     while (my $row = $code_getline->()) {
-        #use DD; dd $row;
+        #use DD; dd $row;<
         $i++;
         if ($i == 1) {
             # header row
@@ -3364,6 +3364,12 @@ available (in `on_input_header_row` and `on_input_data_row` hooks):
 
 - `row`, aos (array of str). The current CSV row as an arrayref.
 
+- `input_header_row_count`, int. Contains the number of actual header rows that
+  have read. If CLI user specifies `--no-input-header`, this will stay at 0.
+
+- `input_data_row_count`, int. Contains the number of actual data rows that have
+  read.
+
 For other hook-specific keys, see the documentation for associated hook point.
 
 _
@@ -3395,8 +3401,8 @@ _
             schema => 'bool*',
             description => <<'_',
 
-If unset, will be inferred from whether `on_input_csv_header_row` or
-`on_input_csv_header_row` is specified.
+If unset, will be inferred from whether `on_input_header_row` or
+`on_input_header_row` is specified.
 
 _
         },
@@ -3405,7 +3411,7 @@ _
             summary => 'Code to call at the beginning',
             schema => 'code*',
         },
-        on_input_csv_header_row => {
+        on_input_header_row => {
             schema => 'code*',
             description => <<'_',
 
@@ -3416,7 +3422,7 @@ specifies `--no-input-header`, the code will receive a virtual row `["field0",
 
 _
         },
-        on_input_csv_data_row => {
+        on_input_data_row => {
             schema => 'code*',
             description => <<'_',
 
@@ -3444,7 +3450,13 @@ sub gen_csv_util {
     my $description = delete($gen_args{description}) // '(No description)';
     my $links = delete($gen_args{links}) // [];
     my $accepts_csv = delete($gen_args{accepts_csv}) //
-        ($gen_args{on_input_csv_data_row} || $gen_args{on_input_csv_data_row} ? 1:0);
+        ($gen_args{on_input_data_row} || $gen_args{on_input_data_row} ? 1:0);
+    my $on_begin            = delete $gen_args{on_begin};
+    my $on_input_header_row = delete $gen_args{on_input_header_row};
+    my $on_input_data_row   = delete $gen_args{on_input_data_row};
+    my $on_output           = delete $gen_args{on_output};
+    my $on_end              = delete $gen_args{on_end};
+
     scalar(keys %gen_args) and die "Unknown argument(s): ".join(", ", keys %gen_args);
 
     my $code;
@@ -3461,44 +3473,72 @@ sub gen_csv_util {
                 name => $name,
             };
 
-          READ_CSV: {
-                last unless $accepts_csv;
+            my $res;
+          EVAL:
+            eval {
 
-                my $input_parser = _instantiate_parser(\%util_args, 'input_');
-                $r->{input_parser} = $input_parser;
+                $on_begin->($r) if $on_begin;
 
-                my ($fh, $err) = _read_file($util_args{input_filename});
-                return $err if $err;
-                $r->{input_fh} = $fh;
+              READ_CSV: {
+                    last unless $accepts_csv;
 
-                my $i = 0;
-                $r->{input_header_row_count} = 0;
-                $r->{input_data_row_count} = 0;
-                $r->{input_fields} = []; # array, field names in order
-                $r->{input_field_idxs} = {}; # key=field name, value=index (0-based)
-                my $row0;
-                my $code_getline = sub {
-                    if ($i == 0 && !$has_header) {
-                        $row0 = $input_parser->getline($fh);
-                        return unless $row0;
-                        return [map { "field$_" } 1..@$row0];
-                    } elsif ($i == 1 && !$has_header) {
-                        $r->{input_data_row_count}++ if $row0;
-                        return $row0;
+                    my $input_parser = _instantiate_parser(\%util_args, 'input_');
+                    $r->{input_parser} = $input_parser;
+
+                    my ($fh, $err) = _read_file($util_args{input_filename});
+                    return $err if $err;
+                    $r->{input_fh} = $fh;
+
+                    my $i;
+                    $r->{input_header_row_count} = 0;
+                    $r->{input_data_row_count} = 0;
+                    $r->{input_fields} = []; # array, field names in order
+                    $r->{input_field_idxs} = {}; # key=field name, value=index (0-based)
+                    my $row0;
+                    my $code_getline = sub {
+                        if ($i == 0 && !$has_header) {
+                            $row0 = $input_parser->getline($fh);
+                            return unless $row0;
+                            return [map { "field$_" } 1..@$row0];
+                        } elsif ($i == 1 && !$has_header) {
+                            $r->{input_data_row_count}++ if $row0;
+                            return $row0;
+                        }
+                        my $res = $input_parser->getline($fh);
+                        if ($res) {
+                            $r->{input_header_row_count}++ if $i==0;
+                            $r->{input_data_row_count}++ if $i;
+                        }
+                        $res;
+                    };
+
+                    $i = 0;
+                    while ($r->{row} = $code_getline->()) {
+                        $i++;
+                        if ($i == 1) {
+                            $on_input_header_row->($r) if $on_input_header_row;
+                        } else {
+                            $on_input_data_row->($r) if $on_input_data_row;
+                        }
                     }
-                    my $res = $input_parser->getline($fh);
-                    if ($res) {
-                        $r->{input_header_row_count}++ if $i==0;
-                        $r->{input_data_row_count}++ if $i;
-                    }
-                    $res;
-                };
+                } # READ_CSV
 
-                while (my $row = $code_getline->()) {
-                }
-            } # READ_CSV
+              OUTPUT: {
+                    $on_output->($r) if $on_output;
+                    $r->{result} //= [200];
+                    goto RETURN_RESULT;
+                } # RETURN_RESULT
 
-            [200];
+            }; # EVAL
+
+            my $err = $@;
+            if ($err) {
+                $err = [500, $err] unless ref $err;
+                return $err;
+            }
+
+          RETURN_RESULT:
+            $r->{result};
         };
     } # CREATE_CODE
 
@@ -3507,6 +3547,7 @@ sub gen_csv_util {
         my %util_argspecs;
         if ($accepts_csv) {
             $util_argspecs{$_} = $argspecs_csv_input{$_} for keys %argspecs_csv_input;
+            $util_argspecs{$_} = $argspec_input_filename_0{$_} for keys %argspec_input_filename_0;
         }
 
         $meta = {
