@@ -25,17 +25,6 @@ sub _read_file {
     my ($fh, $err);
     if ($filename eq '-') {
         $fh = *STDIN;
-    } elsif ($filename =~ /\A\w+:/) {
-        require LWP::UserAgent;
-        my $ua = LWP::UserAgent->new;
-        my $resp = $ua->get($filename);
-        unless ($resp->is_success) {
-            $err = [$resp->code, "Can't get URL $filename: ".$resp->message];
-            goto RETURN;
-        }
-        require IO::Scalar;
-        my $content = $resp->content;
-        $fh = IO::Scalar->new(\$content);
     } else {
         open $fh, "<", $filename or do {
             $err = [500, "Can't open input filename '$filename': $!"];
@@ -432,7 +421,7 @@ our %argspec_input_filename_1 = (
         summary => 'Input CSV file or URL',
         description => <<'_',
 
-Use `-` to read from stdin, use `clipboard:` to read from clipboard.
+Use `-` to read from stdin.
 
 _
         schema => 'filename*',
