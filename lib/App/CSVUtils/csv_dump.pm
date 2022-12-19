@@ -31,25 +31,28 @@ _
 
     on_input_header_row => sub {
         my $r = shift;
-        $r->{rows} //= [];
+
+        # this is a key we add ourselves
+        $r->{output_rows} //= [];
+
         if ($r->{util_args}{hash}) {
-            $r->{wants_row_as_hashref} = 1;
+            $r->{wants_input_row_as_hashref} = 1;
         } else {
-            push @{ $r->{rows} }, $r->{row};
+            push @{ $r->{output_rows} }, $r->{input_row};
         }
     },
 
     on_input_data_row => sub {
         my $r = shift;
-        push @{ $r->{rows} },
-            $r->{util_args}{hash} ? $r->{row_as_hashref} : $r->{row};
+        push @{ $r->{output_rows} },
+            $r->{util_args}{hash} ? $r->{input_row_as_hashref} : $r->{input_row};
     },
 
     outputs_csv => 0,
 
     on_end => sub {
         my $r = shift;
-        $r->{result} = [200, "OK", $r->{rows}];
+        $r->{result} = [200, "OK", $r->{output_rows}];
     },
 );
 
