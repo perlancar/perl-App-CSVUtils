@@ -934,8 +934,6 @@ $SPEC{csvutil} = {
                 #'replace-newline', # not implemented in csvutil
                 'sort-rows',
                 'sort-fields',
-                'sum',
-                'avg',
                 'select-rows',
                 'split',
                 'grep',
@@ -999,7 +997,6 @@ sub csvutil {
     my $code;
     my $field_idx;
     my $sorted_fields;
-    my @summary_row;
     my $selected_row;
     my $row_spec_sub;
     my %freqtable; # key=value, val=frequency
@@ -1078,10 +1075,6 @@ sub csvutil {
                 $sorted_fields = [reverse @$sorted_fields]
                     if $args{sort_reverse};
                 $row = $sorted_fields;
-            }
-
-            if ($action eq 'sum' || $action eq 'avg') {
-                @summary_row = map {0} @$row;
             }
 
             if ($action eq 'select-rows') {
@@ -1268,30 +1261,6 @@ sub csvutil {
                 $row = \@new_row;
             }
             $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
-        } elsif ($action eq 'sum') {
-            if ($i == 1) {
-                $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
-            } else {
-                require Scalar::Util;
-                for (0..$#{$row}) {
-                    next unless Scalar::Util::looks_like_number($row->[$_]);
-                    $summary_row[$_] += $row->[$_];
-                }
-                $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header)
-                    if $args{_with_data_rows};
-            }
-        } elsif ($action eq 'avg') {
-            if ($i == 1) {
-                $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
-            } else {
-                require Scalar::Util;
-                for (0..$#{$row}) {
-                    next unless Scalar::Util::looks_like_number($row->[$_]);
-                    $summary_row[$_] += $row->[$_];
-                }
-                $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header)
-                    if $args{_with_data_rows};
-            }
         } elsif ($action eq 'freqtable') {
             if ($i == 1) {
             } else {
@@ -1460,19 +1429,6 @@ sub csvutil {
 
     if ($action eq 'convert-to-vcf') {
         return [200, "OK", join("", @$rows)];
-    }
-
-    if ($action eq 'sum') {
-        $res .= _get_csv_row($csv_emitter, \@summary_row,
-                             $args{_with_data_rows} ? $i+1 : 2,
-                             $outputs_header);
-    } elsif ($action eq 'avg') {
-        if ($i > 2) {
-            for (@summary_row) { $_ /= ($i-1) }
-        }
-        $res .= _get_csv_row($csv_emitter, \@summary_row,
-                             $args{_with_data_rows} ? $i+1 : 2,
-                             $outputs_header);
     }
 
     if ($action eq 'freqtable') {
