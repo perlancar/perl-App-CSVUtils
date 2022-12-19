@@ -29,8 +29,6 @@ write_text("$dir/sep_char-semicolon.csv", "f1;f2\n1;2\n3;4\n");
 write_text("$dir/sort-rows.csv", qq(f1,f2\n2,andy\n1,Andy\n10,Chuck\n));
 write_text("$dir/sort-fields.csv", qq(four,two,eighteen\n4,2,18));
 
-# XXX test with opt: --no-header
-
 subtest "common option: input_sep_char" => sub {
     my $res;
 
@@ -290,25 +288,23 @@ subtest csv_select_fields => sub {
 };
 
 subtest csv_grep => sub {
-    my $res;
+    my ($res, $stdout);
 
-    $res = App::CSVUtils::csv_grep(input_filename=>"$dir/1.csv", eval=>'$_->[0] >= 4');
-    is_deeply($res, [200,"OK","f1,f2,f3\n4,5,6\n7,8,9\n",{'cmdline.skip_format'=>1}], "result")
-        or diag explain $res;
+    require App::CSVUtils::csv_grep;
+
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_grep::csv_grep(input_filename=>"$dir/1.csv", eval=>'$_->[0] >= 4') };
+    is($stdout, "f1,f2,f3\n4,5,6\n7,8,9\n", "output");
     subtest "opt: --hash" => sub {
-        $res = App::CSVUtils::csv_grep(input_filename=>"$dir/1.csv", hash=>1, eval=>'$_->{f1} >= 4');
-        is_deeply($res, [200,"OK","f1,f2,f3\n4,5,6\n7,8,9\n",{'cmdline.skip_format'=>1}], "result")
-            or diag explain $res;
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_grep::csv_grep(input_filename=>"$dir/1.csv", hash=>1, eval=>'$_->{f1} >= 4') };
+        is($stdout, "f1,f2,f3\n4,5,6\n7,8,9\n", "output");
     };
-    subtest "opt: --no-header" => sub {
-        $res = App::CSVUtils::csv_grep(input_filename=>"$dir/no-header-1.csv", input_header=>0, eval=>'$_->[0] >= 4');
-        is_deeply($res, [200,"OK","4,5,6\n7,8,9\n",{'cmdline.skip_format'=>1}], "result")
-            or diag explain $res;
+    subtest "opt: --no-input-header" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_grep::csv_grep(input_filename=>"$dir/no-header-1.csv", input_header=>0, eval=>'$_->[0] >= 4') };
+        is($stdout, "4,5,6\n7,8,9\n", "output");
     };
-    subtest "opt: --hash, --no-header" => sub {
-        $res = App::CSVUtils::csv_grep(input_filename=>"$dir/no-header-1.csv", hash=>1, input_header=>0, eval=>'$_->{field1} >= 4');
-        is_deeply($res, [200,"OK","4,5,6\n7,8,9\n",{'cmdline.skip_format'=>1}], "result")
-            or diag explain $res;
+    subtest "opt: --hash, --no-input-header" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_grep::csv_grep(input_filename=>"$dir/no-header-1.csv", hash=>1, input_header=>0, eval=>'$_->{field1} >= 4') };
+        is($stdout, "4,5,6\n7,8,9\n", "output");
     };
 };
 

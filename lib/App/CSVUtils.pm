@@ -909,7 +909,7 @@ our %argspecopt_with_data_rows = (
     },
 );
 
-our %argspec_hash = (
+our %argspecopt_hash = (
     hash => {
         summary => 'Provide row in $_ as hashref instead of arrayref',
         schema => ['bool*', is=>1],
@@ -936,7 +936,6 @@ $SPEC{csvutil} = {
                 'sort-fields',
                 'select-rows',
                 'split',
-                'grep',
                 'map',
                 'each-row',
                 'convert-to-hash',
@@ -1292,10 +1291,6 @@ sub csvutil {
             $csv_emitter->print($split_fh, $row);
             print $split_fh "\n";
             $split_lines++;
-        } elsif ($action eq 'grep') {
-            unless ($code) {
-                $code = compile_eval_code($args{eval}, 'eval');
-            }
             if ($i == 1 || do {
                 local $_ = $args{hash} ? _array2hash($row, $fields) : $row;
                 local $main::row = $row;
@@ -1611,7 +1606,7 @@ _
         %argspecopt_overwrite,
         %argspec_fields_1plus_nocomp,
         %argspecopt_eval,
-        %argspec_hash,
+        %argspecopt_hash,
         after => {
             summary => 'Put the new field after specified field',
             schema => 'str*',
@@ -1775,7 +1770,7 @@ _
         %argspecopt_output_filename,
         %argspecopt_overwrite,
         %argspec_eval_1,
-        %argspec_hash,
+        %argspecopt_hash,
     },
     tags => ['outputs_csv'],
 };
@@ -1931,7 +1926,7 @@ _
         %argspecopt_input_filename_0,
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
-        %argspec_hash,
+        %argspecopt_hash,
 
         %argspecs_sort_rows_short,
     },
@@ -2158,57 +2153,6 @@ sub csv_split {
     csvutil(%args, action=>'split');
 }
 
-$SPEC{csv_grep} = {
-    v => 1.1,
-    summary => 'Only output row(s) where Perl expression returns true',
-    description => <<'_' . $common_desc,
-
-This is like Perl's `grep` performed over rows of CSV. In `$_`, your Perl code
-will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
-`$main::row` is also set to the row (always as arrayref). `$main::rownum`
-contains the row number (2 means the first data row). `$main::csv` is the
-<pm:Text::CSV_XS> object. `$main::field_idxs` is also available for additional
-information.
-
-Your code is then free to return true or false based on some criteria. Only rows
-where Perl expression returns true will be included in the result.
-
-_
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename_1,
-        %argspecopt_overwrite,
-        %argspec_eval,
-        %argspec_hash,
-    },
-    examples => [
-        {
-            summary => 'Only show rows where the amount field '.
-                'is divisible by 7',
-            argv => ['-He', '$_->{amount} % 7 ? 1:0', 'file.csv'],
-            test => 0,
-            'x.doc.show_result' => 0,
-        },
-        {
-            summary => 'Only show rows where date is a Wednesday',
-            argv => ['-He', 'BEGIN { use DateTime::Format::Natural; $parser = DateTime::Format::Natural->new } $dt = $parser->parse_datetime($_->{date}); $dt->day_of_week == 3', 'file.csv'],
-            test => 0,
-            'x.doc.show_result' => 0,
-        },
-    ],
-    links => [
-        {url=>'prog:csvgrep'},
-    ],
-    tags => ['outputs_csv'],
-};
-sub csv_grep {
-    my %args = @_;
-
-    csvutil(%args, action=>'grep');
-}
-
 $SPEC{csv_map} = {
     v => 1.1,
     summary => 'Return result of Perl code for every row',
@@ -2231,7 +2175,7 @@ _
         %argspecopt_output_filename_1,
         %argspecopt_overwrite,
         %argspec_eval,
-        %argspec_hash,
+        %argspecopt_hash,
         add_newline => {
             summary => 'Whether to make sure each string ends with newline',
             schema => 'bool*',
@@ -2268,7 +2212,7 @@ _
         %argspecs_csv_input,
         %argspecopt_input_filename_0,
         %argspec_eval,
-        %argspec_hash,
+        %argspecopt_hash,
     },
     examples => [
         {
