@@ -433,6 +433,8 @@ our %argspecopt_input_filename = (
 
 Use `-` to read from stdin.
 
+Encoding of input file is assumed to be UTF-8.
+
 _
         schema => 'filename*',
         default => '-',
@@ -447,6 +449,8 @@ our %argspecopt_input_filename_0 = (
         description => <<'_',
 
 Use `-` to read from stdin.
+
+Encoding of input file is assumed to be UTF-8.
 
 _
         schema => 'filename*',
@@ -463,6 +467,8 @@ our %argspecopt_input_filename_1 = (
         description => <<'_',
 
 Use `-` to read from stdin.
+
+Encoding of input file is assumed to be UTF-8.
 
 _
         schema => 'filename*',
@@ -481,6 +487,8 @@ our %argspecopt_input_filenames = (
 
 Use `-` to read from stdin.
 
+Encoding of input file is assumed to be UTF-8.
+
 _
         schema => ['array*', of=>'filename*'],
         default => ['-'],
@@ -497,6 +505,8 @@ our %argspecopt_input_filenames_0plus = (
         description => <<'_',
 
 Use `-` to read from stdin.
+
+Encoding of input file is assumed to be UTF-8.
 
 _
         schema => ['array*', of=>'filename*'],
@@ -523,6 +533,8 @@ our %argspecopt_output_filename = (
 
 Use `-` to output to stdout (the default if you don't specify this option).
 
+Encoding of output file is assumed to be UTF-8.
+
 _
         schema => 'filename*',
         cmdline_aliases=>{o=>{}},
@@ -537,6 +549,8 @@ our %argspecopt_output_filename_1 = (
         description => <<'_',
 
 Use `-` to output to stdout (the default if you don't specify this option).
+
+Encoding of output file is assumed to be UTF-8.
 
 _
         schema => 'filename*',
@@ -554,6 +568,8 @@ our %argspecopt_output_filename_2 = (
 
 Use `-` to output to stdout (the default if you don't specify this option).
 
+Encoding of output file is assumed to be UTF-8.
+
 _
         schema => 'filename*',
         pos => 2,
@@ -568,6 +584,8 @@ our %argspecopt_output_filenames = (
         description => <<'_',
 
 Use `-` to output to stdout (the default if you don't specify this option).
+
+Encoding of output file is assumed to be UTF-8.
 
 _
         schema => ['array*', of=>'filename*'],
@@ -927,8 +945,6 @@ $SPEC{csvutil} = {
                 'convert-to-td',
                 #'concat', # not implemented in csvutil
                 'select-fields',
-                'dump',
-                'csv',
                 #'setop', # not implemented in csvutil
                 #'lookup-fields', # not implemented in csvutil
                 'transpose',
@@ -1371,16 +1387,8 @@ sub csvutil {
             }
         } elsif ($action eq 'convert-to-td') {
             push @$rows, $row unless $i == 1;
-        } elsif ($action eq 'dump') {
-            if ($args{hash}) {
-                push @$rows, _array2hash($row, $fields) unless $i == 1;
-            } else {
-                push @$rows, $row;
-            }
         } elsif ($action eq 'fill-template') {
             push @$rows, _array2hash($row, $fields) unless $i == 1;
-        } elsif ($action eq 'csv') {
-            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
         } elsif ($action eq 'get-cells') {
             my $j = -1;
           COORD:
@@ -1473,10 +1481,6 @@ sub csvutil {
             push @freqtable, [$_, $freqtable{$_}];
         }
         return [200, "OK", \@freqtable, {'table.fields'=>['value','freq']}];
-    }
-
-    if ($action eq 'dump') {
-        return [200, "OK", $rows];
     }
 
     if ($action eq 'pick-rows') {
@@ -2753,29 +2757,6 @@ _
 sub csv_fill_template {
     my %args = @_;
     csvutil(%args, action=>'fill-template');
-}
-
-$SPEC{csv_csv} = {
-    v => 1.1,
-    summary => 'Convert CSV to CSV',
-    description => <<'_' . $common_desc,
-
-Why convert CSV to CSV? When you want to change separator/quote/escape
-character, for one.
-
-_
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename_1,
-        %argspecopt_overwrite,
-        %argspec_hash,
-    },
-};
-sub csv_csv {
-    my %args = @_;
-    csvutil(%args, action=>'csv');
 }
 
 $SPEC{csv_setop} = {

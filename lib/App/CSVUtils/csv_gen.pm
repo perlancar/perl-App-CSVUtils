@@ -62,8 +62,6 @@ _
 
     accepts_csv => 0,
 
-    outputs_csv => 1,
-
     examples => [
         {
             summary => 'Generate 10 numbers from 1 to 10',
