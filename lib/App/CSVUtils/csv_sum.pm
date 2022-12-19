@@ -22,6 +22,7 @@ Non-numbers will be assumed to be 0.
 
 _
     add_args => {
+        %App::CSVUtils::argspecopt_with_data_rows,
     },
 
     on_input_header_row => sub {
@@ -42,8 +43,9 @@ _
         for my $j (0 .. $#{ $r->{input_fields} }) {
             no warnings 'numeric', 'uninitialized';
             $r->{summary_row}[$j] += $r->{input_row}[$j]+0;
-            $r->{row_count}++;
         }
+        $r->{code_printline}->($r->{input_row}) if $r->{util_args}{with_data_rows};
+        $r->{row_count}++;
     },
 
     after_read_input => sub {

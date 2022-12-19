@@ -902,7 +902,7 @@ our %argspecs_sort_fields_short = (
     %argspecsopt_sortsub,
 );
 
-our %argspec_with_data_rows = (
+our %argspecopt_with_data_rows = (
     with_data_rows => {
         summary => 'Whether to also output data rows',
         schema => 'bool',
@@ -950,7 +950,6 @@ $SPEC{csvutil} = {
                 'get-cells',
                 'fill-template',
                 'convert-to-vcf',
-                'pick-rows',
             ]],
             req => 1,
             pos => 0,
@@ -1057,7 +1056,7 @@ sub csvutil {
                 } elsif ($args{sort_by_code} || $args{sort_by_sortsub}) {
                     my $code;
                     if ($args{sort_by_code}) {
-                        $code = _compile($args{sort_by_code});
+                        $code = compile_eval_code($args{sort_by_code}, 'sort_by_code');
                     } elsif (defined $args{sort_by_sortsub}) {
                         require Sort::Sub;
                         $code = Sort::Sub::get_sorter(
@@ -1129,7 +1128,7 @@ sub csvutil {
         } elsif ($action eq 'munge-field') {
             unless ($i == 1) {
                 unless ($code) {
-                    $code = _compile($args{eval});
+                    $code = compile_eval_code($args{eval}, 'eval');
                     $field_idx = _get_field_idx($args{field}, \%field_idxs);
                 }
                 if (defined $row->[$field_idx]) {
@@ -1148,7 +1147,7 @@ sub csvutil {
         } elsif ($action eq 'munge-row') {
             unless ($i == 1) {
                 unless ($code) {
-                    $code = _compile($args{eval});
+                    $code = compile_eval_code($args{eval}, 'eval');
                 }
                 local $_ = $args{hash} ? _array2hash($row, $fields) : $row;
                 local $main::row = $row;
@@ -1200,7 +1199,7 @@ sub csvutil {
                 $fields = $row;
             } else {
                 unless ($code) {
-                    $code = _compile($args{eval} // 'return');
+                    $code = compile_eval_code($args{eval} // 'return', 'eval');
                     if (!defined($args{fields}) || !@{ $args{fields} }) {
                         return [400, "Please specify one or more fields (-F)"];
                     }
@@ -1295,7 +1294,7 @@ sub csvutil {
             $split_lines++;
         } elsif ($action eq 'grep') {
             unless ($code) {
-                $code = _compile($args{eval});
+                $code = compile_eval_code($args{eval}, 'eval');
             }
             if ($i == 1 || do {
                 local $_ = $args{hash} ? _array2hash($row, $fields) : $row;
@@ -1309,7 +1308,7 @@ sub csvutil {
             }
         } elsif ($action eq 'map' || $action eq 'each-row') {
             unless ($code) {
-                $code = _compile($args{eval});
+                $code = compile_eval_code($args{eval}, 'eval');
             }
             if ($i > 1) {
                 my $rowres = do {
@@ -1329,25 +1328,6 @@ sub csvutil {
             }
         } elsif ($action eq 'sort-rows') {
             push @$rows, $row unless $i == 1;
-        } elsif ($action eq 'pick-rows') {
-            if ($i > 1) {
-                if ($args{pick_num} == 1) {
-                    # algorithm from Learning Perl
-                    $rows->[0] = $row if rand($i-1) < 1;
-                } else {
-                    # algorithm from Learning Perl, modified
-                    if (@$rows < $args{pick_num}) {
-                        # we haven't reached $pick_num, put row to result in a
-                        # random position
-                        splice @$rows, rand(@$rows+1), 0, $row;
-                    } else {
-                        # we have reached $pick_num, just replace an item
-                        # randomly, using algorithm from Learning Perl, slightly
-                        # modified
-                        rand($i-1) < @$rows and splice @$rows, rand(@$rows), 1, $row;
-                    }
-                }
-            }
         } elsif ($action eq 'transpose') {
             push @$rows, $row;
         } elsif ($action eq 'convert-to-hash') {
@@ -1439,22 +1419,12 @@ sub csvutil {
         return [200, "OK", \@freqtable, {'table.fields'=>['value','freq']}];
     }
 
-    if ($action eq 'pick-rows') {
-        if ($has_header) {
-            $csv_emitter->combine(@$fields);
-            $res .= $csv_emitter->string . "\n";
-        }
-        for my $row (@$rows) {
-            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
-        }
-    }
-
     if ($action eq 'sort-rows') {
 
         # whether we should compute keys
         my @keys;
         if ($args{sort_key}) {
-            my $code_gen_key = _compile($args{sort_key});
+            my $code_gen_key = compile_eval_code($args{sort_key}, 'sort_key');
             if ($action eq 'sort-rows') {
                 for my $row (@$rows) {
                     local $_ = $args{hash} ? _array2hash($row, $fields) : $row;
@@ -1473,7 +1443,7 @@ sub csvutil {
 
             my $code0;
             if ($args{sort_by_code}) {
-                $code0 = _compile($args{sort_by_code});
+                $code0 = compile_eval_code($args{sort_by_code}, 'sort_by_code');
             } elsif (defined $args{sort_by_sortsub}) {
                 require Sort::Sub;
                 $code0 = Sort::Sub::get_sorter(
@@ -1545,7 +1515,7 @@ sub csvutil {
                     }
                 }
             }
-            $code = _compile($code_str);
+            $code = compile_eval_code($code_str, 'from sort_by_fields');
             $rows = [sort { local $main::a = $a; local $main::b = $b; $code->($main::a, $main::b) } @$rows];
 
         } else {
@@ -2101,46 +2071,6 @@ sub csv_shuf_fields {
     );
 }
 
-$SPEC{csv_sum} = {
-    v => 1.1,
-    summary => 'Output a summary row which are arithmetic sums of data rows',
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename_1,
-        %argspecopt_overwrite,
-        %argspec_with_data_rows,
-    },
-    description => '' . $common_desc,
-    tags => ['outputs_csv'],
-};
-sub csv_sum {
-    my %args = @_;
-
-    csvutil(%args, action=>'sum', _with_data_rows=>$args{with_data_rows});
-}
-
-$SPEC{csv_avg} = {
-    v => 1.1,
-    summary => 'Output a summary row which are arithmetic averages of data rows',
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename_1,
-        %argspecopt_overwrite,
-        %argspec_with_data_rows,
-    },
-    description => '' . $common_desc,
-    tags => ['outputs_csv'],
-};
-sub csv_avg {
-    my %args = @_;
-
-    csvutil(%args, action=>'avg', _with_data_rows=>$args{with_data_rows});
-}
-
 $SPEC{csv_freqtable} = {
     v => 1.1,
     summary => 'Output a frequency table of values of a specified field in CSV',
@@ -2277,34 +2207,6 @@ sub csv_grep {
     my %args = @_;
 
     csvutil(%args, action=>'grep');
-}
-
-$SPEC{csv_pick_rows} = {
-    v => 1.1,
-    summary => 'Return one or more random rows from CSV',
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename_1,
-        %argspecopt_overwrite,
-        num => {
-            summary => 'Number of rows to pick',
-            schema => 'posint*',
-            default => 1,
-            cmdline_aliases => {n=>{}},
-        },
-    },
-    description => '' . $common_desc,
-    tags => ['outputs_csv'],
-};
-sub csv_pick_rows {
-    my %args = @_;
-    csvutil(
-        %args,
-        action=>'pick-rows',
-        pick_num => $args{num} // 1,
-    );
 }
 
 $SPEC{csv_map} = {
