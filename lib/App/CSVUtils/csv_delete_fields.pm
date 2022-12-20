@@ -1,0 +1,60 @@
+package App::CSVUtils::csv_delete_fields;
+
+use 5.010001;
+use strict;
+use warnings;
+
+# AUTHORITY
+# DATE
+# DIST
+# VERSION
+
+use App::CSVUtils qw(
+                        gen_csv_util
+                );
+
+gen_csv_util(
+    name => 'csv_delete_fields',
+    summary => 'Delete one or more fields from CSV file',
+    add_args => {
+        %App::CSVUtils::argspecsopt_field_selection,
+    },
+    examples => [
+    ],
+
+    on_input_data_row => sub {
+        my $r = shift;
+
+        # we add the following keys to the stash
+        unless ($r->{selected_fields_idx_array_sorted}) {
+            my $res = App::CSVUtils::_select_fields($r->{input_fields}, $r->{input_fields_idx}, $r->{util_args});
+            die $res unless $res->[0] == 100;
+            my $selected_fields = $res->[2][0];
+            my $selected_fields_idx_array = $res->[2][1];
+            die [412, "At least one field must remain"]
+                if @{ $selected_fields } == @{ $r->{input_fields} };
+            $r->{selected_fields_idx_array_sorted} = [sort { $b <=> $a } @$selected_fields_idx_array];
+
+            # set ouput fields
+            $r->{output_fields} = [@{ $r->{input_fields} }];
+            for (@{ $r->{selected_fields_idx_array_sorted} }) {
+                splice @{ $r->{output_fields} }, $_, 1;
+            }
+
+            if ($r->{util_args}{show_selected_fields}) {
+                $r->{wants_skip_files}++;
+                $r->{result} = [200, "OK", $selected_fields];
+                return;
+            }
+        }
+
+        for (@{ $r->{selected_fields_idx_array_sorted} }) {
+            splice @{ $r->{input_row} }, $_, 1;
+        }
+
+        $r->{code_printrow}->($r->{input_row});
+    },
+);
+
+1;
+# ABSTRACT:

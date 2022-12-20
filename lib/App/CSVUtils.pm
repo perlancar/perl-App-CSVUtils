@@ -598,7 +598,7 @@ our %argspecopt_field = (
     field => {
         summary => 'Field name',
         schema => 'str*',
-        cmdline_aliases => { F=>{} },
+        cmdline_aliases => { f=>{} },
     },
 );
 
@@ -606,7 +606,7 @@ our %argspec_field_1 = (
     field => {
         summary => 'Field name',
         schema => 'str*',
-        cmdline_aliases => { F=>{} },
+        cmdline_aliases => { f=>{} },
         req => 1,
         pos => 1,
         completion => \&_complete_field,
@@ -618,7 +618,7 @@ our %argspec_field_1_nocomp = (
     field => {
         summary => 'Field name',
         schema => 'str*',
-        cmdline_aliases => { F=>{} },
+        cmdline_aliases => { f=>{} },
         req => 1,
         pos => 1,
     },
@@ -632,7 +632,7 @@ our %argspec_fields_1plus_nocomp = (
         summary => 'Field names',
         'summary.alt.plurality.singular' => 'Field name',
         schema => ['array*', of=>['str*', min_len=>1], min_len=>1],
-        cmdline_aliases => { F=>{} },
+        cmdline_aliases => { f=>{} },
         req => 1,
         pos => 1,
         slurpy => 1,
@@ -646,7 +646,7 @@ our %argspec_fields = (
         summary => 'Field names',
         schema => ['array*', of=>['str*', min_len=>1], min_len=>1],
         req => 1,
-        cmdline_aliases => {F=>{}},
+        cmdline_aliases => {f=>{}},
     },
 );
 
@@ -656,7 +656,7 @@ our %argspecopt_fields = (
         'x.name.singular' => 'field',
         summary => 'Field names',
         schema => ['array*', of=>['str*', min_len=>1], min_len=>1],
-        cmdline_aliases => {F=>{}},
+        cmdline_aliases => {f=>{}},
     },
 );
 our %argspecsopt_field_selection = (
@@ -925,7 +925,6 @@ $SPEC{csvutil} = {
         %argspecs_csv_input,
         action => {
             schema => ['str*', in=>[
-                'delete-fields',
                 'munge-field',
                 'munge-row',
                 #'replace-newline', # not implemented in csvutil
@@ -1150,19 +1149,6 @@ sub csvutil {
                         $row->[$field_idxs{$field}] = $_->{$field};
                     }
                 }
-            }
-            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
-        } elsif ($action eq 'delete-fields') {
-            unless ($selected_fields) {
-                my $res = _select_fields($fields, \%field_idxs, \%args);
-                return $res unless $res->[0] == 100;
-                $selected_fields = $res->[2][0];
-                $selected_field_idxs_array = $res->[2][1];
-                return [412, "At least one field must remain"] if @$selected_fields == @$fields;
-                $selected_field_idxs_array_sorted = [sort { $b <=> $a } @$selected_field_idxs_array];
-            }
-            for (@$selected_field_idxs_array_sorted) {
-                splice @$row, $_, 1;
             }
             $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
         } elsif ($action eq 'select-fields') {
@@ -1464,25 +1450,6 @@ our $common_desc = <<'_';
 Encoding: The utilities in this module/distribution accept and emit UTF8 text.
 
 _
-
-$SPEC{csv_delete_fields} = {
-    v => 1.1,
-    summary => 'Delete one or more fields from CSV file',
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-        %argspecopt_input_filename_0,
-        %argspecsopt_field_selection,
-        %argspecopt_output_filename_1,
-        %argspecopt_overwrite,
-    },
-    description => '' . $common_desc,
-    tags => ['outputs_csv'],
-};
-sub csv_delete_fields {
-    my %args = @_;
-    csvutil(%args, action=>'delete-fields');
-}
 
 $SPEC{csv_munge_field} = {
     v => 1.1,

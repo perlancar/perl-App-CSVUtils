@@ -70,43 +70,48 @@ subtest csv_add_fields => sub {
 };
 
 subtest csv_delete_fields => sub {
-    my $res;
+    my ($res, $stdout);
 
-    $res = App::CSVUtils::csv_delete_fields(input_filename=>"$dir/1.csv", include_fields=>["f4"]);
+    require App::CSVUtils::csv_delete_fields;
+
+    $res = App::CSVUtils::csv_delete_fields::csv_delete_fields(input_filename=>"$dir/1.csv", include_fields=>["f4"]);
     is($res->[0], 400, "deleting unknown field -> error");
 
     subtest "deleting unknown field with ignore_unknown_fields option -> ok" => sub {
-        $res = App::CSVUtils::csv_delete_fields(input_filename=>"$dir/1.csv", include_fields=>["f4"], ignore_unknown_fields=>1);
-        is_deeply($res, [200, "OK", "f1,f2,f3\n1,2,3\n4,5,6\n7,8,9\n", {'cmdline.skip_format'=>1}]) or diag explain $res;
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_delete_fields::csv_delete_fields(input_filename=>"$dir/1.csv", include_fields=>["f4"], ignore_unknown_fields=>1) };
+        is($stdout, "f1,f2,f3\n1,2,3\n4,5,6\n7,8,9\n");
     };
 
     subtest "exclude_field_pat option" => sub {
-        $res = App::CSVUtils::csv_delete_fields(input_filename=>"$dir/1.csv", include_field_pat => qr/.*/, exclude_field_pat=>qr/3/);
-        is_deeply($res, [200, "OK", "f3\n3\n6\n9\n", {'cmdline.skip_format'=>1}]) or diag explain $res;
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_delete_fields::csv_delete_fields(input_filename=>"$dir/1.csv", include_field_pat => qr/.*/, exclude_field_pat=>qr/3/) };
+        is($stdout, "f3\n3\n6\n9\n");
     };
 
     subtest "exclude_fields option" => sub {
-        $res = App::CSVUtils::csv_delete_fields(input_filename=>"$dir/1.csv", include_field_pat => qr/.*/, exclude_fields=>['f3']);
-        is_deeply($res, [200, "OK", "f3\n3\n6\n9\n", {'cmdline.skip_format'=>1}]) or diag explain $res;
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_delete_fields::csv_delete_fields(input_filename=>"$dir/1.csv", include_field_pat => qr/.*/, exclude_fields=>['f3']) };
+        is($stdout, "f3\n3\n6\n9\n");
     };
 
     subtest "show_selected_fields option" => sub {
-        $res = App::CSVUtils::csv_delete_fields(input_filename=>"$dir/1.csv", include_field_pat => qr/.*/, exclude_fields=>['f3'], show_selected_fields=>1);
+        $res = App::CSVUtils::csv_delete_fields::csv_delete_fields(input_filename=>"$dir/1.csv", include_field_pat => qr/.*/, exclude_fields=>['f3'], show_selected_fields=>1);
         is_deeply($res, [200, "OK", ["f1","f2"]]) or diag explain $res;
     };
 
-    $res = App::CSVUtils::csv_delete_fields(input_filename=>"$dir/2.csv", include_field_pat=>qr/.*/);
+    $res = App::CSVUtils::csv_delete_fields::csv_delete_fields(input_filename=>"$dir/2.csv", include_field_pat=>qr/.*/);
     is($res->[0], 412, "deleting last remaining field -> error (1)");
 
-    $res = App::CSVUtils::csv_delete_fields(input_filename=>"$dir/3.csv", include_fields=>["f2", "f1"]);
+    $res = App::CSVUtils::csv_delete_fields::csv_delete_fields(input_filename=>"$dir/3.csv", include_fields=>["f2", "f1"]);
     is($res->[0], 412, "deleting last remaining field -> error (2)");
 
-    $res = App::CSVUtils::csv_delete_fields(input_filename=>"$dir/1.csv", include_fields=>["f1"]);
-    is_deeply($res, [200,"OK","f2,f3\n2,3\n5,6\n8,9\n",{'cmdline.skip_format'=>1}], "result");
+    subtest "include_fields (1)" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_delete_fields::csv_delete_fields(input_filename=>"$dir/1.csv", include_fields=>["f1"]) };
+        is($stdout, "f2,f3\n2,3\n5,6\n8,9\n", "output");
+    };
 
-    $res = App::CSVUtils::csv_delete_fields(input_filename=>"$dir/1.csv", include_fields=>["f3", "f1"]);
-    is_deeply($res, [200,"OK","f2\n2\n5\n8\n",{'cmdline.skip_format'=>1}], "result")
-        or diag explain $res;
+    subtest "include_fields (2)" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_delete_fields::csv_delete_fields(input_filename=>"$dir/1.csv", include_fields=>["f3", "f1"]) };
+        is($stdout, "f2\n2\n5\n8\n");
+    };
 };
 
 subtest csv_list_field_names => sub {
