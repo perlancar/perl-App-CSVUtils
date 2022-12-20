@@ -87,7 +87,7 @@ _
             }
             # in the first loop over input files, we only read the header to
             # collect the fields.
-            $r->{wants_skip_file};
+            $r->{wants_skip_file}++;
         }
     },
 

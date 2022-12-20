@@ -3535,6 +3535,14 @@ sub gen_csv_util {
                                 if ($on_input_header_row) {
                                     # log_trace "Calling on_input_header_row hook handler ...";
                                     $on_input_header_row->($r);
+
+                                    if (delete $r->{wants_skip_file}) {
+                                        log_trace "Handler wants to skip this file, moving on to the next file";
+                                        next INPUT_FILENAME;
+                                    } elsif (delete $r->{wants_skip_files}) {
+                                        log_trace "Handler wants to skip all files, skipping all input files";
+                                        last READ_CSV;
+                                    }
                                 }
 
                                 # reindex the fields, should the above hook
@@ -3561,6 +3569,14 @@ sub gen_csv_util {
                                 if ($on_input_data_row) {
                                     # log_trace "Calling on_input_header_row hook handler ...";
                                     $on_input_data_row->($r);
+
+                                    if (delete $r->{wants_skip_file}) {
+                                        log_trace "Handler wants to skip this file, moving on to the next file";
+                                        next INPUT_FILENAME;
+                                    } elsif (delete $r->{wants_skip_files}) {
+                                        log_trace "Handler wants to skip all files, skipping all input files";
+                                        last READ_CSV;
+                                    }
                                 }
                             }
 
@@ -3584,23 +3600,16 @@ sub gen_csv_util {
                                 last READ_CSV;
                             }
                         }
-                        if ($r->{input_filenum} == @input_filenames && $after_close_input_files) {
-                            log_trace "Calling after_close_input_files handler ...";
-                            $after_close_input_files->($r);
-                            if (delete $r->{wants_repeat_files}) {
-                                log_trace "Handler wants to repeat reading files, repeating";
-                                goto BEFORE_INPUT_FILENAME;
-                            } elsif (delete $r->{wants_repeat_file}) {
-                                log_trace "Handler wants to repeat reading this file, repeating";
-                                $r->{input_filenum}--;
-                                redo INPUT_FILENAME;
-                            } elsif (delete $r->{wants_skip_files}) {
-                                log_trace "Handler wants to skip reading all file, skipping";
-                                last READ_CSV;
-                            }
-                        }
-
                     } # for input_filename
+
+                    if ($after_close_input_files) {
+                        log_trace "Calling after_close_input_files handler ...";
+                        $after_close_input_files->($r);
+                        if (delete $r->{wants_repeat_files}) {
+                            log_trace "Handler wants to repeat reading files, repeating";
+                            goto BEFORE_INPUT_FILENAME;
+                        }
+                    }
 
                 } # READ_CSV
 
