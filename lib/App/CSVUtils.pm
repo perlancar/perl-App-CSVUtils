@@ -926,7 +926,6 @@ $SPEC{csvutil} = {
         action => {
             schema => ['str*', in=>[
                 'list-field-names',
-                'info',
                 'delete-fields',
                 'munge-field',
                 'munge-row',
@@ -1119,7 +1118,6 @@ sub csvutil {
                     [map { {name=>$_, index=>$field_idxs{$_}+1} }
                          sort keys %field_idxs],
                     {'table.fields'=>['name','index']}];
-        } elsif ($action eq 'info') {
         } elsif ($action eq 'munge-field') {
             unless ($i == 1) {
                 unless ($code) {
@@ -1283,20 +1281,6 @@ sub csvutil {
             return [400, "Unknown action '$action'"];
         }
     } # while getline()
-
-    if ($action eq 'info') {
-        return [200, "OK", {
-            field_count => scalar @$fields,
-            fields      => $fields,
-
-            row_count        => $header_row_count + $data_row_count,
-            header_row_count => $header_row_count,
-            data_row_count   => $data_row_count,
-
-            #file_size  => $chars, # we use csv's getline() so how?
-            file_size   => (-s $fh),
-        }];
-    }
 
     if ($action eq 'convert-to-hash') {
         $selected_row //= [];
