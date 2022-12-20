@@ -925,7 +925,6 @@ $SPEC{csvutil} = {
         %argspecs_csv_input,
         action => {
             schema => ['str*', in=>[
-                'add-fields',
                 'list-field-names',
                 'info',
                 'delete-fields',
@@ -1158,69 +1157,6 @@ sub csvutil {
                         next unless exists $field_idxs{$field};
                         $row->[$field_idxs{$field}] = $_->{$field};
                     }
-                }
-            }
-            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
-        } elsif ($action eq 'add-fields') {
-            if ($i == 1) {
-                if (defined $args{_at}) {
-                    $field_idx = $args{_at}-1;
-                } elsif (defined $args{before}) {
-                    for (0..$#{$row}) {
-                        if ($row->[$_] eq $args{before}) {
-                            $field_idx = $_;
-                            last;
-                        }
-                    }
-                    return [400, "Field '$args{before}' (to add new fields before) not found"]
-                        unless defined $field_idx;
-                } elsif (defined $args{after}) {
-                    for (0..$#{$row}) {
-                        if ($row->[$_] eq $args{after}) {
-                            $field_idx = $_+1;
-                            last;
-                        }
-                    }
-                    return [400, "Field '$args{after}' (to add new fields after) not found"]
-                        unless defined $field_idx;
-                } else {
-                    $field_idx = @$row;
-                }
-                splice @$row, $field_idx, 0, @{ $args{fields} };
-                for (keys %field_idxs) {
-                    if ($field_idxs{$_} >= $field_idx) {
-                        $field_idxs{$_}++;
-                    }
-                }
-                $fields = $row;
-            } else {
-                unless ($code) {
-                    $code = compile_eval_code($args{eval} // 'return', 'eval');
-                    if (!defined($args{fields}) || !@{ $args{fields} }) {
-                        return [400, "Please specify one or more fields (-F)"];
-                    }
-                    for (@{ $args{fields} }) {
-                        unless (length $_) {
-                            return [400, "New field name cannot be empty"];
-                        }
-                        if (defined $field_idxs{$_}) {
-                            return [412, "Field '$_' already exists"];
-                        }
-                    }
-                }
-                {
-                    local $_ = $args{hash} ? _array2hash($row, $fields) : $row;
-                    local $main::row = $row;
-                    local $main::rownum = $i;
-                    local $main::csv = $csv_parser;
-                    local $main::field_idxs = \%field_idxs;
-                    my @vals;
-                    eval { @vals = $code->() };
-                    die "Error while adding field(s) '".join(",", @{$args{fields}})."' for row #$i: $@\n"
-                        if $@;
-                    if (ref $vals[0] eq 'ARRAY') { @vals = @{ $vals[0] } }
-                    splice @$row, $field_idx, 0,
-                        (map { $_ // '' } @vals[0 .. $#{$args{fields}} ]);
                 }
             }
             $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
@@ -1550,96 +1486,6 @@ our $common_desc = <<'_';
 Encoding: The utilities in this module/distribution accept and emit UTF8 text.
 
 _
-
-$SPEC{csv_add_fields} = {
-    v => 1.1,
-    summary => 'Add one or more fields to CSV file',
-    description => <<'_' . $common_desc,
-
-The new fields by default will be added at the end, unless you specify one of
-`--after` (to put after a certain field), `--before` (to put before a certain
-field), or `--at` (to put at specific position, 1 means the first field). The
-new fields will be clustered together though, you currently cannot set the
-position of each new field. But you can later reorder fields using
-<prog:csv-sort-fields>.
-
-If supplied, your Perl code (`-e`) will be called for each row (excluding the
-header row) and should return the value for the new fields (either as a list or
-as an arrayref). `$_` contains the current row (as arrayref, or if you specify
-`-H`, as a hashref). `$main::row` is available and contains the current row
-(always as an arrayref). `$main::rownum` contains the row number (2 means the
-first data row). `$csv` is the <pm:Text::CSV_XS> object. `$main::field_idxs` is
-also available for additional information.
-
-If `-e` is not supplied, the new fields will be getting the default value of
-empty string (`''`).
-
-_
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename,
-        %argspecopt_overwrite,
-        %argspec_fields_1plus_nocomp,
-        %argspecopt_eval,
-        %argspecopt_hash,
-        after => {
-            summary => 'Put the new field after specified field',
-            schema => 'str*',
-            completion => \&_complete_field,
-        },
-        before => {
-            summary => 'Put the new field before specified field',
-            schema => 'str*',
-            completion => \&_complete_field,
-        },
-        at => {
-            summary => 'Put the new field at specific position '.
-                '(1 means first field)',
-            schema => ['int*', min=>1],
-        },
-    },
-    args_rels => {
-        choose_one => [qw/after before at/],
-    },
-    examples => [
-        {
-            summary => 'Add a few new blank fields at the end',
-            argv => ['file.csv', 'field4', 'field6', 'field5'],
-            test => 0,
-            'x.doc.show_result' => 0,
-        },
-        {
-            summary => 'Add a few new blank fields after a certain field',
-            argv => ['file.csv', 'field4', 'field6', 'field5', '--after', 'field2'],
-            test => 0,
-            'x.doc.show_result' => 0,
-        },
-        {
-            summary => 'Add a new field and set its value',
-            argv => ['file.csv', 'after_tax', '-e', '$main::row->[5] * 1.11'],
-            test => 0,
-            'x.doc.show_result' => 0,
-        },
-        {
-            summary => 'Add a couple new fields and set their values',
-            argv => ['file.csv', 'tax_rate', 'after_tax', '-e', '(0.11, $main::row->[5] * 1.11)'],
-            test => 0,
-            'x.doc.show_result' => 0,
-        },
-    ],
-    tags => ['outputs_csv'],
-};
-sub csv_add_fields {
-    my %args = @_;
-    csvutil(
-        %args, action=>'add-fields',
-        _after  => $args{after},
-        _before => $args{before},
-        _at     => $args{at},
-    );
-}
 
 $SPEC{csv_list_field_names} = {
     v => 1.1,
@@ -2912,6 +2758,33 @@ sub csv_lookup_fields {
     }
 }
 
+# add a position to specified argument, if possible
+sub _add_arg_pos {
+    my ($args, $argname, $is_slurpy) = @_;
+
+    # argument already has a position, return
+    return if defined $args->{$argname}{pos};
+
+    # position of slurpy argument
+    my $slurpy_pos;
+    for (keys %$args) {
+        next unless $args->{$_}{slurpy};
+        $slurpy_pos = $args->{$_}{pos};
+        last;
+    }
+
+    # find the lowest position that's not available
+  ARG:
+    for my $j (0 .. scalar(keys %$args)-1) {
+        last if defined $slurpy_pos && $j >= $slurpy_pos;
+        for (keys %$args) {
+            next ARG if defined $args->{$_}{pos} && $args->{$_}{pos} == $j;
+        }
+        $args->{$argname}{pos} = $j;
+        last;
+    }
+}
+
 $SPEC{gen_csv_util} = {
     v => 1.1,
     summary => 'Generate a CSV utility',
@@ -3698,66 +3571,24 @@ sub gen_csv_util {
             if ($reads_csv) {
                 $meta->{args}{$_} = {%{$argspecs_csv_input{$_}}} for keys %argspecs_csv_input;
 
-                my $max_pos = -1;
-                for (keys %{ $meta->{args} }) {
-                    $max_pos = $meta->{args}{$_}{pos}
-                        if defined $meta->{args}{$_}{pos} &&
-                        $meta->{args}{$_}{pos} > $max_pos;
-                }
-
                 if ($reads_multiple_csv) {
                     $meta->{args}{input_filenames} = {%{$argspecopt_input_filenames{input_filenames}}};
-                    if (
-                        # no other args use slurpy=1
-                        !(grep {defined($meta->{args}{$_}{pos}) && $meta->{args}{$_}{pos} == 0 } keys %{$meta->{args}} )
-                    ) {
-                        my $max_pos = -1;
-                        for (keys %{ $meta->{args} }) {
-                            $max_pos = $meta->{args}{$_}{pos}
-                                if defined $meta->{args}{$_}{pos} &&
-                                $meta->{args}{$_}{pos} > $max_pos;
-                        }
-                        $meta->{args}{input_filenames}{pos} = $max_pos+1;
-                        $meta->{args}{input_filenames}{slurpy} = 1;
-                    }
+                    _add_arg_pos($meta->{args}, 'input_filenames', 'slurpy');
                 } else {
                     $meta->{args}{input_filename} = {%{$argspecopt_input_filename{input_filename}}};
-                    if (
-                        # no other args use pos=0
-                        !(grep {defined($meta->{args}{$_}{pos}) && $meta->{args}{$_}{pos} == 0 } keys %{$meta->{args}} )
-                    ) {
-                        $meta->{args}{input_filename}{pos} = $max_pos+1;
-                    }
+                    _add_arg_pos($meta->{args}, 'input_filename');
                 }
             } # if reads_csv
 
             if ($writes_csv) {
                 $meta->{args}{$_} = {%{$argspecs_csv_output{$_}}} for keys %argspecs_csv_output;
 
-                my $max_pos = -1;
-                for (keys %{ $meta->{args} }) {
-                    $max_pos = $meta->{args}{$_}{pos}
-                        if defined $meta->{args}{$_}{pos} &&
-                        $meta->{args}{$_}{pos} > $max_pos;
-                }
-
                 if ($writes_multiple_csv) {
                     $meta->{args}{output_filenames} = {%{$argspecopt_output_filenames{output_filenames}}};
-                    if (
-                        # no other args use slurpy=1
-                        !(grep {defined($meta->{args}{$_}{pos}) && $meta->{args}{$_}{pos} == 0 } keys %{$meta->{args}} )
-                    ) {
-                        $meta->{args}{output_filenames}{pos} = $max_pos+1;
-                        $meta->{args}{output_filenames}{slurpy} = 1;
-                    }
+                    _add_arg_pos($meta->{args}, 'output_filenames', 'slurpy');
                 } else {
                     $meta->{args}{output_filename} = {%{$argspecopt_output_filename{output_filename}}};
-                    if (
-                        # no other args use pos=0
-                        !(grep {defined($meta->{args}{$_}{pos}) && $meta->{args}{$_}{pos} == 0 } keys %{$meta->{args}} )
-                    ) {
-                        $meta->{args}{output_filename}{pos} = $max_pos+1;
-                    }
+                    _add_arg_pos($meta->{args}, 'output_filename');
                 }
 
                 $meta->{args}{overwrite} = {%{$argspecopt_overwrite{overwrite}}};

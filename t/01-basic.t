@@ -39,29 +39,34 @@ subtest "common option: input_sep_char" => sub {
 };
 
 subtest csv_add_fields => sub {
-    my $res;
+    my ($res, $stdout);
 
-    dies_ok { App::CSVUtils::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4"], eval=>"blah +") }
-        "error in eval code -> dies";
+    require App::CSVUtils::csv_add_fields;
 
-    $res = App::CSVUtils::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f3"], eval=>"1");
-    is($res->[0], 412, "adding existing field -> error");
+    $res = App::CSVUtils::csv_add_fields::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4"], eval=>"blah +");
+    is($res->[0], 400, "error in eval code -> dies") or diag explain $res;
 
-    $res = App::CSVUtils::csv_add_fields(input_filename=>"$dir/1.csv", fields=>[""], eval=>"1");
-    is($res->[0], 400, "empty field -> error");
+    $res = App::CSVUtils::csv_add_fields::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f3"], eval=>"1");
+    is($res->[0], 412, "adding existing field -> error") or diag explain $res;
 
-    $res = App::CSVUtils::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4"]);
-    is_deeply($res, [200,"OK","f1,f2,f3,f4\n1,2,3,\n4,5,6,\n7,8,9,\n",{'cmdline.skip_format'=>1}], "result (with no eval)");
-    $res = App::CSVUtils::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4"], eval=>'$main::rownum*2');
-    is_deeply($res, [200,"OK","f1,f2,f3,f4\n1,2,3,4\n4,5,6,6\n7,8,9,8\n",{'cmdline.skip_format'=>1}], "result (with eval)");
-    $res = App::CSVUtils::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4","f6","f5"], eval=>'[11,13,12]');
-    is_deeply($res, [200,"OK","f1,f2,f3,f4,f6,f5\n1,2,3,11,13,12\n4,5,6,11,13,12\n7,8,9,11,13,12\n",{'cmdline.skip_format'=>1}], "result (with eval, multiple fields)");
-    $res = App::CSVUtils::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4"], eval=>'$main::rownum*2', after=>'f1');
-    is_deeply($res, [200,"OK","f1,f4,f2,f3\n1,4,2,3\n4,6,5,6\n7,8,8,9\n",{'cmdline.skip_format'=>1}], "result (with 'after' option)");
-    $res = App::CSVUtils::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4"], eval=>'$main::rownum*2', before=>'f2');
-    is_deeply($res, [200,"OK","f1,f4,f2,f3\n1,4,2,3\n4,6,5,6\n7,8,8,9\n",{'cmdline.skip_format'=>1}], "result (with 'before' option)");
-    $res = App::CSVUtils::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4"], eval=>'$main::rownum*2', at=>2);
-    is_deeply($res, [200,"OK","f1,f4,f2,f3\n1,4,2,3\n4,6,5,6\n7,8,8,9\n",{'cmdline.skip_format'=>1}], "result (with 'at' option)");
+    $res = App::CSVUtils::csv_add_fields::csv_add_fields(input_filename=>"$dir/1.csv", fields=>[""], eval=>"1");
+    is($res->[0], 400, "empty field -> error") or diag explain $res;
+
+    $res = App::CSVUtils::csv_add_fields::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4","f5","f4"], eval=>"1");
+    is($res->[0], 412, "duplicate in fields -> error") or diag explain $res;
+
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_add_fields::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4"]) };
+    is($stdout, "f1,f2,f3,f4\n1,2,3,\n4,5,6,\n7,8,9,\n", "output (with no eval)");
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_add_fields::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4"], eval=>'$main::rownum*2') };
+    is($stdout, "f1,f2,f3,f4\n1,2,3,4\n4,5,6,6\n7,8,9,8\n", "output (with eval)");
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_add_fields::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4","f6","f5"], eval=>'[11,13,12]') };
+    is($stdout, "f1,f2,f3,f4,f6,f5\n1,2,3,11,13,12\n4,5,6,11,13,12\n7,8,9,11,13,12\n", "output (with eval, multiple fields)");
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_add_fields::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4"], eval=>'$main::rownum*2', after=>'f1') };
+    is($stdout, "f1,f4,f2,f3\n1,4,2,3\n4,6,5,6\n7,8,8,9\n", "output (with 'after' option)");
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_add_fields::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4"], eval=>'$main::rownum*2', before=>'f2') };
+    is($stdout, "f1,f4,f2,f3\n1,4,2,3\n4,6,5,6\n7,8,8,9\n", "output (with 'before' option)");
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_add_fields::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4"], eval=>'$main::rownum*2', at=>2) };
+    is($stdout, "f1,f4,f2,f3\n1,4,2,3\n4,6,5,6\n7,8,8,9\n", "output (with 'at' option)");
 };
 
 subtest csv_delete_fields => sub {
