@@ -110,9 +110,11 @@ subtest csv_delete_fields => sub {
 };
 
 subtest csv_list_field_names => sub {
-    my $res;
+    my ($res, $stdout);
 
-    $res = App::CSVUtils::csv_list_field_names(input_filename=>"$dir/1.csv");
+    require App::CSVUtils::csv_list_field_names;
+
+    $res = App::CSVUtils::csv_list_field_names::csv_list_field_names(input_filename=>"$dir/1.csv");
     is_deeply($res, [200,"OK",[{name=>'f1',index=>1},{name=>'f2',index=>2},{name=>'f3',index=>3}],{'table.fields'=>[qw/name index/]}], "result");
 };
 

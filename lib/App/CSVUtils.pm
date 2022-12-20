@@ -925,7 +925,6 @@ $SPEC{csvutil} = {
         %argspecs_csv_input,
         action => {
             schema => ['str*', in=>[
-                'list-field-names',
                 'delete-fields',
                 'munge-field',
                 'munge-row',
@@ -1113,12 +1112,7 @@ sub csvutil {
             }
         } # if i==1 (header row)
 
-        if ($action eq 'list-field-names') {
-            return [200, "OK",
-                    [map { {name=>$_, index=>$field_idxs{$_}+1} }
-                         sort keys %field_idxs],
-                    {'table.fields'=>['name','index']}];
-        } elsif ($action eq 'munge-field') {
+        if ($action eq 'munge-field') {
             unless ($i == 1) {
                 unless ($code) {
                     $code = compile_eval_code($args{eval}, 'eval');
@@ -1470,20 +1464,6 @@ our $common_desc = <<'_';
 Encoding: The utilities in this module/distribution accept and emit UTF8 text.
 
 _
-
-$SPEC{csv_list_field_names} = {
-    v => 1.1,
-    summary => 'List field names of CSV file',
-    args => {
-        %argspecs_csv_input,
-        %argspecopt_input_filename_0,
-    },
-    description => '' . $common_desc,
-};
-sub csv_list_field_names {
-    my %args = @_;
-    csvutil(%args, action=>'list-field-names');
-}
 
 $SPEC{csv_delete_fields} = {
     v => 1.1,

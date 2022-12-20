@@ -13,20 +13,13 @@ use App::CSVUtils qw(gen_csv_util);
 
 gen_csv_util(
     name => 'csv_info',
-    summary => 'Dump CSV as data structure (array of array/hash)',
+    summary => 'Show information about CSV file (number of rows, fields, etc)',
     description => <<'_',
 
-This utility reads CSV file then dumps it as a text table, or as JSON if you
-specify the `--format=json` or `--json` option.
 
 _
 
     add_args => {
-        hash => {
-            summary => 'Dump CSV as array of hashrefs instead of array of arrayrefs',
-            schema => 'true*',
-            cmdline_aliases => {H=>{}},
-        },
     },
 
     writes_csv => 0,
