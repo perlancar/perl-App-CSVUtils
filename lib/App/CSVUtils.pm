@@ -678,6 +678,7 @@ our %argspecsopt_field_selection = (
         cmdline_aliases => {
             field_pat => {}, # backward compatibility
             include_all_fields => { summary => 'Shortcut for --field-pat=.*, effectively selecting all fields', is_flag=>1, code => sub { $_[0]{include_field_pat} = '.*' } },
+            a => { summary => 'Shortcut for --field-pat=.*, effectively selecting all fields', is_flag=>1, code => sub { $_[0]{include_field_pat} = '.*' } },
         },
         tags => ['category:field-selection'],
     },
@@ -696,7 +697,8 @@ our %argspecsopt_field_selection = (
         summary => 'Field regex pattern to exclude, takes precedence over --field-pat',
         schema => 're*',
         cmdline_aliases => {
-            exclude_all_fields => { summary => 'Shortcut for --field-pat=.*, effectively selecting all fields', is_flag=>1, code => sub { $_[0]{exclude_field_pat} = '.*' } },
+            exclude_all_fields => { summary => 'Shortcut for --exclude-field-pat=.*, effectively excluding all fields', is_flag=>1, code => sub { $_[0]{exclude_field_pat} = '.*' } },
+            A => { summary => 'Shortcut for --exclude-field-pat=.*, effectively excluding all fields', is_flag=>1, code => sub { $_[0]{exclude_field_pat} = '.*' } },
         },
         tags => ['category:field-selection'],
     },
