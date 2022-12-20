@@ -3025,16 +3025,17 @@ simply using <pm:Perinci::CmdLine::Gen> or, if you use <pm:Dist::Zilla>,
 
 To create a CSV utility, you specify a `name` (e.g. `csv_dump`; must be a valid
 unqualified Perl identifier/function name) and optionally `summary`,
-`description`, and other metadata like `links` or even `add_metadata_props`.
-Then you specify one or more of `on_*` arguments to supply behaviors (coderef)
-for your CSV utility at various hook points.
+`description`, and other metadata like `links` or even `add_meta_props`. Then
+you specify one or more of `on_*` or `before_*` or `after_*` arguments to supply
+handlers (coderefs) for your CSV utility at various hook points.
 
 
 *THE HOOKS*
 
 All code for hooks should accept a single argument `r`. `r` is a stash (hashref)
 of various data, the keys of which will depend on which hook point being called.
-You can also add more keys to store data.
+You can also add more keys to store data or for flow control (see hook
+documentation below for more details).
 
 The order of the hooks, in processing chronological order:
 
@@ -3047,10 +3048,11 @@ The order of the hooks, in processing chronological order:
 * before_read_input
 
   Called before opening any input CSV file. This hook is *still* called even if
-  your utility sets `accepts_csv` to false.
+  your utility sets `reads_csv` to false.
 
-  At this point, the `input_filenames` stash key has not been set. You can use
-  this hook e.g. to set a custom `input_filenames`.
+  At this point, the `input_filenames` stash key (as well as other keys like
+  `input_filename`, `input_filenum`, etc) has not been set. You can use this
+  hook e.g. to set a custom `input_filenames`.
 
 * before_open_input_files
 
@@ -3070,14 +3072,14 @@ The order of the hooks, in processing chronological order:
 
 * on_input_header_row
 
-  Called when receiving header row (called for every input file, and called even
-  when user specify `--no-input-header`, in which case the header row will be
-  the generated `["field1", "field2", ...]`. You can use this hook e.g. to
-  add/remove/rearrange fields.
+  Called when receiving header row. Will be called for every input file, and
+  called even when user specify `--no-input-header`, in which case the header
+  row will be the generated `["field1", "field2", ...]`. You can use this hook
+  e.g. to add/remove/rearrange fields.
 
   Note that for stdin input (`-`), if reading is repeated via flow control, then
   this hook will return the previously saved header row of stdin the first time
-  it is read.
+  it is read. This is done because we can't seek stdin back to the beginning.
 
 * on_input_data_row
 
@@ -3086,8 +3088,8 @@ The order of the hooks, in processing chronological order:
 
   Note that for stdin input (`-`), if reading is repeated via flow control, then
   this reading will continue from the last time it is last read since we can't
-  seek. That is, if the first time the stdin is exhausted, then the subsequent
-  times, reading will reach EOF immediately.
+  seek stdin back to the beginning. That is, if the first time the stdin is
+  exhausted, then the subsequent times, reading will reach EOF immediately.
 
 * after_close_input_file
 
@@ -3107,7 +3109,7 @@ The order of the hooks, in processing chronological order:
 * after_read_input
 
   Called after the last row of the last CSV file is read and the last file is
-  closed. This hook is *still* called, if you set `accepts_csv` option to false.
+  closed. This hook is *still* called, if you set `reads_csv` option to false.
   At this point the stash keys related to CSV reading have all been cleared,
   including `input_filenames`, `input_filename`, `input_fh`, etc.
 
@@ -3198,20 +3200,38 @@ To read CSV data, normally your utility would provide handler for the
 
 *OUTPUTTING CSV DATA*
 
-To output CSV data, you first specify `outputs_csv` (or `outputs_multiple_csv`)
-option to true. Then, to print a CSV row, you call the `$r->{code_printline}`,
-passing the row you want to output as argument. An arrayref or hashref is
-accepted. Often, for line-by-line transformation utilities, you do this in the
-`on_input_data_row` hook. But you can also
+To output CSV data, usually you call the provided routine `$r->{code_printline}`
+to print a row of CSV, e.g. in `on_input_data_row` hooks (for line-by-line
+transformation). An arrayref or hashref row is accepted as the argument.
 
-*CHANGING THE OUTPUT FIELDS*
+You can also buffer rows from input to e.g. `$r->{output_rows}`, then call
+`$r->{code_printline}` repeatedly in the `after_read_input` hook to print all
+the rows.
 
 
 *READING MULTIPLE CSV FILES*
 
+To read multiple CSV files, you first specify `reads_multiple_csv`. Then, you
+can supply handler for `on_input_header_row` and `on_input_data_row` as usual.
+If you want to do something before/after each input file, you can also supply
+handler for `before_open_input_file` or `after_close_input_file`.
 
-*OUTPUTTING TO MULTIPLE CSV FILES*
 
+*WRITING TO MULTIPLE CSV FILES*
+
+Similarly, to write to many CSv files, you first specify `writes_multiple_csv`.
+Then, you can supply handler for `on_input_header_row` and `on_input_data_row`
+as usual. To switch to the next file, set
+`$r->{wants_switch_to_next_output_file}` to true, in which case the next call to
+`$r->{code_printline}` will close the current file and open the next file.
+
+
+*CHANGING THE OUTPUT FIELDS*
+
+When calling `$r->{code_printline}`, you can output whatever fields you want. By
+convention, you can set `$r->{output_fields}` and `$r->{output_fields_idx}` to
+let other handlers know about the output fields. For example, see the
+implementation of <prog:csv-concat>.
 
 _
     args => {
@@ -3250,35 +3270,35 @@ _
             tags => ['category:metadata'],
         },
 
-        accepts_csv => {
-            summary => 'Whether utility accepts CSV data',
-            'summary.alt.bool.not' => 'Specify that utility does not accept CSV data',
+        reads_csv => {
+            summary => 'Whether utility reads CSV data',
+            'summary.alt.bool.not' => 'Specify that utility does not read CSV data',
             schema => 'bool*',
             default => 1,
         },
-        accepts_multiple_csv => {
+        reads_multiple_csv => {
             summary => 'Whether utility accepts CSV data',
             schema => 'bool*',
             description => <<'_',
 
-Setting this option to true will implicitly set the `accepts_csv` option to
-true, obviously.
+Setting this option to true will implicitly set the `reads_csv` option to true,
+obviously.
 
 _
         },
-        outputs_csv => {
-            summary => 'Whether utility outputs CSV data',
-            'summary.alt.bool.not' => 'Specify that utility does not output CSV data',
+        writes_csv => {
+            summary => 'Whether utility writes CSV data',
+            'summary.alt.bool.not' => 'Specify that utility does not write CSV data',
             schema => 'bool*',
             default => 1,
         },
-        outputs_multiple_csv => {
+        writes_multiple_csv => {
             summary => 'Whether utility outputs CSV data',
             schema => 'bool*',
             description => <<'_',
 
-Setting this option to true will implicitly set the `outputs_csv` option to
-true, obviously.
+Setting this option to true will implicitly set the `writes_csv` option to true,
+obviously.
 
 _
         },
@@ -3330,12 +3350,12 @@ sub gen_csv_util {
     my $add_meta_props = delete $gen_args{add_meta_props};
     my $add_args = delete $gen_args{add_args};
     my $add_args_rels = delete $gen_args{add_args_rels};
-    my $accepts_multiple_csv = delete($gen_args{accepts_multiple_csv});
-    my $accepts_csv = delete($gen_args{accepts_csv}) // 1;
-    $accepts_csv = 1 if $accepts_multiple_csv;
-    my $outputs_multiple_csv = delete($gen_args{outputs_multiple_csv});
-    my $outputs_csv = delete($gen_args{outputs_csv}) // 1;
-    $accepts_csv = 1 if $accepts_multiple_csv;
+    my $reads_multiple_csv = delete($gen_args{reads_multiple_csv});
+    my $reads_csv = delete($gen_args{reads_csv}) // 1;
+    $reads_csv = 1 if $reads_multiple_csv;
+    my $writes_multiple_csv = delete($gen_args{writes_multiple_csv});
+    my $writes_csv = delete($gen_args{writes_csv}) // 1;
+    $writes_csv = 1 if $writes_multiple_csv;
     my $on_begin                 = delete $gen_args{on_begin};
     my $before_read_input        = delete $gen_args{before_read_input};
     my $before_open_input_files  = delete $gen_args{before_open_input_files};
@@ -3375,7 +3395,7 @@ sub gen_csv_util {
                     $on_begin->($r);
                 }
 
-                if ($outputs_csv) {
+                if ($writes_csv) {
                     my $output_emitter = _instantiate_emitter(\%util_args);
                     $r->{output_emitter} = $output_emitter;
                     $r->{has_printed_header} = 0;
@@ -3386,7 +3406,7 @@ sub gen_csv_util {
                         # set output filenames, if not yet
                         unless ($r->{output_filenames}) {
                             my @output_filenames;
-                            if ($outputs_multiple_csv) {
+                            if ($writes_multiple_csv) {
                                 @output_filenames = @{ $util_args{output_filenames} // ['-'] };
                             } else {
                                 @output_filenames = ($util_args{output_filename} // '-');
@@ -3481,13 +3501,13 @@ sub gen_csv_util {
                 }
 
               READ_CSV: {
-                    last unless $accepts_csv;
+                    last unless $reads_csv;
 
                     my $input_parser = _instantiate_parser(\%util_args, 'input_');
                     $r->{input_parser} = $input_parser;
 
                     my @input_filenames;
-                    if ($accepts_multiple_csv) {
+                    if ($reads_multiple_csv) {
                         @input_filenames = @{ $util_args{input_filenames} // ['-'] };
                     } else {
                         @input_filenames = ($util_args{input_filename} // '-');
@@ -3739,7 +3759,7 @@ sub gen_csv_util {
                 $meta->{args}{$_} = $add_args->{$_} for keys %$add_args;
             }
 
-            if ($accepts_csv) {
+            if ($reads_csv) {
                 $meta->{args}{$_} = {%{$argspecs_csv_input{$_}}} for keys %argspecs_csv_input;
 
                 my $max_pos = -1;
@@ -3749,7 +3769,7 @@ sub gen_csv_util {
                         $meta->{args}{$_}{pos} > $max_pos;
                 }
 
-                if ($accepts_multiple_csv) {
+                if ($reads_multiple_csv) {
                     $meta->{args}{input_filenames} = {%{$argspecopt_input_filenames{input_filenames}}};
                     if (
                         # no other args use slurpy=1
@@ -3773,9 +3793,9 @@ sub gen_csv_util {
                         $meta->{args}{input_filename}{pos} = $max_pos+1;
                     }
                 }
-            } # if accepts_csv
+            } # if reads_csv
 
-            if ($outputs_csv) {
+            if ($writes_csv) {
                 $meta->{args}{$_} = {%{$argspecs_csv_output{$_}}} for keys %argspecs_csv_output;
 
                 my $max_pos = -1;
@@ -3785,7 +3805,7 @@ sub gen_csv_util {
                         $meta->{args}{$_}{pos} > $max_pos;
                 }
 
-                if ($outputs_multiple_csv) {
+                if ($writes_multiple_csv) {
                     $meta->{args}{output_filenames} = {%{$argspecopt_output_filenames{output_filenames}}};
                     if (
                         # no other args use slurpy=1

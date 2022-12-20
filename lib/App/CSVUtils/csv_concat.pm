@@ -54,7 +54,7 @@ _
         %App::CSVUtils::argspecopt_with_data_rows,
     },
 
-    accepts_multiple_csv => 1,
+    reads_multiple_csv => 1,
 
     before_open_input_files => sub {
         my $r = shift;

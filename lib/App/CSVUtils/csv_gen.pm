@@ -60,7 +60,7 @@ _
         req_one => ['fields', 'eval_fields'],
     },
 
-    accepts_csv => 0,
+    reads_csv => 0,
 
     examples => [
         {

@@ -48,7 +48,7 @@ _
             $r->{util_args}{hash} ? $r->{input_row_as_hashref} : $r->{input_row};
     },
 
-    outputs_csv => 0,
+    writes_csv => 0,
 
     on_end => sub {
         my $r = shift;
