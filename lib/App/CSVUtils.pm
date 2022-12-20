@@ -1485,20 +1485,6 @@ sub csv_list_field_names {
     csvutil(%args, action=>'list-field-names');
 }
 
-$SPEC{csv_info} = {
-    v => 1.1,
-    summary => 'Show information about CSV file (number of rows, fields, etc)',
-    args => {
-        %argspecs_csv_input,
-        %argspecopt_input_filename_0,
-    },
-    description => '' . $common_desc,
-};
-sub csv_info {
-    my %args = @_;
-    csvutil(%args, action=>'info');
-}
-
 $SPEC{csv_delete_fields} = {
     v => 1.1,
     summary => 'Delete one or more fields from CSV file',
