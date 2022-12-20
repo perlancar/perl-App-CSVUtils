@@ -101,7 +101,7 @@ _
                 last unless $row;
                 last if defined $r->{util_args}{num_rows} &&
                     ($r->{output_data_rownum}//0) >= $r->{util_args}{num_rows};
-                $r->{code_printline}->($row);
+                $r->{code_printrow}->($row);
             }
         }
     },

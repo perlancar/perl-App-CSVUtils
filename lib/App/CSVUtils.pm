@@ -936,8 +936,6 @@ $SPEC{csvutil} = {
                 'sort-fields',
                 'select-rows',
                 'split',
-                'map',
-                'each-row',
                 'convert-to-hash',
                 'convert-to-td',
                 'select-fields',
@@ -1299,26 +1297,6 @@ sub csvutil {
                 $code->($row);
             }) {
                 $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
-            }
-        } elsif ($action eq 'map' || $action eq 'each-row') {
-            unless ($code) {
-                $code = compile_eval_code($args{eval}, 'eval');
-            }
-            if ($i > 1) {
-                my $rowres = do {
-                    local $_ = $args{hash} ? _array2hash($row, $fields) : $row;
-                    local $main::row = $row;
-                    local $main::rownum = $i;
-                    local $main::csv = $csv_parser;
-                    local $main::field_idxs = \%field_idxs;
-                    $code->($row);
-                } // '';
-                if ($action eq 'map') {
-                    unless (!$add_newline || $rowres =~ /\R\z/) {
-                        $rowres .= "\n";
-                    }
-                    $res .= $rowres;
-                }
             }
         } elsif ($action eq 'sort-rows') {
             push @$rows, $row unless $i == 1;
@@ -2150,84 +2128,6 @@ sub csv_split {
     my %args = @_;
 
     csvutil(%args, action=>'split');
-}
-
-$SPEC{csv_map} = {
-    v => 1.1,
-    summary => 'Return result of Perl code for every row',
-    description => <<'_' . $common_desc,
-
-This is like Perl's `map` performed over rows of CSV. In `$_`, your Perl code
-will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
-`$main::row` is also set to the row (always as arrayref). `$main::rownum`
-contains the row number (2 means the first data row). `$main::csv` is the
-<pm:Text::CSV_XS> object. `$main::field_idxs` is also available for additional
-information.
-
-Your code is then free to return a string based on some operation against these
-data. This utility will then print out the resulting string.
-
-_
-    args => {
-        %argspecs_csv_input,
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename_1,
-        %argspecopt_overwrite,
-        %argspec_eval,
-        %argspecopt_hash,
-        add_newline => {
-            summary => 'Whether to make sure each string ends with newline',
-            schema => 'bool*',
-            default => 1,
-        },
-    },
-    examples => [
-        {
-            summary => 'Create SQL insert statements (escaping is left as an exercise for users)',
-            argv => ['-He', '"INSERT INTO mytable (id,amount) VALUES ($_->{id}, $_->{amount});"', 'file.csv'],
-            test => 0,
-            'x.doc.show_result' => 0,
-        },
-    ],
-    links => [
-        {url=>'prog:csvgrep'},
-    ],
-};
-sub csv_map {
-    my %args = @_;
-
-    csvutil(%args, action=>'map');
-}
-
-$SPEC{csv_each_row} = {
-    v => 1.1,
-    summary => 'Run Perl code for every row',
-    description => <<'_' . $common_desc,
-
-This is like csv_map, except result of code is not printed.
-
-_
-    args => {
-        %argspecs_csv_input,
-        %argspecopt_input_filename_0,
-        %argspec_eval,
-        %argspecopt_hash,
-    },
-    examples => [
-        {
-            summary => 'Delete user data',
-            argv => ['-He', '"unlink qq(/home/data/$_->{username}.dat)"', 'users.csv'],
-            test => 0,
-            'x.doc.show_result' => 0,
-        },
-    ],
-    links => [
-    ],
-};
-sub csv_each_row {
-    my %args = @_;
-
-    csvutil(%args, action=>'each-row');
 }
 
 $SPEC{csv_convert_to_hash} = {
@@ -3133,6 +3033,13 @@ The common keys that `r` will contain:
 - `name`, str. The name of the CSV utility. Which can also be retrieved via
   `gen_args`.
 
+- `code_print`, coderef. Routine provided for you to print something. Takes care
+  of opening the output files for you.
+
+- `code_printrow`, coderef. Routine provided for you to print something. You
+  pass the row (either arrayref or hashref). Takes care of opening the output
+  files for you, as well as printing header row.
+
 If you are accepting CSV data, the following keys will also be available (in
 `on_input_header_row` and `on_input_data_row` hooks):
 
@@ -3198,15 +3105,23 @@ To read CSV data, normally your utility would provide handler for the
 `on_input_data_row` hook and sometimes additionally `on_input_header_row`.
 
 
+*OUTPUTTING STRING OR RETURNING RESULT*
+
+To output string, usually you call the provided routine `$r->{code_print}`. This
+routine will open the output files for you.
+
+You can also return enveloped result directly by setting `$r->{result}`.
+
+
 *OUTPUTTING CSV DATA*
 
-To output CSV data, usually you call the provided routine `$r->{code_printline}`
-to print a row of CSV, e.g. in `on_input_data_row` hooks (for line-by-line
-transformation). An arrayref or hashref row is accepted as the argument.
+To output CSV data, usually you call the provided routine `$r->{code_printrow}`.
+This routine accepts a row (arrayref or hashref). This routine will open the
+output files for you when needed, as well as print header row automatically.
 
 You can also buffer rows from input to e.g. `$r->{output_rows}`, then call
-`$r->{code_printline}` repeatedly in the `after_read_input` hook to print all
-the rows.
+`$r->{code_printrow}` repeatedly in the `after_read_input` hook to print all the
+rows.
 
 
 *READING MULTIPLE CSV FILES*
@@ -3223,12 +3138,12 @@ Similarly, to write to many CSv files, you first specify `writes_multiple_csv`.
 Then, you can supply handler for `on_input_header_row` and `on_input_data_row`
 as usual. To switch to the next file, set
 `$r->{wants_switch_to_next_output_file}` to true, in which case the next call to
-`$r->{code_printline}` will close the current file and open the next file.
+`$r->{code_printrow}` will close the current file and open the next file.
 
 
 *CHANGING THE OUTPUT FIELDS*
 
-When calling `$r->{code_printline}`, you can output whatever fields you want. By
+When calling `$r->{code_printrow}`, you can output whatever fields you want. By
 convention, you can set `$r->{output_fields}` and `$r->{output_fields_idx}` to
 let other handlers know about the output fields. For example, see the
 implementation of <prog:csv-concat>.
@@ -3395,64 +3310,73 @@ sub gen_csv_util {
                     $on_begin->($r);
                 }
 
+                my $code_openfile = sub {
+                    # set output filenames, if not yet
+                    unless ($r->{output_filenames}) {
+                        my @output_filenames;
+                        if ($writes_multiple_csv) {
+                            @output_filenames = @{ $util_args{output_filenames} // ['-'] };
+                        } else {
+                            @output_filenames = ($util_args{output_filename} // '-');
+                        }
+
+                        $r->{output_filenames} = \@output_filenames;
+                        $r->{output_num_of_files} //= scalar(@output_filenames);
+                    } # set output filenames
+
+                    # open the next file, if not yet
+                    unless ($r->{output_fh} || $r->{wants_switch_to_next_output_file}) {
+                        $r->{output_filenum} //= 0;
+                        $r->{output_filenum}++;
+
+                        $r->{output_rownum} = 0;
+                        $r->{output_data_rownum} = 0;
+
+                        # close the previous file, if any
+                        if ($r->{output_fh} && $r->{output_filename} ne '-') {
+                            log_debug "Closing output file '$r->{output_filename}' ...";
+                            close $r->{output_fh} or die [500, "Can't close output file '$r->{output_filename}': $!"];
+                            delete $r->{has_printed_header};
+                            delete $r->{wants_switch_to_next_output_file};
+                        }
+
+                        # we have exhausted all the files, do nothing & return
+                        return if $r->{output_filenum} > @{ $r->{output_filenames} };
+
+                        $r->{output_filename} = $r->{output_filenames}[ $r->{output_filenum}-1 ];
+                        log_info "[%d/%s] Opening output file %s ...",
+                            $r->{output_filenum}, $r->{output_num_of_files}, $r->{output_filename};
+                        if ($r->{output_filename} eq '-') {
+                            $r->{output_fh} = \*STDOUT;
+                        } else {
+                            if (-f $r->{output_filename}) {
+                                if ($r->{util_args}{overwrite}) {
+                                    log_info "Will be overwriting output file %s", $r->{output_filename};
+                                } else {
+                                    die [412, "Refusing to overwrite existing output file '$r->{output_filename}', choose another name or use --overwrite (-O)"];
+                                }
+                            }
+                            my ($fh, $err) = _open_file_write($r->{output_filename});
+                            die $err if $err;
+                            $r->{output_fh} = $fh;
+                        }
+                    } # open the next file
+                }; # code_openfile
+
+                my $code_print = sub {
+                    my $str = shift;
+                    $code_openfile->();
+                    print { $r->{output_fh} } $str;
+                }; # code_print
+                $r->{code_print} = $code_print;
+
                 if ($writes_csv) {
                     my $output_emitter = _instantiate_emitter(\%util_args);
                     $r->{output_emitter} = $output_emitter;
                     $r->{has_printed_header} = 0;
 
-                    my $code_printline = sub {
+                    my $code_printrow = sub {
                         my $row = shift;
-
-                        # set output filenames, if not yet
-                        unless ($r->{output_filenames}) {
-                            my @output_filenames;
-                            if ($writes_multiple_csv) {
-                                @output_filenames = @{ $util_args{output_filenames} // ['-'] };
-                            } else {
-                                @output_filenames = ($util_args{output_filename} // '-');
-                            }
-
-                            $r->{output_filenames} = \@output_filenames;
-                            $r->{output_num_of_files} //= scalar(@output_filenames);
-                        } # set output filenames
-
-                        # open the next file, if not yet
-                        unless ($r->{output_fh} || $r->{wants_switch_to_next_output_file}) {
-                            $r->{output_filenum} //= 0;
-                            $r->{output_filenum}++;
-
-                            $r->{output_rownum} = 0;
-                            $r->{output_data_rownum} = 0;
-
-                            # close the previous file, if any
-                            if ($r->{output_fh} && $r->{output_filename} ne '-') {
-                                log_debug "Closing output file '$r->{output_filename}' ...";
-                                close $r->{output_fh} or die [500, "Can't close output file '$r->{output_filename}': $!"];
-                                delete $r->{has_printed_header};
-                                delete $r->{wants_switch_to_next_output_file};
-                            }
-
-                            # we have exhausted all the files, do nothing & return
-                            return if $r->{output_filenum} > @{ $r->{output_filenames} };
-
-                            $r->{output_filename} = $r->{output_filenames}[ $r->{output_filenum}-1 ];
-                            log_info "[%d/%s] Opening output CSV file %s ...",
-                                $r->{output_filenum}, $r->{output_num_of_files}, $r->{output_filename};
-                            if ($r->{output_filename} eq '-') {
-                                $r->{output_fh} = \*STDOUT;
-                            } else {
-                                if (-f $r->{output_filename}) {
-                                    if ($r->{util_args}{overwrite}) {
-                                        log_info "Will be overwriting output file %s", $r->{output_filename};
-                                    } else {
-                                        die [412, "Refusing to overwrite existing output file '$r->{output_filename}', choose another name or use --overwrite (-O)"];
-                                    }
-                                }
-                                my ($fh, $err) = _open_file_write($r->{output_filename});
-                                die $err if $err;
-                                $r->{output_fh} = $fh;
-                            }
-                        } # open the next file
 
                         # set output fields, if not yet
                         unless ($r->{output_fields}) {
@@ -3467,6 +3391,8 @@ sub gen_csv_util {
                                 $r->{output_fields_idx}{ $r->{output_fields}[$j] } = $j;
                             }
                         }
+
+                        $code_openfile->();
 
                         # print header line, if not yet
                         if ($outputs_header && !$r->{has_printed_header}) {
@@ -3490,9 +3416,9 @@ sub gen_csv_util {
                             $r->{output_rownum}++;
                             $r->{output_data_rownum}++;
                         }
-                    }; # code_printline
+                    }; # code_printrow
 
-                    $r->{code_printline} = $code_printline;
+                    $r->{code_printrow} = $code_printrow;
                 } # if outputs csv
 
                 if ($before_read_input) {
@@ -3712,7 +3638,8 @@ sub gen_csv_util {
                 delete $r->{output_filename};
                 delete $r->{output_rownum};
                 delete $r->{output_data_rownum};
-                delete $r->{code_printline};
+                delete $r->{code_print};
+                delete $r->{code_printrow};
                 delete $r->{has_printed_header};
                 delete $r->{wants_switch_to_next_output_file};
 

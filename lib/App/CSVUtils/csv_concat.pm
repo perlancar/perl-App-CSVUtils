@@ -100,7 +100,7 @@ _
                 my $field = $r->{input_fields}[$j];
                 $combined_row->[ $r->{output_fields_idx}{$field} ] = $r->{input_row}[$j];
             }
-            $r->{code_printline}->($combined_row);
+            $r->{code_printrow}->($combined_row);
         }
     },
 );

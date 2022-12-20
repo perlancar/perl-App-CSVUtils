@@ -310,20 +310,32 @@ subtest csv_grep => sub {
 };
 
 subtest csv_map => sub {
-    my $res;
+    my ($res, $stdout);
 
-    $res = App::CSVUtils::csv_map(input_filename=>"$dir/1.csv", eval=>'"$_->[0].$_->[1].$_->[2]"');
-    is_deeply($res, [200,"OK","1.2.3\n4.5.6\n7.8.9\n",{'cmdline.skip_format'=>1}], "result")
-        or diag explain $res;
+    require App::CSVUtils::csv_map;
+
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_map::csv_map(input_filename=>"$dir/1.csv", eval=>'"$_->[0].$_->[1].$_->[2]"') };
+    is($stdout, "1.2.3\n4.5.6\n7.8.9\n", "output");
     subtest "opt: --hash" => sub {
-        $res = App::CSVUtils::csv_map(hash=>1, input_filename=>"$dir/1.csv", eval=>'"$_->{f1}.$_->{f2}.$_->{f3}"');
-        is_deeply($res, [200,"OK","1.2.3\n4.5.6\n7.8.9\n",{'cmdline.skip_format'=>1}], "result")
-            or diag explain $res;
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_map::csv_map(hash=>1, input_filename=>"$dir/1.csv", eval=>'"$_->{f1}.$_->{f2}.$_->{f3}"') };
+        is($stdout, "1.2.3\n4.5.6\n7.8.9\n", "output");
     };
     subtest "opt: --no-add-newline" => sub {
-        $res = App::CSVUtils::csv_map(add_newline=>0, hash=>1, input_filename=>"$dir/1.csv", eval=>'"$_->{f1}.$_->{f2}.$_->{f3}"');
-        is_deeply($res, [200,"OK","1.2.34.5.67.8.9",{'cmdline.skip_format'=>1}], "result")
-            or diag explain $res;
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_map::csv_map(add_newline=>0, hash=>1, input_filename=>"$dir/1.csv", eval=>'"$_->{f1}.$_->{f2}.$_->{f3}"') };
+        is($stdout, "1.2.34.5.67.8.9", "output");
+    };
+};
+
+subtest csv_each_row => sub {
+    my ($res, $stdout);
+
+    require App::CSVUtils::csv_each_row;
+
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_each_row::csv_each_row(input_filename=>"$dir/1.csv", eval=>'print "$_->[0].$_->[1].$_->[2]\n"') };
+    is($stdout, "1.2.3\n4.5.6\n7.8.9\n", "output");
+    subtest "opt: --hash" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_each_row::csv_each_row(hash=>1, input_filename=>"$dir/1.csv", eval=>'print "$_->{f1}.$_->{f2}.$_->{f3}\n"') };
+        is($stdout, "1.2.3\n4.5.6\n7.8.9\n", "output");
     };
 };
 

@@ -66,7 +66,7 @@ _
         my $r = shift;
 
         for my $row (@{ $r->{picked_rows} }) {
-            $r->{code_printline}->($row);
+            $r->{code_printrow}->($row);
         }
     },
 );
