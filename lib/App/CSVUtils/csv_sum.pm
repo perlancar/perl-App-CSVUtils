@@ -20,6 +20,27 @@ gen_csv_util(
 
 Non-numbers will be assumed to be 0.
 
+Example:
+
+    # students.csv
+    name,score
+    andi,130
+    budi,120
+    chandra,120
+    dudi,120
+
+    % csv-sum students.csv
+    name,score
+    0,490
+
+    % csv-sum students.csv --with-data-row
+    name,score
+    andi,130
+    budi,120
+    chandra,120
+    dudi,120
+    0,12.25
+
 _
     add_args => {
         %App::CSVUtils::argspecopt_with_data_rows,

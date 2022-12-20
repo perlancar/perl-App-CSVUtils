@@ -20,6 +20,36 @@ gen_csv_util(
         %App::CSVUtils::argspecsopt_field_selection,
     },
     examples => [
+        {
+            summary => 'Delete a single field from CSV',
+            argv => ['file.csv', '-f', 'f1'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+        {
+            summary => 'Delete several fields from CSV',
+            argv => ['file.csv', '-f', 'f1', '-f', 'f2', '-f', 'f3'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+        {
+            summary => 'Delete fields matching regex from CSV',
+            argv => ['file.csv', '--inlude-field-pat', '/^extra_/'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+        {
+            summary => 'Delete all fields except specified from CSV',
+            argv => ['file.csv', '-a', '-f', 'f1', '-f', 'f2'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+        {
+            summary => 'Only show what fields would be included, then exit',
+            argv => ['file.csv', '--inlude-field-pat', '/^extra_/', '--show-selected-fields'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
     ],
 
     on_input_data_row => sub {

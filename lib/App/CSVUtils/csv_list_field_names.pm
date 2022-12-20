@@ -21,6 +21,21 @@ _
     add_args => {
     },
 
+    examples => [
+        {
+            summary => 'List field names of a CSV as a text table of name and position',
+            argv => ['file.csv'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+        {
+            summary => 'List field names of a CSV as tab-separated lines, sort by name',
+            src => '[[prog]] file.csv | sort',
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+    ],
+
     writes_csv => 0,
 
     on_input_header_row => sub {

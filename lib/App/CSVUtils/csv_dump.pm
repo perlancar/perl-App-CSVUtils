@@ -28,6 +28,20 @@ _
             cmdline_aliases => {H=>{}},
         },
     },
+    examples => [
+        {
+            summary => 'Convert CSV to a text table',
+            argv => ['file.csv'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+        {
+            summary => 'Convert CSV to JSON',
+            argv => ['file.csv', '--json'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+    ],
 
     on_input_header_row => sub {
         my $r = shift;

@@ -22,6 +22,15 @@ _
     add_args => {
     },
 
+    examples => [
+        {
+            summary => 'Show information on a CSV file',
+            argv => ['file.csv'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+    ],
+
     writes_csv => 0,
 
     after_close_input_files => sub {

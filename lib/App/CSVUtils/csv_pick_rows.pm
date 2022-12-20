@@ -28,6 +28,20 @@ _
             cmdline_aliases => {n=>{}},
         },
     },
+    examples => [
+        {
+            summary => 'Pick a random row from CSV',
+            argv => ['file.csv'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+        {
+            summary => 'Pick 5 random rows from CSV',
+            argv => ['file.csv', '-n5'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+    ],
 
     on_input_header_row => sub {
         my $r = shift;

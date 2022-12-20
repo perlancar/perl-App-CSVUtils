@@ -21,6 +21,18 @@ gen_csv_util(
 Why convert CSV to CSV? When you want to change separator/quote/escape
 character, for one. Or you want to remove header or add one.
 
+Example:
+
+    # in.csv
+    name,age
+    andi,12
+    budi,13
+
+    % csv-csv in.csv --output-sep-char ';'
+    name;age
+    andi;12
+    budi;13
+
 _
     add_args => {
     },
