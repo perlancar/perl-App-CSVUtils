@@ -257,10 +257,11 @@ subtest csv_convert_to_hash => sub {
 };
 
 subtest csv_concat => sub {
-    my $res;
+    my ($res, $stdout);
 
-    $res = App::CSVUtils::csv_concat(input_filenames=>["$dir/1.csv","$dir/2.csv","$dir/4.csv"]);
-    is_deeply($res, [200,"OK",qq(f1,f2,f3,F3\n1,2,3,\n4,5,6,\n7,8,9,\n1,,,\n2,,,\n3,,,\n1,3,,2\n4,6,,5\n),{'cmdline.skip_format'=>1}], "result");
+    require App::CSVUtils::csv_concat;
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_concat::csv_concat(input_filenames=>["$dir/1.csv","$dir/2.csv","$dir/4.csv"]) };
+    is($stdout, qq(f1,f2,f3,F3\n1,2,3,\n4,5,6,\n7,8,9,\n1,,,\n2,,,\n3,,,\n1,3,,2\n4,6,,5\n), "output");
 };
 
 subtest csv_select_fields => sub {

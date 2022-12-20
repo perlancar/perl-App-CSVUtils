@@ -940,7 +940,6 @@ $SPEC{csvutil} = {
                 'each-row',
                 'convert-to-hash',
                 'convert-to-td',
-                #'concat', # not implemented in csvutil
                 'select-fields',
                 #'setop', # not implemented in csvutil
                 #'lookup-fields', # not implemented in csvutil
@@ -2315,111 +2314,6 @@ sub csv2vcf {
     csvutil(%args, action=>'convert-to-vcf');
 }
 
-$SPEC{csv_concat} = {
-    v => 1.1,
-    summary => 'Concatenate several CSV files together, '.
-        'collecting all the fields',
-    description => <<'_' . $common_desc,
-
-Example, concatenating this CSV:
-
-    col1,col2
-    1,2
-    3,4
-
-and:
-
-    col2,col4
-    a,b
-    c,d
-    e,f
-
-and:
-
-    col3
-    X
-    Y
-
-will result in:
-
-    col1,col2,col4,col3
-    1,2,
-    3,4,
-    ,a,b
-    ,c,d
-    ,e,f
-    ,,,X
-    ,,,Y
-
-_
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-        %argspecopt_input_filenames_0plus,
-        %argspecopt_output_filename,
-        %argspecopt_overwrite,
-    },
-    tags => ['outputs_csv'],
-};
-sub csv_concat {
-    my %args = @_;
-
-    my %res_field_idxs;
-    my @rows;
-
-    for my $input_filename (@{ $args{input_filenames} }) {
-        my $csv_parser  = _instantiate_parser(\%args, 'input_');
-
-        my ($fh, $err) = _open_file_read($input_filename);
-        return $err if $err;
-
-        my $i = 0;
-        my $fields;
-        while (my $row = $csv_parser->getline($fh)) {
-            $i++;
-            if ($i == 1) {
-                $fields = $row;
-                for my $field (@$fields) {
-                    unless (exists $res_field_idxs{$field}) {
-                        $res_field_idxs{$field} = keys(%res_field_idxs);
-                    }
-                }
-                next;
-            }
-            my $res_row = [];
-            for my $j (0..$#{$row}) {
-                if ($j >= @$fields) {
-                    log_warn "File %s line %d contains more than %d fields, skipped", $input_filename, $i, scalar(@$fields);
-                    last;
-                }
-                my $field = $fields->[$j];
-                $res_row->[ $res_field_idxs{$field} ] = $row->[$j];
-            }
-            push @rows, $res_row;
-        }
-    } # for each filename
-
-    my $num_fields = keys %res_field_idxs;
-    my $res = "";
-    my $csv_emitter = _instantiate_emitter(\%args);
-
-    # generate header
-    my $status = $csv_emitter->combine(
-        sort { $res_field_idxs{$a} <=> $res_field_idxs{$b} }
-            keys %res_field_idxs)
-        or die "Error in generating result header row: ".$csv_emitter->error_input;
-    $res .= $csv_emitter->string . "\n";
-    for my $i (0..$#rows) {
-        my $row = $rows[$i];
-        $row->[$num_fields-1] = undef if @$row < $num_fields;
-        my $status = $csv_emitter->combine(@$row)
-            or die "Error in generating data row #".($i+1).": ".
-            $csv_emitter->error_input;
-        $res .= $csv_emitter->string . "\n";
-    }
-    _return_or_write_file([200, "OK", $res, {"cmdline.skip_format"=>1}], $args{output_filename}, $args{overwrite});
-}
-
 $SPEC{csv_select_fields} = {
     v => 1.1,
     summary => 'Only output selected field(s)',
@@ -3158,15 +3052,21 @@ The order of the hooks, in processing chronological order:
   At this point, the `input_filenames` stash key has not been set. You can use
   this hook e.g. to set a custom `input_filenames`.
 
+* before_open_input_files
+
+  Called before an input CSV file is about to be opened, including for stdin
+  (`-`). You can use this hook e.g. to check/preprocess input file. Flow control
+  is available by setting `$r->{wants_skip_files}` to skip reading all the input
+  file and go directly to the `after_read_input` hook.
+
 * before_open_input_file
 
-  Called before an input CSV file is about to be opene, including for stdin
-  (`-`). You can use this hook e.g. to check/preprocess input file.
-
-* after_open_input_file
-
-  Called after each input CSV file is opened, including for stdin (`-`). You can
-  use this hook e.g. to check/preprocess input file.
+  Called before an input CSV file is about to be opened, including for stdin
+  (`-`). For the first file, called after `before_open_input_file` hook. You can
+  use this hook e.g. to check/preprocess input file. Flow control is available
+  by setting `$r->{wants_skip_file}` to skip reading a single input file and go
+  to the next file, or `$r->{wants_skip_files}` to skip reading the rest of the
+  files and go directly to the `after_read_input` hook.
 
 * on_input_header_row
 
@@ -3175,15 +3075,39 @@ The order of the hooks, in processing chronological order:
   the generated `["field1", "field2", ...]`. You can use this hook e.g. to
   add/remove/rearrange fields.
 
+  Note that for stdin input (`-`), if reading is repeated via flow control, then
+  this hook will return the previously saved header row of stdin the first time
+  it is read.
+
 * on_input_data_row
 
   Called when receiving each data row. You can use this hook e.g. to modify the
   row or print output (for line-by-line transformation or filtering).
 
+  Note that for stdin input (`-`), if reading is repeated via flow control, then
+  this reading will continue from the last time it is last read since we can't
+  seek. That is, if the first time the stdin is exhausted, then the subsequent
+  times, reading will reach EOF immediately.
+
+* after_close_input_file
+
+  Called after each input file is closed, including for stdin (`-`) (although
+  for stdin, the handle is not actually closed). Flow control is possible by
+  setting `$r->{wants_repeat_file}` to repeat reading the file or
+  `$r->{wants_skip_files}` to skip reading the rest of the files and go straight
+  to the `after_close_input_files` hook.
+
+* after_close_input_files
+
+  Called after the last input file is closed, after the last
+  `after_close_input_file` hook, including for stdin (`-`) (although for stdin,
+  the handle is not actually closed). Flow control is possible by setting
+  `$r->{wants_repeat_files}` to repeat reading all the input files.
+
 * after_read_input
 
   Called after the last row of the last CSV file is read and the last file is
-  closed. This hook is *still* called, if you do not set `accepts_csv` option.
+  closed. This hook is *still* called, if you set `accepts_csv` option to false.
   At this point the stash keys related to CSV reading have all been cleared,
   including `input_filenames`, `input_filename`, `input_fh`, etc.
 
@@ -3234,7 +3158,7 @@ If you are accepting CSV data, the following keys will also be available (in
 - `input_row_as_hashref`, hos (hash of str). The current input CSV row as a
   hashref, with field names as hash keys and field values as hash values. This
   will only be calculated if utility wants it. Utility can express so by setting
-  C<< $r->{wants_input_row_as_hashref} >> to true, e.g. in the `on_begin` hook.
+  `$r->{wants_input_row_as_hashref}` to true, e.g. in the `on_begin` hook.
 
 - `input_header_row_count`, uint. Contains the number of actual header rows that
   have been read. If CLI user specifies `--no-input-header`, this will stay at
@@ -3275,8 +3199,8 @@ To read CSV data, normally your utility would provide handler for the
 *OUTPUTTING CSV DATA*
 
 To output CSV data, you first specify `outputs_csv` (or `outputs_multiple_csv`)
-option to true. Then, to print a CSV row, you call the C<< $r->{code_printline}
->>, passing the row you want to output as argument. An arrayref or hashref is
+option to true. Then, to print a CSV row, you call the `$r->{code_printline}`,
+passing the row you want to output as argument. An arrayref or hashref is
 accepted. Often, for line-by-line transformation utilities, you do this in the
 `on_input_data_row` hook. But you can also
 
@@ -3365,10 +3289,10 @@ _
         before_read_input => {
             schema => 'code*',
         },
-        before_open_input_file => {
+        before_open_input_files => {
             schema => 'code*',
         },
-        after_open_input_file => {
+        before_open_input_file => {
             schema => 'code*',
         },
         on_input_header_row => {
@@ -3377,16 +3301,13 @@ _
         on_input_data_row => {
             schema => 'code*',
         },
-        before_close_input_file => {
-            schema => 'code*',
-        },
         after_close_input_file => {
             schema => 'code*',
         },
-        after_read_input => {
+        after_close_input_files => {
             schema => 'code*',
         },
-        on_input_data_row => {
+        after_read_input => {
             schema => 'code*',
         },
         on_end => {
@@ -3415,14 +3336,16 @@ sub gen_csv_util {
     my $outputs_multiple_csv = delete($gen_args{outputs_multiple_csv});
     my $outputs_csv = delete($gen_args{outputs_csv}) // 1;
     $accepts_csv = 1 if $accepts_multiple_csv;
-    my $on_begin            = delete $gen_args{on_begin};
-    my $before_read_input   = delete $gen_args{before_read_input};
-    my $before_open_input_file = delete $gen_args{before_open_input_file};
-    my $after_open_input_file  = delete $gen_args{after_open_input_file};
-    my $on_input_header_row = delete $gen_args{on_input_header_row};
-    my $on_input_data_row   = delete $gen_args{on_input_data_row};
-    my $after_read_input    = delete $gen_args{after_read_input};
-    my $on_end              = delete $gen_args{on_end};
+    my $on_begin                 = delete $gen_args{on_begin};
+    my $before_read_input        = delete $gen_args{before_read_input};
+    my $before_open_input_files  = delete $gen_args{before_open_input_files};
+    my $before_open_input_file   = delete $gen_args{before_open_input_file};
+    my $on_input_header_row      = delete $gen_args{on_input_header_row};
+    my $on_input_data_row        = delete $gen_args{on_input_data_row};
+    my $after_close_input_file   = delete $gen_args{after_close_input_file};
+    my $after_close_input_files  = delete $gen_args{after_close_input_files};
+    my $after_read_input         = delete $gen_args{after_read_input};
+    my $on_end                   = delete $gen_args{on_end};
 
     scalar(keys %gen_args) and die "Unknown argument(s): ".join(", ", keys %gen_args);
 
@@ -3571,27 +3494,41 @@ sub gen_csv_util {
                     }
                     $r->{input_filenames} //= \@input_filenames;
 
-                    my $input_filenum = 0;
+                  BEFORE_INPUT_FILENAME:
+                    $r->{input_filenum} = 0;
+
+                  INPUT_FILENAME:
                     for my $input_filename (@input_filenames) {
-                        $input_filenum++;
-                        log_info "[file %d/%d] Reading input file %s ...",
-                            $input_filenum, scalar(@input_filenames), $input_filename;
-                        $r->{input_filenum} = $input_filenum;
+                        $r->{input_filenum}++;
                         $r->{input_filename} = $input_filename;
+
+                        if ($r->{input_filenum} == 1 && $before_open_input_files) {
+                            log_trace "Calling before_open_input_files handler ...";
+                            $before_open_input_files->($r);
+                            if (delete $r->{wants_skip_files}) {
+                                log_trace "Handler wants to skip files, skipping all input files";
+                                last READ_CSV;
+                            }
+                        }
 
                         if ($before_open_input_file) {
                             log_trace "Calling before_open_input_file handler ...";
                             $before_open_input_file->($r);
+                            if (delete $r->{wants_skip_file}) {
+                                log_trace "Handler wants to skip this file, moving on to the next file";
+                                next INPUT_FILENAME;
+                            } elsif (delete $r->{wants_skip_files}) {
+                                log_trace "Handler wants to skip all files, skipping all input files";
+                                last READ_CSV;
+                            }
                         }
+
+                        log_info "[file %d/%d] Reading input file %s ...",
+                            $r->{input_filenum}, scalar(@input_filenames), $input_filename;
 
                         my ($fh, $err) = _open_file_read($input_filename);
                         die $err if $err;
                         $r->{input_fh} = $fh;
-
-                        if ($after_open_input_file) {
-                            log_trace "Calling after_open_input_file handler ...";
-                            $after_open_input_file->($r);
-                        }
 
                         my $i;
                         $r->{input_header_row_count} = 0;
@@ -3600,11 +3537,28 @@ sub gen_csv_util {
                         $r->{input_field_idxs} = {}; # key=field name, value=index (0-based)
                         my $row0;
                         my $code_getline = sub {
-                            if ($i == 0 && !$has_header) {
+                            if ($r->{stdin_input_fields} && $r->{input_filename} eq '-') {
+                                if ($i == 0) {
+                                    # we have read the header for stdin. since
+                                    # we can't seek to the beginning, we return
+                                    # the saved fields
+                                    $r->{input_header_row_count}++;
+                                    return $r->{stdin_input_fields};
+                                } else {
+                                    my $row = $input_parser->getline($fh);
+                                    $r->{input_data_row_count}++ if $row;
+                                    return $row;
+                                }
+                            } elsif ($i == 0 && !$has_header) {
+                                # this is the first line of a file and user
+                                # specifies there is no input header. we save
+                                # the line and return the generated field names
+                                # instead.
                                 $row0 = $input_parser->getline($fh);
                                 return unless $row0;
                                 return [map { "field$_" } 1..@$row0];
                             } elsif ($i == 1 && !$has_header) {
+                                # we return the saved first line
                                 $r->{input_data_row_count}++ if $row0;
                                 return $row0;
                             }
@@ -3625,6 +3579,7 @@ sub gen_csv_util {
                             if ($i == 1) {
                                 # gather the list of fields
                                 $r->{input_fields} = $r->{input_row};
+                                $r->{stdin_input_fields} //= $r->{input_row} if $input_filename eq '-';
                                 $r->{orig_input_fields} = $r->{input_fields};
                                 $r->{input_fields_idx} = {};
                                 for my $j (0 .. $#{ $r->{input_fields} }) {
@@ -3664,23 +3619,59 @@ sub gen_csv_util {
                             }
 
                         } # while getline
+
+                        # XXX actually close filehandle except stdin
+
+                        if ($after_close_input_file) {
+                            log_trace "Calling after_close_input_file handler ...";
+                            $after_close_input_file->($r);
+                            if (delete $r->{wants_repeat_file}) {
+                                log_trace "Handler wants to repeat reading this file, repeating";
+                                $r->{input_filenum}--;
+                                redo INPUT_FILENAME;
+                            } elsif (delete $r->{wants_repeat_files}) {
+                                log_trace "Handler wants to repeat reading all files, repeating";
+                                $r->{input_filenum} = 0;
+                                goto BEFORE_INPUT_FILENAME;
+                            } elsif (delete $r->{wants_skip_files}) {
+                                log_trace "Handler wants to skip reading all file, skipping";
+                                last READ_CSV;
+                            }
+                        }
+                        if ($r->{input_filenum} == @input_filenames && $after_close_input_files) {
+                            log_trace "Calling after_close_input_files handler ...";
+                            $after_close_input_files->($r);
+                            if (delete $r->{wants_repeat_files}) {
+                                log_trace "Handler wants to repeat reading files, repeating";
+                                goto BEFORE_INPUT_FILENAME;
+                            } elsif (delete $r->{wants_repeat_file}) {
+                                log_trace "Handler wants to repeat reading this file, repeating";
+                                $r->{input_filenum}--;
+                                redo INPUT_FILENAME;
+                            } elsif (delete $r->{wants_skip_files}) {
+                                log_trace "Handler wants to skip reading all file, skipping";
+                                last READ_CSV;
+                            }
+                        }
+
                     } # for input_filename
 
-                    # cleanup stash from csv-reading-related keys
-                    delete $r->{input_filenames};
-                    delete $r->{input_filenum};
-                    delete $r->{input_filename};
-                    delete $r->{input_fh};
-                    delete $r->{input_rownum};
-                    delete $r->{input_data_rownum};
-                    delete $r->{input_row};
-                    delete $r->{input_row_as_hashref};
-                    delete $r->{input_fields};
-                    delete $r->{input_fields_idx};
-                    delete $r->{orig_input_fields_idx};
-                    delete $r->{code_getline};
-                    delete $r->{wants_input_row_as_hashref};
                 } # READ_CSV
+
+                # cleanup stash from csv-reading-related keys
+                delete $r->{input_filenames};
+                delete $r->{input_filenum};
+                delete $r->{input_filename};
+                delete $r->{input_fh};
+                delete $r->{input_rownum};
+                delete $r->{input_data_rownum};
+                delete $r->{input_row};
+                delete $r->{input_row_as_hashref};
+                delete $r->{input_fields};
+                delete $r->{input_fields_idx};
+                delete $r->{orig_input_fields_idx};
+                delete $r->{code_getline};
+                delete $r->{wants_input_row_as_hashref};
 
                 if ($after_read_input) {
                     log_trace "Calling after_read_input handler ...";
