@@ -65,7 +65,7 @@ _
             no warnings 'numeric', 'uninitialized';
             $r->{summary_row}[$j] += $r->{input_row}[$j]+0;
         }
-        $r->{code_printrow}->($r->{input_row}) if $r->{util_args}{with_data_rows};
+        $r->{code_print_row}->($r->{input_row}) if $r->{util_args}{with_data_rows};
         $r->{row_count}++;
     },
 
@@ -77,7 +77,7 @@ _
                 $r->{summary_row}[$j] /= $r->{row_count};
             }
         }
-        $r->{code_printrow}->($r->{summary_row});
+        $r->{code_print_row}->($r->{summary_row});
     },
 );
 

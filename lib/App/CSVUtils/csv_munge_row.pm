@@ -82,7 +82,7 @@ _
             } else {
                 $newrow = $_;
             }
-            $r->{code_printrow}->($newrow);
+            $r->{code_print_row}->($newrow);
         }
     },
 );

@@ -8,6 +8,9 @@
         - [cli csv-sort-fields] --by-code code now receives [$field_name,
           $field_idx] instead of just $field_name.
 
+        - [cli csv-select-rows] row number spec now means *data row* number
+          spec, e.g. 1 means the first *data* row.
+
         [Internals]
 
         - Make API modular. It is now possible and easier to create a new

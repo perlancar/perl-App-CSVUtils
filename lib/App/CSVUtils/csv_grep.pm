@@ -71,7 +71,7 @@ _
             local $main::rownum = $r->{input_rownum};
             local $main::csv = $r->{input_parser};
             local $main::fields_idx = $r->{input_fields_idx};
-            $r->{code_printrow}->($r->{input_row}) if $r->{code}->($r->{input_row});
+            $r->{code_print_row}->($r->{input_row}) if $r->{code}->($r->{input_row});
         }
     },
 );

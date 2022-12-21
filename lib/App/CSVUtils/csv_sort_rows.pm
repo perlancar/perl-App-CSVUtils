@@ -229,7 +229,7 @@ _
         }
 
         for my $row (@{ $r->{rows} }) {
-            $r->{code_printrow}->($row);
+            $r->{code_print_row}->($row);
         }
     },
 );

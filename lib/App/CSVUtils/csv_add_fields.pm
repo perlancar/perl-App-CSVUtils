@@ -169,7 +169,7 @@ _
         if (ref $vals[0] eq 'ARRAY') { @vals = @{ $vals[0] } }
         splice @{ $r->{input_row} }, $r->{new_fields_idx}, 0,
             (map { $_ // '' } @vals[0 .. $#{$r->{util_args}{fields}}]);
-        $r->{code_printrow}->($r->{input_row});
+        $r->{code_print_row}->($r->{input_row});
     },
 );
 

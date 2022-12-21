@@ -280,17 +280,20 @@ subtest csv_avg => sub {
 };
 
 subtest csv_select_rows => sub {
-    my $res;
+    my ($res, $stdout);
 
-    $res = App::CSVUtils::csv_select_rows(input_filename=>"$dir/5.csv", row_spec=>'10');
-    is_deeply($res, [200,"OK",qq(f1\n),{'cmdline.skip_format'=>1}], "result (n, outside range)");
-    $res = App::CSVUtils::csv_select_rows(input_filename=>"$dir/5.csv", row_spec=>'4');
-    is_deeply($res, [200,"OK",qq(f1\n3\n),{'cmdline.skip_format'=>1}], "result (n)");
-    $res = App::CSVUtils::csv_select_rows(input_filename=>"$dir/5.csv", row_spec=>'4-6');
-    is_deeply($res, [200,"OK",qq(f1\n3\n4\n5\n),{'cmdline.skip_format'=>1}], "result (n-m)");
-    $res = App::CSVUtils::csv_select_rows(input_filename=>"$dir/5.csv", row_spec=>'2,4-6');
-    is_deeply($res, [200,"OK",qq(f1\n1\n3\n4\n5\n),{'cmdline.skip_format'=>1}], "result (n1,n2-m)");
-    $res = App::CSVUtils::csv_select_rows(input_filename=>"$dir/5.csv", row_spec=>'1-');
+    require App::CSVUtils::csv_select_rows;
+
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_select_rows::csv_select_rows(input_filename=>"$dir/5.csv", rownum_spec=>'10') };
+    is($stdout,qq(), "output (n, outside range)");
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_select_rows::csv_select_rows(input_filename=>"$dir/5.csv", rownum_spec=>'4') };
+    is($stdout,qq(f1\n4\n), "output (n)");
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_select_rows::csv_select_rows(input_filename=>"$dir/5.csv", rownum_spec=>'3-5') };
+    is($stdout,qq(f1\n3\n4\n5\n), "output (n-m)");
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_select_rows::csv_select_rows(input_filename=>"$dir/5.csv", rownum_spec=>'1,3-5') };
+    is($stdout,qq(f1\n1\n3\n4\n5\n), "output (n1,n2-m)");
+
+    $res = App::CSVUtils::csv_select_rows::csv_select_rows(input_filename=>"$dir/5.csv", rownum_spec=>'1-');
     is($res->[0], 400, "error in spec -> status 400");
 };
 

@@ -69,7 +69,7 @@ _
             push @$row, $val;
         }
 
-        $r->{code_printrow}->($row);
+        $r->{code_print_row}->($row);
     },
 );
 

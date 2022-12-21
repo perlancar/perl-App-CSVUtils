@@ -83,7 +83,7 @@ _
         for my $j (@{ $r->{output_fields_idx_array} }) {
             push @$row, $r->{input_row}[$j];
         }
-        $r->{code_printrow}->($row);
+        $r->{code_print_row}->($row);
     },
 
 );

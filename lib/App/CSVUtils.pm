@@ -914,8 +914,6 @@ $SPEC{csvutil} = {
         %argspecs_csv_input,
         action => {
             schema => ['str*', in=>[
-                'sort-fields',
-                'select-rows',
                 'split',
                 'convert-to-hash',
                 'convert-to-td',
@@ -1051,22 +1049,6 @@ sub csvutil {
                 $row = $sorted_fields;
             }
 
-            if ($action eq 'select-rows') {
-                my $spec = $args{row_spec};
-                my @codestr;
-                for my $spec_item (split /\s*,\s*/, $spec) {
-                    if ($spec_item =~ /\A\d+\z/) {
-                        push @codestr, "(\$i == $spec_item)";
-                    } elsif ($spec_item =~ /\A(\d+)\s*-\s*(\d+)\z/) {
-                        push @codestr, "(\$i >= $1 && \$i <= $2)";
-                    } else {
-                        return [400, "Invalid row specification '$spec_item'"];
-                    }
-                }
-                $row_spec_sub = eval 'sub { my $i = shift; '.join(" || ", @codestr).' }'; ## no critic: BuiltinFunctions::ProhibitStringyEval
-                return [400, "BUG: Invalid row_spec code: $@"] if $@;
-            }
-
             if ($action eq 'convert-to-vcf') {
                 for my $field (@$fields) {
                     if ($field =~ /name/i && !defined($fields_for{N})) {
@@ -1099,10 +1081,6 @@ sub csvutil {
             } else {
                 $field_idx = _get_field_idx($args{field}, \%field_idxs);
                 $freqtable{ $row->[$field_idx] }++;
-            }
-        } elsif ($action eq 'select-rows') {
-            if ($i == 1 || $row_spec_sub->($i)) {
-                $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
             }
         } elsif ($action eq 'split') {
             next if $i == 1;
@@ -1326,35 +1304,6 @@ sub csv_freqtable {
     my %args = @_;
 
     csvutil(%args, action=>'freqtable');
-}
-
-$SPEC{csv_select_rows} = {
-    v => 1.1,
-    summary => 'Only output specified row(s)',
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename_1,
-        %argspecopt_overwrite,
-        row_spec => {
-            schema => 'str*',
-            summary => 'Row number (e.g. 2 for first data row), '.
-                'range (2-7), or comma-separated list of such (2-7,10,20-23)',
-            req => 1,
-            pos => 2,
-        },
-    },
-    description => '' . $common_desc,
-    links => [
-        {url=>"prog:csv-split"},
-    ],
-    tags => ['outputs_csv'],
-};
-sub csv_select_rows {
-    my %args = @_;
-
-    csvutil(%args, action=>'select-rows');
 }
 
 $SPEC{csv_split} = {
@@ -2310,12 +2259,16 @@ The common keys that `r` will contain:
 - `name`, str. The name of the CSV utility. Which can also be retrieved via
   `gen_args`.
 
-- `code_print`, coderef. Routine provided for you to print something. Takes care
-  of opening the output files for you.
+- `code_print`, coderef. Routine provided for you to print something. Accepts a
+  string. Takes care of opening the output files for you.
 
-- `code_printrow`, coderef. Routine provided for you to print something. You
+- `code_print_row`, coderef. Routine provided for you to print a data row. You
   pass the row (either arrayref or hashref). Takes care of opening the output
-  files for you, as well as printing header row.
+  files for you, as well as printing header row the first time, if needed.
+
+- `code_print_header_row`, coderef. Routine provided for you to print header
+  row. You don't need to pass any arguments. Will only print the header row once
+  per output file if output header is enabled, even if called multiple times.
 
 If you are accepting CSV data, the following keys will also be available (in
 `on_input_header_row` and `on_input_data_row` hooks):
@@ -2409,12 +2362,12 @@ You can also return enveloped result directly by setting `$r->{result}`.
 
 *OUTPUTTING CSV DATA*
 
-To output CSV data, usually you call the provided routine `$r->{code_printrow}`.
+To output CSV data, usually you call the provided routine `$r->{code_print_row}`.
 This routine accepts a row (arrayref or hashref). This routine will open the
 output files for you when needed, as well as print header row automatically.
 
 You can also buffer rows from input to e.g. `$r->{output_rows}`, then call
-`$r->{code_printrow}` repeatedly in the `after_read_input` hook to print all the
+`$r->{code_print_row}` repeatedly in the `after_read_input` hook to print all the
 rows.
 
 
@@ -2432,12 +2385,12 @@ Similarly, to write to many CSv files, you first specify `writes_multiple_csv`.
 Then, you can supply handler for `on_input_header_row` and `on_input_data_row`
 as usual. To switch to the next file, set
 `$r->{wants_switch_to_next_output_file}` to true, in which case the next call to
-`$r->{code_printrow}` will close the current file and open the next file.
+`$r->{code_print_row}` will close the current file and open the next file.
 
 
 *CHANGING THE OUTPUT FIELDS*
 
-When calling `$r->{code_printrow}`, you can output whatever fields you want. By
+When calling `$r->{code_print_row}`, you can output whatever fields you want. By
 convention, you can set `$r->{output_fields}` and `$r->{output_fields_idx}` to
 let other handlers know about the output fields. For example, see the
 implementation of <prog:csv-concat>.
@@ -2604,7 +2557,7 @@ sub gen_csv_util {
                     $on_begin->($r);
                 }
 
-                my $code_openfile = sub {
+                my $code_open_file = sub {
                     # set output filenames, if not yet
                     unless ($r->{output_filenames}) {
                         my @output_filenames;
@@ -2655,11 +2608,11 @@ sub gen_csv_util {
                             $r->{output_fh} = $fh;
                         }
                     } # open the next file
-                }; # code_openfile
+                }; # code_open_file
 
                 my $code_print = sub {
                     my $str = shift;
-                    $code_openfile->();
+                    $code_open_file->();
                     print { $r->{output_fh} } $str;
                 }; # code_print
                 $r->{code_print} = $code_print;
@@ -2669,9 +2622,7 @@ sub gen_csv_util {
                     $r->{output_emitter} = $output_emitter;
                     $r->{has_printed_header} = 0;
 
-                    my $code_printrow = sub {
-                        my $row = shift;
-
+                    my $code_print_header_row = sub {
                         # set output fields, if not yet
                         unless ($r->{output_fields}) {
                             # by default, use the
@@ -2686,7 +2637,7 @@ sub gen_csv_util {
                             }
                         }
 
-                        $code_openfile->();
+                        $code_open_file->();
 
                         # print header line, if not yet
                         if ($outputs_header && !$r->{has_printed_header}) {
@@ -2695,6 +2646,13 @@ sub gen_csv_util {
                             print { $r->{output_fh} } "\n";
                             $r->{output_rownum}++;
                         }
+                    };
+                    $r->{code_print_header_row} = $code_print_header_row;
+
+                    my $code_print_row = sub {
+                        my $row = shift;
+
+                        $code_print_header_row->();
 
                         # print data line
                         if ($row) {
@@ -2710,9 +2668,8 @@ sub gen_csv_util {
                             $r->{output_rownum}++;
                             $r->{output_data_rownum}++;
                         }
-                    }; # code_printrow
-
-                    $r->{code_printrow} = $code_printrow;
+                    }; # code_print_row
+                    $r->{code_print_row} = $code_print_row;
                 } # if outputs csv
 
                 if ($before_read_input) {
@@ -2942,7 +2899,8 @@ sub gen_csv_util {
                 delete $r->{output_rownum};
                 delete $r->{output_data_rownum};
                 delete $r->{code_print};
-                delete $r->{code_printrow};
+                delete $r->{code_print_row};
+                delete $r->{code_print_header_row};
                 delete $r->{has_printed_header};
                 delete $r->{wants_switch_to_next_output_file};
 

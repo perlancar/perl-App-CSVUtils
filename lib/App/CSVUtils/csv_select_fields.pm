@@ -84,7 +84,7 @@ gen_csv_util(
             push @$row, $r->{input_row}[$_];
         }
 
-        $r->{code_printrow}->($row);
+        $r->{code_print_row}->($row);
     },
 );
 

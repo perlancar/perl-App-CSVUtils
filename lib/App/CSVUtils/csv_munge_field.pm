@@ -69,7 +69,7 @@ _
                  "#$r->{input_rownum} field '$r->{util_args}{field}' value '$_': $@\n"] if $@;
             $r->{input_row}->[ $r->{field_idx} ] = $_;
         }
-        $r->{code_printrow}->($r->{input_row});
+        $r->{code_print_row}->($r->{input_row});
     },
 );
 

@@ -82,7 +82,7 @@ gen_csv_util(
             splice @{ $r->{input_row} }, $_, 1;
         }
 
-        $r->{code_printrow}->($r->{input_row});
+        $r->{code_print_row}->($r->{input_row});
     },
 );
 

@@ -40,7 +40,7 @@ _
     on_input_data_row => sub {
         my $r = shift;
 
-        $r->{code_printrow}->($r->{input_row});
+        $r->{code_print_row}->($r->{input_row});
     },
 );
 
