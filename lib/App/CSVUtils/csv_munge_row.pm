@@ -31,7 +31,8 @@ available for additional information.
 The modified `$_` will be rendered back to CSV row.
 
 You cannot add new fields using this utility. To do so, use
-<prog:csv-add-fields>. You also cannot delete fields. To do so, use
+<prog:csv-add-fields>. You also cannot delete fields (they just become empty
+string if you delete the field in the eval code). To delete fields, use
 <prog:csv-delete-fields>.
 
 Note that you can also munge a single field using <prog:csv-munge-field>.
