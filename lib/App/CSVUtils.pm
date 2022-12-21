@@ -914,8 +914,6 @@ $SPEC{csvutil} = {
         %argspecs_csv_input,
         action => {
             schema => ['str*', in=>[
-                'split',
-                'convert-to-td',
                 #'setop', # not implemented in csvutil
                 #'lookup-fields', # not implemented in csvutil
                 'transpose',
@@ -972,9 +970,6 @@ sub csvutil {
     my $row_spec_sub;
     my %freqtable; # key=value, val=frequency
     my @cells;
-
-    # for action=split
-    my ($split_fh, $split_filename, $split_lines);
 
     # for action convert-to-vcf
     my %fields_for;
@@ -1081,43 +1076,8 @@ sub csvutil {
                 $field_idx = _get_field_idx($args{field}, \%field_idxs);
                 $freqtable{ $row->[$field_idx] }++;
             }
-        } elsif ($action eq 'split') {
-            next if $i == 1;
-            unless (defined $split_fh) {
-                $split_filename = "xaa";
-                $split_lines = 0;
-                open $split_fh, ">", $split_filename
-                    or die "Can't open '$split_filename': $!\n";
-                binmode $split_fh, ":encoding(utf8)";
-            }
-            if ($split_lines >= $args{lines}) {
-                $split_filename++;
-                $split_lines = 0;
-                open $split_fh, ">", $split_filename
-                    or die "Can't open '$split_filename': $!\n";
-            }
-            if ($split_lines == 0 && $has_header) {
-                $csv_emitter->print($split_fh, $fields);
-                print $split_fh "\n";
-            }
-            $csv_emitter->print($split_fh, $row);
-            print $split_fh "\n";
-            $split_lines++;
-            if ($i == 1 || do {
-                local $_ = $args{hash} ? _array2hash($row, $fields) : $row;
-                no warnings 'once';
-                local $main::row = $row;
-                local $main::rownum = $i;
-                local $main::csv = $csv_parser;
-                local $main::field_idxs = \%field_idxs;
-                $code->($row);
-            }) {
-                $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
-            }
         } elsif ($action eq 'transpose') {
             push @$rows, $row;
-        } elsif ($action eq 'convert-to-td') {
-            push @$rows, $row unless $i == 1;
         } elsif ($action eq 'fill-template') {
             push @$rows, _array2hash($row, $fields) unless $i == 1;
         } elsif ($action eq 'get-cells') {
@@ -1157,10 +1117,6 @@ sub csvutil {
             return [400, "Unknown action '$action'"];
         }
     } # while getline()
-
-    if ($action eq 'convert-to-td') {
-        return [200, "OK", $rows, {'table.fields'=>$fields}];
-    }
 
     if ($action eq 'convert-to-vcf') {
         return [200, "OK", join("", @$rows)];
@@ -1288,48 +1244,6 @@ sub csv_freqtable {
     csvutil(%args, action=>'freqtable');
 }
 
-$SPEC{csv_split} = {
-    v => 1.1,
-    summary => 'Split CSV file into several files',
-    description => <<'_' . $common_desc,
-
-Will output split files xaa, xab, and so on. Each split file will contain a
-maximum of `lines` rows (options to limit split files' size based on number of
-characters and bytes will be added). Each split file will also contain CSV
-header.
-
-Warning: by default, existing split files xaa, xab, and so on will be
-overwritten.
-
-Interface is loosely based on the `split` Unix utility.
-
-_
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-        %argspecopt_input_filename_0,
-        lines => {
-            schema => ['uint*', min=>1],
-            default => 1000,
-            cmdline_aliases => {l=>{}},
-        },
-        # XXX --bytes (-b)
-        # XXX --line-bytes (-C)
-        # XXX -d (numeric suffix)
-        # --suffix-length (-a)
-        # --number, -n (chunks)
-    },
-    links => [
-        {url=>"prog:csv-select-rows"},
-    ],
-    tags => ['outputs_csv'],
-};
-sub csv_split {
-    my %args = @_;
-
-    csvutil(%args, action=>'split');
-}
-
 $SPEC{csv_transpose} = {
     v => 1.1,
     summary => 'Transpose a CSV',
@@ -1364,11 +1278,6 @@ _
     },
     description => '' . $common_desc,
 };
-sub csv2td {
-    my %args = @_;
-
-    csvutil(%args, action=>'convert-to-td');
-}
 
 $SPEC{csv2vcf} = {
     v => 1.1,
@@ -2532,7 +2441,7 @@ sub gen_csv_util {
                     } # set output filenames
 
                     # open the next file, if not yet
-                    unless ($r->{output_fh} || $r->{wants_switch_to_next_output_file}) {
+                    if (!$r->{output_fh} || $r->{wants_switch_to_next_output_file}) {
                         $r->{output_filenum} //= 0;
                         $r->{output_filenum}++;
 
@@ -2541,7 +2450,7 @@ sub gen_csv_util {
 
                         # close the previous file, if any
                         if ($r->{output_fh} && $r->{output_filename} ne '-') {
-                            log_debug "Closing output file '$r->{output_filename}' ...";
+                            log_info "Closing output file '$r->{output_filename}' ...";
                             close $r->{output_fh} or die [500, "Can't close output file '$r->{output_filename}': $!"];
                             delete $r->{has_printed_header};
                             delete $r->{wants_switch_to_next_output_file};
@@ -2850,7 +2759,7 @@ sub gen_csv_util {
                 delete $r->{output_filenum};
                 if ($r->{output_fh}) {
                     if ($r->{output_filename} ne '-') {
-                        log_debug "Closing output file '$r->{output_filename}' ...";
+                        log_info "Closing output file '$r->{output_filename}' ...";
                         close $r->{output_fh} or die [500, "Can't close output file '$r->{output_filename}': $!"];
                     }
                     delete $r->{output_fh};
