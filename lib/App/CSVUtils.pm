@@ -916,7 +916,6 @@ $SPEC{csvutil} = {
             schema => ['str*', in=>[
                 #'lookup-fields', # not implemented in csvutil
                 'transpose',
-                'freqtable',
                 'get-cells',
                 'fill-template',
                 'convert-to-vcf',
@@ -967,7 +966,6 @@ sub csvutil {
     my $sorted_fields;
     my $selected_row;
     my $row_spec_sub;
-    my %freqtable; # key=value, val=frequency
     my @cells;
 
     # for action convert-to-vcf
@@ -1069,13 +1067,7 @@ sub csvutil {
             }
         } # if i==1 (header row)
 
-        if ($action eq 'freqtable') {
-            if ($i == 1) {
-            } else {
-                $field_idx = _get_field_idx($args{field}, \%field_idxs);
-                $freqtable{ $row->[$field_idx] }++;
-            }
-        } elsif ($action eq 'transpose') {
+        if ($action eq 'transpose') {
             push @$rows, $row;
         } elsif ($action eq 'fill-template') {
             push @$rows, _array2hash($row, $fields) unless $i == 1;
@@ -1119,14 +1111,6 @@ sub csvutil {
 
     if ($action eq 'convert-to-vcf') {
         return [200, "OK", join("", @$rows)];
-    }
-
-    if ($action eq 'freqtable') {
-        my @freqtable;
-        for (sort { $freqtable{$b} <=> $freqtable{$a} } keys %freqtable) {
-            push @freqtable, [$_, $freqtable{$_}];
-        }
-        return [200, "OK", \@freqtable, {'table.fields'=>['value','freq']}];
     }
 
     if ($action eq 'transpose') {
@@ -1225,22 +1209,6 @@ sub csv_shuf_fields {
         # TODO: this feels less shuffled
         sort_by_code => sub { int(rand 3)-1 }, # return -1,0,1 randomly
     );
-}
-
-$SPEC{csv_freqtable} = {
-    v => 1.1,
-    summary => 'Output a frequency table of values of a specified field in CSV',
-    args => {
-        %argspecs_csv_input,
-        %argspecopt_input_filename_0,
-        %argspec_field_1,
-    },
-    description => '' . $common_desc,
-};
-sub csv_freqtable {
-    my %args = @_;
-
-    csvutil(%args, action=>'freqtable');
 }
 
 $SPEC{csv_transpose} = {
