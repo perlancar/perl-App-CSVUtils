@@ -915,7 +915,6 @@ $SPEC{csvutil} = {
         action => {
             schema => ['str*', in=>[
                 'split',
-                'convert-to-hash',
                 'convert-to-td',
                 #'setop', # not implemented in csvutil
                 #'lookup-fields', # not implemented in csvutil
@@ -1117,10 +1116,6 @@ sub csvutil {
             }
         } elsif ($action eq 'transpose') {
             push @$rows, $row;
-        } elsif ($action eq 'convert-to-hash') {
-            if ($i == $args{_row_number}) {
-                $selected_row = $row;
-            }
         } elsif ($action eq 'convert-to-td') {
             push @$rows, $row unless $i == 1;
         } elsif ($action eq 'fill-template') {
@@ -1162,19 +1157,6 @@ sub csvutil {
             return [400, "Unknown action '$action'"];
         }
     } # while getline()
-
-    if ($action eq 'convert-to-hash') {
-        $selected_row //= [];
-        my $hash = {};
-        for (0..$#{$fields}) {
-            $hash->{ $fields->[$_] } = $selected_row->[$_];
-        }
-        return [200, "OK", $hash];
-    }
-
-    if ($action eq 'convert-to-hash') {
-        return [200, "OK", join("", @$rows)];
-    }
 
     if ($action eq 'convert-to-td') {
         return [200, "OK", $rows, {'table.fields'=>$fields}];
@@ -1346,28 +1328,6 @@ sub csv_split {
     my %args = @_;
 
     csvutil(%args, action=>'split');
-}
-
-$SPEC{csv_convert_to_hash} = {
-    v => 1.1,
-    summary => 'Return a hash of field names as keys and first row as values',
-    args => {
-        %argspecs_csv_input,
-        %argspecopt_input_filename_0,
-        row_number => {
-            schema => ['int*', min=>2],
-            default => 2,
-            summary => 'Row number (e.g. 2 for first data row)',
-            pos => 1,
-        },
-    },
-    description => '' . $common_desc,
-};
-sub csv_convert_to_hash {
-    my %args = @_;
-
-    csvutil(%args, action=>'convert-to-hash',
-            _row_number=>$args{row_number} // 2);
 }
 
 $SPEC{csv_transpose} = {

@@ -300,11 +300,13 @@ subtest csv_select_rows => sub {
 subtest csv_convert_to_hash => sub {
     my $res;
 
-    $res = App::CSVUtils::csv_convert_to_hash(input_filename=>"$dir/1.csv");
-    is_deeply($res, [200,"OK",{f1=>1, f2=>2, f3=>3}], "result 1");
-    $res = App::CSVUtils::csv_convert_to_hash(input_filename=>"$dir/1.csv", row_number=>3);
+    require App::CSVUtils::csv_convert_to_hash;
+
+    $res = App::CSVUtils::csv_convert_to_hash::csv_convert_to_hash(input_filename=>"$dir/1.csv");
+    is_deeply($res, [200,"OK",{f1=>1, f2=>2, f3=>3}], "result 1") or diag explain $res;
+    $res = App::CSVUtils::csv_convert_to_hash::csv_convert_to_hash(input_filename=>"$dir/1.csv", rownum=>2);
     is_deeply($res, [200,"OK",{f1=>4, f2=>5, f3=>6}], "result 2");
-    $res = App::CSVUtils::csv_convert_to_hash(input_filename=>"$dir/1.csv", row_number=>10);
+    $res = App::CSVUtils::csv_convert_to_hash::csv_convert_to_hash(input_filename=>"$dir/1.csv", rownum=>10);
     is_deeply($res, [200,"OK",{f1=>undef, f2=>undef, f3=>undef}], "result 3");
 };
 

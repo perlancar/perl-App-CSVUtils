@@ -11,6 +11,12 @@
         - [cli csv-select-rows] row number spec now means *data row* number
           spec, e.g. 1 means the first *data* row.
 
+        - [cli csv-select-rows] Will not output header row if there is no rows
+          matching spec.
+
+        - [cli csv-convert-to-hash] Row number now means *data* row number, e.g.
+          1 means the first row number.
+
         [Internals]
 
         - Make API modular. It is now possible and easier to create a new
