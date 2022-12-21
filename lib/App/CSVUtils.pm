@@ -927,7 +927,6 @@ $SPEC{csvutil} = {
         %argspecs_csv_input,
         action => {
             schema => ['str*', in=>[
-                #'replace-newline', # not implemented in csvutil
                 'sort-rows',
                 'sort-fields',
                 'select-rows',
@@ -1399,62 +1398,6 @@ our $common_desc = <<'_';
 Encoding: The utilities in this module/distribution accept and emit UTF8 text.
 
 _
-
-$SPEC{csv_replace_newline} = {
-    v => 1.1,
-    summary => 'Replace newlines in CSV values',
-    description => <<'_' . $common_desc,
-
-Some CSV parsers or applications cannot handle multiline CSV values. This
-utility can be used to convert the newline to something else. There are a few
-choices: replace newline with space (`--with-space`, the default), remove
-newline (`--with-nothing`), replace with encoded representation
-(`--with-backslash-n`), or with characters of your choice (`--with 'blah'`).
-
-_
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename,
-        %argspecopt_overwrite,
-        %argspecopt_output_filename_1,
-        %argspecopt_overwrite,
-        with => {
-            schema => 'str*',
-            default => ' ',
-            cmdline_aliases => {
-                with_space => { is_flag=>1, code=>sub { $_[0]{with} = ' ' } },
-                with_nothing => { is_flag=>1, code=>sub { $_[0]{with} = '' } },
-                with_backslash_n => { is_flag=>1, code=>sub { $_[0]{with} = "\\n" } },
-            },
-        },
-    },
-    tags => ['outputs_csv'],
-};
-sub csv_replace_newline {
-    my %args = @_;
-    my $with = $args{with};
-
-    my $csv_parser  = _instantiate_parser(\%args, 'input_');
-    my $csv_emitter = _instantiate_emitter(\%args);
-
-    my ($fh, $err) = _open_file_read($args{input_filename});
-
-    my $res = "";
-    my $i = 0;
-    while (my $row = $csv_parser->getline($fh)) {
-        $i++;
-        for my $col (@$row) {
-            $col =~ s/[\015\012]+/$with/g;
-        }
-        my $status = $csv_emitter->combine(@$row)
-            or die "Error in line $i: ".$csv_emitter->error_input;
-        $res .= $csv_emitter->string . "\n";
-    }
-
-    _return_or_write_file([200, "OK", $res, {"cmdline.skip_format"=>1}], $args{output_filename}, $args{overwrite});
-}
 
 $SPEC{csv_sort_rows} = {
     v => 1.1,

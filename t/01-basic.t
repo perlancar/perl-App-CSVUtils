@@ -16,7 +16,7 @@ my $dir = tempdir(CLEANUP => 1);
 write_text("$dir/empty.csv", '');
 write_text("$dir/1.csv", "f1,f2,f3\n1,2,3\n4,5,6\n7,8,9\n");
 write_text("$dir/2.csv", "f1\n1\n2\n3\n");
-write_text("$dir/3.csv", qq(f1,f2\n1,"row\n1"\n2,"row\n2"\n));
+write_text("$dir/3.csv", qq(f1,"f2\n0"\n1,"row\n1"\n2,"row\n2"\n)); # contains newline
 write_text("$dir/4.csv", qq(f1,F3,f2\n1,2,3\n4,5,6\n));
 write_text("$dir/5.csv", qq(f1\n1\n2\n3\n4\n5\n6\n));
 write_text("$dir/no-rows.csv", qq(f1,f2,f3\n));
@@ -100,7 +100,7 @@ subtest csv_delete_fields => sub {
     $res = App::CSVUtils::csv_delete_fields::csv_delete_fields(input_filename=>"$dir/2.csv", include_field_pat=>qr/.*/);
     is($res->[0], 412, "deleting last remaining field -> error (1)");
 
-    $res = App::CSVUtils::csv_delete_fields::csv_delete_fields(input_filename=>"$dir/3.csv", include_fields=>["f2", "f1"]);
+    $res = App::CSVUtils::csv_delete_fields::csv_delete_fields(input_filename=>"$dir/3.csv", include_fields=>["f2\n0", "f1"]);
     is($res->[0], 412, "deleting last remaining field -> error (2)");
 
     subtest "include_fields (1)" => sub {
@@ -154,10 +154,11 @@ subtest csv_munge_row => sub {
 };
 
 subtest csv_replace_newline => sub {
-    my $res;
+    my ($res, $stdout);
 
-    $res = App::CSVUtils::csv_replace_newline(input_filename=>"$dir/3.csv", with=>" ");
-    is_deeply($res, [200,"OK",qq(f1,f2\n1,"row 1"\n2,"row 2"\n),{'cmdline.skip_format'=>1}], "result");
+    require App::CSVUtils::csv_replace_newline;
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_replace_newline::csv_replace_newline(input_filename=>"$dir/3.csv", with=>" ") };
+    is($stdout, qq(f1,"f2 0"\n1,"row 1"\n2,"row 2"\n), "output");
     # XXX opt=with
 };
 
