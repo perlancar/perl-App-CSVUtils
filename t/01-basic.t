@@ -138,6 +138,21 @@ subtest csv_munge_field => sub {
     is($stdout, "f1,f2,f3\n1,2,9\n4,5,18\n7,8,27\n", "output");
 };
 
+subtest csv_munge_row => sub {
+    my ($res, $stdout);
+
+    require App::CSVUtils::csv_munge_row;
+
+    $res = App::CSVUtils::csv_munge_row::csv_munge_row(input_filename=>"$dir/1.csv", eval=>"blah +");
+    is($res->[0], 400, "error in code -> error");
+
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_munge_row::csv_munge_row(input_filename=>"$dir/1.csv", eval=>'$_->[2] *= 3') };
+    is($stdout, "f1,f2,f3\n1,2,9\n4,5,18\n7,8,27\n", "output");
+
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_munge_row::csv_munge_row(input_filename=>"$dir/1.csv", hash=>1, eval=>'$_->{f3} *= 3; delete $_->{f1}; $_->{f4} = 1') };
+    is($stdout, "f1,f2,f3\n,2,9\n,5,18\n,8,27\n", "output (with --hash, new fields ignored)");
+};
+
 subtest csv_replace_newline => sub {
     my $res;
 
