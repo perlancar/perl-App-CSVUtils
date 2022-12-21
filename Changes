@@ -5,6 +5,9 @@
         - Rename variable given to eval codes '$main::field_idxs' to
           '$main::fields_idx'.
 
+        - [cli csv-sort-fields] --by-code code now receives [$field_name,
+          $field_idx] instead of just $field_name.
+
         [Internals]
 
         - Make API modular. It is now possible and easier to create a new
@@ -16,7 +19,7 @@
 
         [Enhancements]
 
-        - [csv-select-fields] Add option --show-selected-fields, like in
+        - [cli csv-select-fields] Add option --show-selected-fields, like in
           csv-delete-fields.
 
         [Removed]

@@ -31,7 +31,7 @@ header row) and should return the value for the new fields (either as a list or
 as an arrayref). `$_` contains the current row (as arrayref, or if you specify
 `-H`, as a hashref). `$main::row` is available and contains the current row
 (always as an arrayref). `$main::rownum` contains the row number (2 means the
-first data row). `$csv` is the <pm:Text::CSV_XS> object. `$main::field_idxs` is
+first data row). `$csv` is the <pm:Text::CSV_XS> object. `$main::fields_idx` is
 also available for additional information.
 
 If `-e` is not supplied, the new fields will be getting the default value of
@@ -161,7 +161,7 @@ _
             local $main::row = $r->{input_row};
             local $main::rownum = $r->{input_rownum};
             local $main::csv = $r->{input_parser};
-            local $main::field_idxs = $r->{input_field_idxs};
+            local $main::fields_idx = $r->{input_fields_idx};
             eval { @vals = $r->{code}->() };
         }
         die [500, "Error while adding field(s) '".join(",", @{$r->{util_args}{fields}})."' for row #$r->{input_rownum}: $@"]

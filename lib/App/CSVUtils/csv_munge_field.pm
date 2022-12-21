@@ -23,7 +23,7 @@ Perl code (-e) will be called for each row (excluding the header row) and `$_`
 will contain the value of the field, and the Perl code is expected to modify it.
 `$main::row` will contain the current row array. `$main::rownum` contains the
 row number (2 means the first data row). `$main::csv` is the <pm:Text::CSV_XS>
-object. `$main::field_idxs` is also available for additional information.
+object. `$main::fields_idx` is also available for additional information.
 
 To munge multiple fields, use <prog:csv-munge-row>.
 
@@ -63,7 +63,7 @@ _
             local $main::row = $r->{input_row};
             local $main::rownum = $r->{input_rownum};
             local $main::csv = $r->{input_parser};
-            local $main::field_idxs = $r->{input_field_idxs};
+            local $main::fields_idx = $r->{input_fields_idx};
             eval { $r->{code}->() };
             die [500, "Error while munging row ".
                  "#$r->{input_rownum} field '$r->{util_args}{field}' value '$_': $@\n"] if $@;

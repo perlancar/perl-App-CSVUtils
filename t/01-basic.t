@@ -163,74 +163,93 @@ subtest csv_replace_newline => sub {
 };
 
 subtest csv_sort_fields => sub {
-    my $res;
+    my ($res, $stdout);
 
-    # alphabetical
-    $res = App::CSVUtils::csv_sort_fields(input_filename=>"$dir/4.csv");
-    is_deeply($res, [200,"OK",qq(F3,f1,f2\n2,1,3\n5,4,6\n),{'cmdline.skip_format'=>1}], "result (alphabetical)");
-    # reverse alphabetical
-    $res = App::CSVUtils::csv_sort_fields(input_filename=>"$dir/4.csv", reverse=>1);
-    is_deeply($res, [200,"OK",qq(f2,f1,F3\n3,1,2\n6,4,5\n),{'cmdline.skip_format'=>1}], "result (reverse alphabetical)");
-    # ci alphabetical
-    $res = App::CSVUtils::csv_sort_fields(input_filename=>"$dir/4.csv", ci=>1);
-    is_deeply($res, [200,"OK",qq(f1,f2,F3\n1,3,2\n4,6,5\n),{'cmdline.skip_format'=>1}], "result (ci alphabetical)");
-    # by_examples
-    $res = App::CSVUtils::csv_sort_fields(input_filename=>"$dir/4.csv", by_examples=>["f2","F3","f1"]);
-    is_deeply($res, [200,"OK",qq(f2,F3,f1\n3,2,1\n6,5,4\n),{'cmdline.skip_format'=>1}], "result (by_examples)");
-    # reverse by_examples
-    $res = App::CSVUtils::csv_sort_fields(input_filename=>"$dir/4.csv", by_examples=>["f2","F3","f1"], reverse=>1);
-    is_deeply($res, [200,"OK",qq(f1,F3,f2\n1,2,3\n4,5,6\n),{'cmdline.skip_format'=>1}], "result (reverse by_example)");
-    # by_code
-    $res = App::CSVUtils::csv_sort_fields(input_filename=>"$dir/4.csv", by_code=>sub { lc($a) cmp lc($b) });
-    is_deeply($res, [200,"OK",qq(f1,f2,F3\n1,3,2\n4,6,5\n),{'cmdline.skip_format'=>1}], "result (by_code)");
-    # by_sortsub
+    require App::CSVUtils::csv_sort_fields;
+
+    subtest "alphabetical" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_fields::csv_sort_fields(input_filename=>"$dir/4.csv") };
+        is($stdout,qq(F3,f1,f2\n2,1,3\n5,4,6\n), "output");
+    };
+    subtest "reverse alphabetical" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_fields::csv_sort_fields(input_filename=>"$dir/4.csv", reverse=>1) };
+        is($stdout,qq(f2,f1,F3\n3,1,2\n6,4,5\n), "output");
+    };
+    subtest "ci alphabetical" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_fields::csv_sort_fields(input_filename=>"$dir/4.csv", ci=>1) };
+        is($stdout,qq(f1,f2,F3\n1,3,2\n4,6,5\n), "output");
+    };
+    subtest "by_examples" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_fields::csv_sort_fields(input_filename=>"$dir/4.csv", by_examples=>["f2","F3","f1"]) };
+        is($stdout,qq(f2,F3,f1\n3,2,1\n6,5,4\n), "output");
+    };
+    subtest "reverse by_examples" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_fields::csv_sort_fields(input_filename=>"$dir/4.csv", by_examples=>["f2","F3","f1"], reverse=>1) };
+        is($stdout,qq(f1,F3,f2\n1,2,3\n4,5,6\n), "output");
+    };
+    subtest "by_code" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_fields::csv_sort_fields(input_filename=>"$dir/4.csv", by_code=>sub { lc($a->[0]) cmp lc($b->[0]) }) };
+        is($stdout,qq(f1,f2,F3\n1,3,2\n4,6,5\n), "output") or diag explain $res;
+    };
     subtest by_sortsub => sub {
         test_needs 'Sort::Sub', 'Sort::Sub::by_length';
-        $res = App::CSVUtils::csv_sort_fields(input_filename=>"$dir/sort-fields.csv", by_sortsub=>"by_length");
-        is_deeply($res, [200,"OK",qq(two,four,eighteen\n2,4,18\n),{'cmdline.skip_format'=>1}], "result (by sortsub)");
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_fields::csv_sort_fields(input_filename=>"$dir/sort-fields.csv", by_sortsub=>"by_length") };
+        is($stdout,qq(two,four,eighteen\n2,4,18\n), "output");
     };
 };
 
 subtest csv_sort_rows => sub {
-    my $res;
+    my ($res, $stdout);
 
-    # alphabetical
-    $res = App::CSVUtils::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_fields=>["f2"]);
-    is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n10,Chuck\n2,andy\n),{'cmdline.skip_format'=>1}]);
-    # reverse alphabetical
-    $res = App::CSVUtils::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_fields=>["~f2"]);
-    is_deeply($res, [200,"OK",qq(f1,f2\n2,andy\n10,Chuck\n1,Andy\n),{'cmdline.skip_format'=>1}]);
-    # numeric
-    $res = App::CSVUtils::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_fields=>["+f1"]);
-    is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n2,andy\n10,Chuck\n),{'cmdline.skip_format'=>1}]);
-    # reverse numeric
-    $res = App::CSVUtils::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_fields=>["-f1"]);
-    is_deeply($res, [200,"OK",qq(f1,f2\n10,Chuck\n2,andy\n1,Andy\n),{'cmdline.skip_format'=>1}]);
-    # ci
-    $res = App::CSVUtils::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_fields=>["f2","+f1"], ci=>1);
-    is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n2,andy\n10,Chuck\n),{'cmdline.skip_format'=>1}]);
+    require App::CSVUtils::csv_sort_rows;
+    subtest "alphabetical" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_rows::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_fields=>["f2"]) };
+        is($stdout,qq(f1,f2\n1,Andy\n10,Chuck\n2,andy\n), "output");
+    };
+    subtest "reverse alphabetical" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_rows::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_fields=>["~f2"]) };
+        is($stdout,qq(f1,f2\n2,andy\n10,Chuck\n1,Andy\n), "output");
+    };
+    subtest "numeric" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_rows::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_fields=>["+f1"]) };
+        is($stdout,qq(f1,f2\n1,Andy\n2,andy\n10,Chuck\n), "output");
+    };
+    subtest "reverse numeric" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_rows::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_fields=>["-f1"]) };
+        is($stdout,qq(f1,f2\n10,Chuck\n2,andy\n1,Andy\n), "output");
+    };
+    subtest "ci" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_rows::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_fields=>["f2","+f1"], ci=>1) };
+        is($stdout,qq(f1,f2\n1,Andy\n2,andy\n10,Chuck\n), "output");
+    };
 
-    # by code
-    $res = App::CSVUtils::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_code=>'$a->[0] cmp $b->[0]');
-    is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n10,Chuck\n2,andy\n),{'cmdline.skip_format'=>1}]);
-    # by code, hash
-    $res = App::CSVUtils::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_code=>'$a->{f1} cmp $b->{f1}', hash=>1);
-    is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n10,Chuck\n2,andy\n),{'cmdline.skip_format'=>1}]);
-    # by code, key
-    $res = App::CSVUtils::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_code=>'$a cmp $b', key=>'$_->[0]');
-    is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n10,Chuck\n2,andy\n),{'cmdline.skip_format'=>1}]);
-    # by code, hash, key
-    $res = App::CSVUtils::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_code=>'$a cmp $b', hash=>1, key=>'$_->{f1}');
-    is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n10,Chuck\n2,andy\n),{'cmdline.skip_format'=>1}]);
+    subtest "by_code" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_rows::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_code=>'$a->[0] cmp $b->[0]') };
+        is($stdout,qq(f1,f2\n1,Andy\n10,Chuck\n2,andy\n), "output");
+    };
+    subtest "by_code + hash" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_rows::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_code=>'$a->{f1} cmp $b->{f1}', hash=>1) };
+        is($stdout,qq(f1,f2\n1,Andy\n10,Chuck\n2,andy\n), "output");
+    };
+    subtest "by_code + key" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_rows::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_code=>'$a cmp $b', key=>'$_->[0]') };
+        is($stdout,qq(f1,f2\n1,Andy\n10,Chuck\n2,andy\n), "output");
+    };
+    subtest "by_code + hash + key" => sub {
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_rows::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_code=>'$a cmp $b', hash=>1, key=>'$_->{f1}') };
+        is($stdout,qq(f1,f2\n1,Andy\n10,Chuck\n2,andy\n), "output");
+    };
 
     subtest by_sortsub => sub {
         test_needs 'Sort::Sub', 'Sort::Sub::numerically';
-        # numeric
-        $res = App::CSVUtils::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_sortsub=>"numerically", key=>'$_->[0]');
-        is_deeply($res, [200,"OK",qq(f1,f2\n1,Andy\n2,andy\n10,Chuck\n),{'cmdline.skip_format'=>1}]);
-        # reverse numeric. hash
-        $res = App::CSVUtils::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_sortsub=>"numerically<r>", hash=>1, key=>'$_->{f1}');
-        is_deeply($res, [200,"OK",qq(f1,f2\n10,Chuck\n2,andy\n1,Andy\n),{'cmdline.skip_format'=>1}]);
+        subtest "numeric" => sub {
+            $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_rows::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_sortsub=>"numerically", key=>'$_->[0]') };
+            is($stdout,qq(f1,f2\n1,Andy\n2,andy\n10,Chuck\n), "output");
+        };
+        subtest "reverse numeric + hash" => sub {
+            $stdout = capture_stdout { $res = App::CSVUtils::csv_sort_rows::csv_sort_rows(input_filename=>"$dir/sort-rows.csv", by_sortsub=>"numerically<r>", hash=>1, key=>'$_->{f1}') };
+            is($stdout,qq(f1,f2\n10,Chuck\n2,andy\n1,Andy\n), "output");
+        };
     };
 };
 

@@ -23,7 +23,7 @@ This is like Perl's `grep` performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
 `$main::row` is also set to the row (always as arrayref). `$main::rownum`
 contains the row number (2 means the first data row). `$main::csv` is the
-<pm:Text::CSV_XS> object. `$main::field_idxs` is also available for additional
+<pm:Text::CSV_XS> object. `$main::fields_idx` is also available for additional
 information.
 
 Your code is then free to return true or false based on some criteria. Only rows
@@ -70,7 +70,7 @@ _
             local $main::row = $r->{input_row};
             local $main::rownum = $r->{input_rownum};
             local $main::csv = $r->{input_parser};
-            local $main::field_idxs = $r->{input_field_idxs};
+            local $main::fields_idx = $r->{input_fields_idx};
             $r->{code_printrow}->($r->{input_row}) if $r->{code}->($r->{input_row});
         }
     },

@@ -773,15 +773,28 @@ our %argspecopt_eval_2 = (
     },
 );
 
-our %argspecopt_by_code = (
+our %argspecopt_by_code__rows = (
     by_code => {
-        summary => 'Sort using Perl code',
+        summary => 'Sort rows using Perl code',
         schema => $sch_req_str_or_code,
         description => <<'_',
 
 `$a` and `$b` (or the first and second argument) will contain the two rows to be
 compared. Which are arrayrefs; or if `--hash` (`-H`) is specified, hashrefs; or
 if `--key` is specified, whatever the code in `--key` returns.
+
+_
+    },
+);
+
+our %argspecopt_by_code__fields = (
+    by_code => {
+        summary => 'Sort fields using Perl code',
+        schema => $sch_req_str_or_code,
+        description => <<'_',
+
+`$a` and `$b` (or the first and second argument) will contain `[$field_name,
+$field_idx]`.
 
 _
     },
@@ -817,7 +830,8 @@ keys. Relevant when sorting using `--by-code` or `--by-sortsub`. If specified,
 then instead of row when sorting rows, the code (or Sort::Sub routine) will
 receive these sort keys to sort against.
 
-Tthe code will receive the row (arrayref) as the argument.
+The code will receive the row (arrayref, or if -H is specified, hashref) as the
+argument.
 
 _
         schema => $sch_req_str_or_code,
@@ -825,34 +839,8 @@ _
     },
 );
 
-# argspecs for csvutil
-our %argspecsopt_sort = (
-    sort_reverse => {
-        schema => ['bool', is=>1],
-    },
-    sort_ci => {
-        schema => ['bool', is=>1],
-    },
-    sort_by_sortsub => {
-        schema => 'str*',
-    },
-    sort_sortsub_args => {
-        schema => ['hash*'],
-    },
-    sort_by_code => {
-        schema => $sch_req_str_or_code,
-    },
-    sort_key => {
-        schema => $sch_req_str_or_code,
-    },
-    # for csv-sort-fields
-    sort_examples => {
-        schema => ['array*', of=>'str*'],
-    },
-);
-
 # argspecs for csv-sort-rows
-our %argspecs_sort_rows_short = (
+our %argspecs_sort_rows = (
     reverse => {
         schema => ['bool', is=>1],
         cmdline_aliases => {r=>{}},
@@ -879,11 +867,10 @@ _
     },
     %argspecopt_key,
     %argspecsopt_sortsub,
-    %argspecopt_by_code,
+    %argspecopt_by_code__rows,
 );
 
-# argspecs for csv-sort-fields
-our %argspecs_sort_fields_short = (
+our %argspecs_sort_fields = (
     reverse => {
         schema => ['bool', is=>1],
         cmdline_aliases => {r=>{}},
@@ -900,7 +887,7 @@ our %argspecs_sort_fields_short = (
         schema => ['array*', of=>'str*'],
         element_completion => \&_complete_field,
     },
-    %argspecopt_by_code,
+    %argspecopt_by_code__fields,
     %argspecsopt_sortsub,
 );
 
@@ -927,7 +914,6 @@ $SPEC{csvutil} = {
         %argspecs_csv_input,
         action => {
             schema => ['str*', in=>[
-                'sort-rows',
                 'sort-fields',
                 'select-rows',
                 'split',
@@ -952,7 +938,6 @@ $SPEC{csvutil} = {
         %argspecopt_field,
         %argspecsopt_field_selection,
         %argspecsopt_vcf,
-        %argspecsopt_sort,
     },
     args_rels => {
     },
@@ -1109,16 +1094,7 @@ sub csvutil {
             }
         } # if i==1 (header row)
 
-        if ($action eq 'sort-fields') {
-            unless ($i == 1) {
-                my @new_row;
-                for (@$sorted_fields) {
-                    push @new_row, $row->[$field_idxs{$_}];
-                }
-                $row = \@new_row;
-            }
-            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
-        } elsif ($action eq 'freqtable') {
+        if ($action eq 'freqtable') {
             if ($i == 1) {
             } else {
                 $field_idx = _get_field_idx($args{field}, \%field_idxs);
@@ -1152,6 +1128,7 @@ sub csvutil {
             $split_lines++;
             if ($i == 1 || do {
                 local $_ = $args{hash} ? _array2hash($row, $fields) : $row;
+                no warnings 'once';
                 local $main::row = $row;
                 local $main::rownum = $i;
                 local $main::csv = $csv_parser;
@@ -1160,8 +1137,6 @@ sub csvutil {
             }) {
                 $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
             }
-        } elsif ($action eq 'sort-rows') {
-            push @$rows, $row unless $i == 1;
         } elsif ($action eq 'transpose') {
             push @$rows, $row;
         } elsif ($action eq 'convert-to-hash') {
@@ -1239,121 +1214,6 @@ sub csvutil {
         return [200, "OK", \@freqtable, {'table.fields'=>['value','freq']}];
     }
 
-    if ($action eq 'sort-rows') {
-
-        # whether we should compute keys
-        my @keys;
-        if ($args{sort_key}) {
-            my $code_gen_key = compile_eval_code($args{sort_key}, 'sort_key');
-            if ($action eq 'sort-rows') {
-                for my $row (@$rows) {
-                    local $_ = $args{hash} ? _array2hash($row, $fields) : $row;
-                    push @keys, $code_gen_key->($_);
-                }
-            } else {
-                # sort-fields
-                for my $field (@$fields) {
-                    local $_ = $field;
-                    push @keys, $code_gen_key->($_);
-                }
-            }
-        }
-
-        if ($args{sort_by_code} || $args{sort_by_sortsub}) {
-
-            my $code0;
-            if ($args{sort_by_code}) {
-                $code0 = compile_eval_code($args{sort_by_code}, 'sort_by_code');
-            } elsif (defined $args{sort_by_sortsub}) {
-                require Sort::Sub;
-                $code0 = Sort::Sub::get_sorter(
-                    $args{sort_by_sortsub}, $args{sort_sortsub_args});
-            }
-
-            if (@keys) {
-                # compare two sort keys ($a & $b) are indices
-                $code = sub {
-                    local $main::a = $keys[$a];
-                    local $main::b = $keys[$b];
-                    $code0->($main::a, $main::b);
-                };
-            } else {
-                if ($args{hash}) {
-                    # compare two rowhashes
-                    $code = sub {
-                        local $main::a = _array2hash($a, $fields);
-                        local $main::b = _array2hash($b, $fields);
-                        $code0->($main::a, $main::b);
-                    };
-                } else {
-                    # compare two arrayref rows
-                    $code = $code0;
-                }
-            }
-
-            if (@keys) {
-                # sort indices according to keys first, then return sorted
-                # rows according to indices
-                my @sorted_indices = sort { local $main::a=$a; local $main::b=$b; $code->($main::a,$main::b) } 0..$#{$rows};
-                $rows = [map {$rows->[$_]} @sorted_indices];
-            } else {
-                $rows = [sort { local $main::a=$a; local $main::b=$b; $code->($main::a,$main::b) } @$rows];
-            }
-
-        } elsif ($args{sort_by_fields}) {
-
-            my @fields;
-            my $code_str = "";
-            for my $field_spec (@{ $args{sort_by_fields} }) {
-                my ($prefix, $field) = $field_spec =~ /\A([+~-]?)(.+)/;
-                my $field_idx = $field_idxs{$field};
-                return [400, "Unknown field '$field' (known fields include: ".
-                            join(", ", map { "'$_'" } sort {$field_idxs{$a} <=> $field_idxs{$b}}
-                                 keys %field_idxs).")"] unless defined $field_idx;
-                $prefix //= "";
-                if ($prefix eq '+') {
-                    $code_str .= ($code_str ? " || " : "") .
-                        "(\$a->[$field_idx] <=> \$b->[$field_idx])";
-                } elsif ($prefix eq '-') {
-                    $code_str .= ($code_str ? " || " : "") .
-                        "(\$b->[$field_idx] <=> \$a->[$field_idx])";
-                } elsif ($prefix eq '') {
-                    if ($args{sort_ci}) {
-                        $code_str .= ($code_str ? " || " : "") .
-                            "(lc(\$a->[$field_idx]) cmp lc(\$b->[$field_idx]))";
-                    } else {
-                        $code_str .= ($code_str ? " || " : "") .
-                            "(\$a->[$field_idx] cmp \$b->[$field_idx])";
-                    }
-                } elsif ($prefix eq '~') {
-                    if ($args{sort_ci}) {
-                        $code_str .= ($code_str ? " || " : "") .
-                            "(lc(\$b->[$field_idx]) cmp lc(\$a->[$field_idx]))";
-                    } else {
-                        $code_str .= ($code_str ? " || " : "") .
-                            "(\$b->[$field_idx] cmp \$a->[$field_idx])";
-                    }
-                }
-            }
-            $code = compile_eval_code($code_str, 'from sort_by_fields');
-            $rows = [sort { local $main::a = $a; local $main::b = $b; $code->($main::a, $main::b) } @$rows];
-
-        } else {
-
-            return [400, "Please specify by_fields or by_sortsub or by_code"];
-
-        }
-
-        # output csv
-        if ($has_header) {
-            $csv_emitter->combine(@$fields);
-            $res .= $csv_emitter->string . "\n";
-        }
-        for my $row (@$rows) {
-            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
-        }
-    }
-
     if ($action eq 'transpose') {
         my $transposed_rows = [];
         for my $rownum (0..$#{$rows}) {
@@ -1399,130 +1259,6 @@ Encoding: The utilities in this module/distribution accept and emit UTF8 text.
 
 _
 
-$SPEC{csv_sort_rows} = {
-    v => 1.1,
-    summary => 'Sort CSV rows',
-    description => <<'_' . $common_desc,
-
-This utility sorts the rows in the CSV. Example input CSV:
-
-    name,age
-    Andy,20
-    Dennis,15
-    Ben,30
-    Jerry,30
-
-Example output CSV (using `--by-field +age` which means by age numerically and
-ascending):
-
-    name,age
-    Dennis,15
-    Andy,20
-    Ben,30
-    Jerry,30
-
-Example output CSV (using `--by-field -age`, which means by age numerically and
-descending):
-
-    name,age
-    Ben,30
-    Jerry,30
-    Andy,20
-    Dennis,15
-
-Example output CSV (using `--by-field name`, which means by name ascibetically
-and ascending):
-
-    name,age
-    Andy,20
-    Ben,30
-    Dennis,15
-    Jerry,30
-
-Example output CSV (using `--by-field ~name`, which means by name ascibetically
-and descending):
-
-    name,age
-    Jerry,30
-    Dennis,15
-    Ben,30
-    Andy,20
-
-Example output CSV (using `--by-field +age --by-field ~name`):
-
-    name,age
-    Dennis,15
-    Andy,20
-    Jerry,30
-    Ben,30
-
-You can also reverse the sort order (`-r`) or sort case-insensitively (`-i`).
-
-For more flexibility, instead of `--by-field` you can use `--by-code`:
-
-Example output `--by-code '$a->[1] <=> $b->[1] || $b->[0] cmp $a->[0]'` (which
-is equivalent to `--by-field +age --by-field ~name`):
-
-    name,age
-    Dennis,15
-    Andy,20
-    Jerry,30
-    Ben,30
-
-If you use `--hash`, your code will receive the rows to be compared as hashref,
-e.g. `--hash --by-code '$a->{age} <=> $b->{age} || $b->{name} cmp $a->{name}'.
-
-A third alternative is to sort using <pm:Sort::Sub> routines. Example output
-(using `--by-sortsub 'by_length<r>' --key '$_->[0]'`, which is to say to sort by
-descending length of name):
-
-    name,age
-    Dennis,15
-    Jerry,30
-    Andy,20
-    Ben,30
-
-_
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename_1,
-        %argspecopt_overwrite,
-        %argspecopt_hash,
-
-        %argspecs_sort_rows_short,
-    },
-    args_rels => {
-        req_one => ['by_fields', 'by_code', 'by_sortsub'],
-    },
-    tags => ['outputs_csv'],
-};
-sub csv_sort_rows {
-    my %args = @_;
-
-    my %csvutil_args = (
-        hash_subset(\%args, \%argspecs_csv_input, \%argspecs_csv_output),
-        action => 'sort-rows',
-
-        input_filename => $args{input_filename},
-        output_filename => $args{output_filename},
-        overwrite => $args{overwrite},
-        hash => $args{hash},
-
-        sort_reverse => $args{reverse},
-        sort_ci => $args{ci},
-        sort_key => $args{key},
-        sort_by_fields => $args{by_fields},
-        sort_by_code   => $args{by_code},
-        sort_by_sortsub => $args{by_sortsub},
-        sort_sortsub_args => $args{sortsub_args},
-    );
-
-    csvutil(%csvutil_args);
-}
-
 $SPEC{csv_shuf_rows} = {
     v => 1.1,
     summary => 'Shuffle CSV rows',
@@ -1549,60 +1285,6 @@ sub csv_shuf_rows {
         # TODO: this feels less shuffled
         sort_by_code => sub { int(rand 3)-1 }, # return -1,0,1 randomly
     );
-}
-
-$SPEC{csv_sort_fields} = {
-    v => 1.1,
-    summary => 'Sort CSV fields',
-    description => <<'_' . $common_desc,
-
-This utility sorts the order of fields in the CSV. Example input CSV:
-
-    b,c,a
-    1,2,3
-    4,5,6
-
-Example output CSV:
-
-    a,b,c
-    3,1,2
-    6,4,5
-
-You can also reverse the sort order (`-r`), sort case-insensitively (`-i`), or
-provides the ordering example, e.g. `--by-examples-json '["a","c","b"]'`, or use
-`--by-code` or `--by-sortsub`.
-
-_
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename_1,
-        %argspecopt_overwrite,
-
-        %argspecs_sort_fields_short,
-    },
-    tags => ['outputs_csv'],
-};
-sub csv_sort_fields {
-    my %args = @_;
-
-    my %csvutil_args = (
-        hash_subset(\%args, \%argspecs_csv_input, \%argspecs_csv_output),
-        action => 'sort-fields',
-
-        input_filename => $args{input_filename},
-        output_filename => $args{output_filename},
-        overwrite => $args{overwrite},
-
-        sort_reverse => $args{reverse},
-        sort_ci => $args{ci},
-        (sort_examples => $args{by_examples}) x !!defined($args{by_examples}),
-        (sort_by_code => $args{by_code}) x !!defined($args{by_code}),
-        (sort_by_sortsub => $args{by_sortsub}) x !!defined($args{by_sortsub}),
-    );
-    csvutil(%csvutil_args);
 }
 
 $SPEC{csv_shuf_fields} = {
@@ -2692,6 +2374,23 @@ If you are outputting CSV, the following keys will be available:
   input file has header.
 
 For other hook-specific keys, see the documentation for associated hook point.
+
+
+*ACCEPTING ADDITIONAL COMMAND-LINE OPTIONS/ARGUMENTS*
+
+As mentioned above, you will get additional command-line options/arguments in
+`$r->{util_args}` hashref. Some options/arguments are already added by
+`gen_csv_util`, e.g. `input_filename` or `input_filenames` along with
+`input_sep_char`, etc (when your utility declares `reads_csv`),
+`output_filename` or `output_filenames` along with `overwrite`,
+`output_sep_char`, etc (when your utility declares `writes_csv`).
+
+If you want to accept additional arguments/options, you specify them in
+`add_args` (hashref, with key being Each option/argument has to be specified
+first via `add_args` (as hashref, with key being argument name and value the
+argument specification as defined in <pm:Rinci::function>)). Some argument
+specifications have been defined in <pm:App::CSVUtils> and can be used. See
+existing utilities for examples.
 
 
 *READING CSV DATA*

@@ -62,7 +62,7 @@ _
             local $main::row = $r->{input_row};
             local $main::rownum = $r->{input_rownum};
             local $main::csv = $r->{input_parser};
-            local $main::field_idxs = $r->{input_field_idxs};
+            local $main::fields_idx = $r->{input_fields_idx};
             $r->{code}->($r->{input_row});
         };
     },
