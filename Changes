@@ -1,5 +1,10 @@
 0.999   2022-12-14  Released-By: PERLANCAR; Backward-Incompatible: yes; Unreleased: yes
 
+        [Incompatible changes]
+
+        - Rename variable given to eval codes '$main::field_idxs' to
+          '$main::fields_idx'.
+
         [Internals]
 
         - Make API modular. It is now possible and easier to create a new
@@ -9,10 +14,10 @@
 
         - Add utility: csv-gen.
 
-        [Incompatible changes]
+        [Enhancements]
 
-        - Rename variable given to eval codes '$main::field_idxs' to
-          '$main::fields_idx'.
+        - [csv-select-fields] Add option --show-selected-fields, like in
+          csv-delete-fields.
 
         [Removed]
 

@@ -934,7 +934,6 @@ $SPEC{csvutil} = {
                 'split',
                 'convert-to-hash',
                 'convert-to-td',
-                'select-fields',
                 #'setop', # not implemented in csvutil
                 #'lookup-fields', # not implemented in csvutil
                 'transpose',
@@ -1111,17 +1110,7 @@ sub csvutil {
             }
         } # if i==1 (header row)
 
-        if ($action eq 'select-fields') {
-            unless ($selected_fields) {
-                my $res = _select_fields($fields, \%field_idxs, \%args);
-                return $res unless $res->[0] == 100;
-                $selected_fields = $res->[2][0];
-                return [412, "At least one field must be selected"] unless @$selected_fields;
-                $selected_field_idxs_array = $res->[2][1];
-            }
-            $row = [@{$row}[@$selected_field_idxs_array]];
-            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
-        } elsif ($action eq 'sort-fields') {
+        if ($action eq 'sort-fields') {
             unless ($i == 1) {
                 my @new_row;
                 for (@$sorted_fields) {
@@ -1867,25 +1856,6 @@ sub csv2vcf {
     my %args = @_;
 
     csvutil(%args, action=>'convert-to-vcf');
-}
-
-$SPEC{csv_select_fields} = {
-    v => 1.1,
-    summary => 'Only output selected field(s)',
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename_1,
-        %argspecopt_overwrite,
-        %argspecsopt_field_selection,
-    },
-    description => '' . $common_desc,
-    tags => ['outputs_csv'],
-};
-sub csv_select_fields {
-    my %args = @_;
-    csvutil(%args, action=>'select-fields');
 }
 
 $SPEC{csv_pick_fields} = {

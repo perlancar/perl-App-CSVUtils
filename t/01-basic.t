@@ -294,20 +294,21 @@ subtest csv_concat => sub {
 };
 
 subtest csv_select_fields => sub {
-    my $res;
+    my ($res, $stdout);
 
-    $res = App::CSVUtils::csv_select_fields(input_filename=>"$dir/1.csv", include_fields=>["f1", "f4"]);
+    require App::CSVUtils::csv_select_fields;
+
+    $res = App::CSVUtils::csv_select_fields::csv_select_fields(input_filename=>"$dir/1.csv", include_fields=>["f1", "f4"]);
     is($res->[0], 400, "specifying unknown field -> error");
 
     subtest "specifying unknown field with ignore_unknown_fields option -> ok" => sub {
-        $res = App::CSVUtils::csv_select_fields(input_filename=>"$dir/1.csv", include_fields=>["f1", "f4"], ignore_unknown_fields=>1);
-        is_deeply($res, [200, "OK", "f1\n1\n4\n7\n", {'cmdline.skip_format'=>1}]) or diag explain $res;
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_select_fields::csv_select_fields(input_filename=>"$dir/1.csv", include_fields=>["f1", "f4"], ignore_unknown_fields=>1) };
+        is($stdout, "f1\n1\n4\n7\n", "output");
     };
 
     subtest "ordering of fields as specified" => sub {
-        $res = App::CSVUtils::csv_select_fields(input_filename=>"$dir/1.csv", include_fields=>["f3", "f1"]);
-        is_deeply($res, [200,"OK","f3,f1\n3,1\n6,4\n9,7\n",{'cmdline.skip_format'=>1}], "result")
-            or diag explain $res;
+        $stdout = capture_stdout { $res = App::CSVUtils::csv_select_fields::csv_select_fields(input_filename=>"$dir/1.csv", include_fields=>["f3", "f1"]) };
+        is($stdout, "f3,f1\n3,1\n6,4\n9,7\n", "output");
     };
 
     # XXX test include_field_pat, exclude_fields, exclude_field_pat (but these
