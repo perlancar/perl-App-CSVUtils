@@ -659,6 +659,7 @@ our %argspecopt_fields = (
         cmdline_aliases => {f=>{}},
     },
 );
+
 our %argspecsopt_field_selection = (
     include_fields => {
         'x.name.is_plural' => 1,
@@ -773,33 +774,6 @@ our %argspecopt_eval_2 = (
     },
 );
 
-our %argspecopt_by_code__rows = (
-    by_code => {
-        summary => 'Sort rows using Perl code',
-        schema => $sch_req_str_or_code,
-        description => <<'_',
-
-`$a` and `$b` (or the first and second argument) will contain the two rows to be
-compared. Which are arrayrefs; or if `--hash` (`-H`) is specified, hashrefs; or
-if `--key` is specified, whatever the code in `--key` returns.
-
-_
-    },
-);
-
-our %argspecopt_by_code__fields = (
-    by_code => {
-        summary => 'Sort fields using Perl code',
-        schema => $sch_req_str_or_code,
-        description => <<'_',
-
-`$a` and `$b` (or the first and second argument) will contain `[$field_name,
-$field_idx]`.
-
-_
-    },
-);
-
 our %argspecsopt_sortsub = (
     by_sortsub => {
         schema => 'str*',
@@ -865,9 +839,19 @@ _
         schema => ['array*', of=>'str*'],
         element_completion => \&_complete_sort_field,
     },
+    by_code => {
+        summary => 'Sort by using Perl code',
+        schema => $sch_req_str_or_code,
+        description => <<'_',
+
+`$a` and `$b` (or the first and second argument) will contain the two rows to be
+compared. Which are arrayrefs; or if `--hash` (`-H`) is specified, hashrefs; or
+if `--key` is specified, whatever the code in `--key` returns.
+
+_
+    },
     %argspecopt_key,
     %argspecsopt_sortsub,
-    %argspecopt_by_code__rows,
 );
 
 our %argspecs_sort_fields = (
@@ -880,14 +864,23 @@ our %argspecs_sort_fields = (
         cmdline_aliases => {i=>{}},
     },
     by_examples => {
-        summary => 'A list of field names to sort by example',
+        summary => 'Sort by a list of field names as examples',
         'summary.alt.plurality.singular' => 'Add a field to sort by example',
         'x.name.is_plural' => 1,
         'x.name.singular' => 'by_example',
         schema => ['array*', of=>'str*'],
         element_completion => \&_complete_field,
     },
-    %argspecopt_by_code__fields,
+    by_code => {
+        summary => 'Sort fields using Perl code',
+        schema => $sch_req_str_or_code,
+        description => <<'_',
+
+`$a` and `$b` (or the first and second argument) will contain `[$field_name,
+$field_idx]`.
+
+_
+    },
     %argspecsopt_sortsub,
 );
 
@@ -915,7 +908,6 @@ $SPEC{csvutil} = {
         action => {
             schema => ['str*', in=>[
                 #'lookup-fields', # not implemented in csvutil
-                'transpose',
                 'get-cells',
                 'fill-template',
                 'convert-to-vcf',
@@ -1067,9 +1059,7 @@ sub csvutil {
             }
         } # if i==1 (header row)
 
-        if ($action eq 'transpose') {
-            push @$rows, $row;
-        } elsif ($action eq 'fill-template') {
+        if ($action eq 'fill-template') {
             push @$rows, _array2hash($row, $fields) unless $i == 1;
         } elsif ($action eq 'get-cells') {
             my $j = -1;
@@ -1111,20 +1101,6 @@ sub csvutil {
 
     if ($action eq 'convert-to-vcf') {
         return [200, "OK", join("", @$rows)];
-    }
-
-    if ($action eq 'transpose') {
-        my $transposed_rows = [];
-        for my $rownum (0..$#{$rows}) {
-            for my $colnum (0..$#{$fields}) {
-                $transposed_rows->[$colnum][$rownum] =
-                    $rows->[$rownum][$colnum];
-            }
-        }
-        for my $rownum (0..$#{$transposed_rows}) {
-            $res .= _get_csv_row($csv_emitter, $transposed_rows->[$rownum],
-                                 $rownum+1, $outputs_header);
-        }
     }
 
     if ($action eq 'get-cells') {
@@ -1209,25 +1185,6 @@ sub csv_shuf_fields {
         # TODO: this feels less shuffled
         sort_by_code => sub { int(rand 3)-1 }, # return -1,0,1 randomly
     );
-}
-
-$SPEC{csv_transpose} = {
-    v => 1.1,
-    summary => 'Transpose a CSV',
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename_1,
-        %argspecopt_overwrite,
-    },
-    description => '' . $common_desc,
-    tags => ['outputs_csv'],
-};
-sub csv_transpose {
-    my %args = @_;
-
-    csvutil(%args, action=>'transpose');
 }
 
 $SPEC{csv2td} = {
