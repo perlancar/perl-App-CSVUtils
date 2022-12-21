@@ -927,7 +927,6 @@ $SPEC{csvutil} = {
         %argspecs_csv_input,
         action => {
             schema => ['str*', in=>[
-                'munge-field',
                 'munge-row',
                 #'replace-newline', # not implemented in csvutil
                 'sort-rows',
@@ -1113,26 +1112,7 @@ sub csvutil {
             }
         } # if i==1 (header row)
 
-        if ($action eq 'munge-field') {
-            unless ($i == 1) {
-                unless ($code) {
-                    $code = compile_eval_code($args{eval}, 'eval');
-                    $field_idx = _get_field_idx($args{field}, \%field_idxs);
-                }
-                if (defined $row->[$field_idx]) {
-                    local $_ = $row->[$field_idx];
-                    local $main::row = $row;
-                    local $main::rownum = $i;
-                    local $main::csv = $csv_parser;
-                    local $main::field_idxs = \%field_idxs;
-                    eval { $code->($_) };
-                    die "Error while munging row ".
-                        "#$i field '$args{field}' value '$_': $@\n" if $@;
-                    $row->[$field_idx] = $_;
-                }
-            }
-            $res .= _get_csv_row($csv_emitter, $row, $i, $outputs_header);
-        } elsif ($action eq 'munge-row') {
+        if ($action eq 'munge-row') {
             unless ($i == 1) {
                 unless ($code) {
                     $code = compile_eval_code($args{eval}, 'eval');
@@ -1452,36 +1432,6 @@ our $common_desc = <<'_';
 Encoding: The utilities in this module/distribution accept and emit UTF8 text.
 
 _
-
-$SPEC{csv_munge_field} = {
-    v => 1.1,
-    summary => 'Munge a field in every row of CSV file with Perl code',
-    description => <<'_' . $common_desc,
-
-Perl code (-e) will be called for each row (excluding the header row) and `$_`
-will contain the value of the field, and the Perl code is expected to modify it.
-`$main::row` will contain the current row array. `$main::rownum` contains the
-row number (2 means the first data row). `$main::csv` is the <pm:Text::CSV_XS>
-object. `$main::field_idxs` is also available for additional information.
-
-To munge multiple fields, use <prog:csv-munge-row>.
-
-_
-    args => {
-        %argspecs_csv_input,
-        %argspecs_csv_output,
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename,
-        %argspecopt_overwrite,
-        %argspec_field_1,
-        %argspec_eval_2,
-    },
-    tags => ['outputs_csv'],
-};
-sub csv_munge_field {
-    my %args = @_;
-    csvutil(%args, action=>'munge-field');
-}
 
 $SPEC{csv_munge_row} = {
     v => 1.1,

@@ -124,16 +124,18 @@ subtest csv_list_field_names => sub {
 };
 
 subtest csv_munge_field => sub {
-    my $res;
+    my ($res, $stdout);
 
-    dies_ok { App::CSVUtils::csv_munge_field(input_filename=>"$dir/1.csv", field=>"f1", eval=>"blah +") }
-        "error in code -> dies";
+    require App::CSVUtils::csv_munge_field;
 
-    dies_ok { App::CSVUtils::csv_munge_field(input_filename=>"$dir/1.csv", field=>"f4", eval=>'1') }
-        "munging unknown field -> dies";
+    $res = App::CSVUtils::csv_munge_field::csv_munge_field(input_filename=>"$dir/1.csv", field=>"f1", eval=>"blah +");
+    is($res->[0], 400, "error in code -> error");
 
-    $res = App::CSVUtils::csv_munge_field(input_filename=>"$dir/1.csv", field=>"f3", eval=>'$_ = $_*3');
-    is_deeply($res, [200,"OK","f1,f2,f3\n1,2,9\n4,5,18\n7,8,27\n",{'cmdline.skip_format'=>1}], "result");
+    $res = App::CSVUtils::csv_munge_field::csv_munge_field(input_filename=>"$dir/1.csv", field=>"f4", eval=>'1');
+    is($res->[0], 404, "munging unknown field -> error");
+
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_munge_field::csv_munge_field(input_filename=>"$dir/1.csv", field=>"f3", eval=>'$_ = $_*3') };
+    is($stdout, "f1,f2,f3\n1,2,9\n4,5,18\n7,8,27\n", "output");
 };
 
 subtest csv_replace_newline => sub {
