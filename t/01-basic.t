@@ -487,6 +487,7 @@ subtest csv_setop => sub {
 };
 
 subtest csv_lookup_fields => sub {
+    require App::CSVUtils::csv_lookup_fields;
     write_text("$dir/report.csv", <<'_');
 client_id,followup_staff,followup_note,client_email,client_phone
 101,Jerry,not renewing,
@@ -504,10 +505,10 @@ id,name,email,client_phone
 734,Felipe,felipe@example.com,555-9067
 _
 
-    my $res;
+    my ($res, $stdout);
 
-    $res = App::CSVUtils::csv_lookup_fields(target=>"$dir/report.csv", source=>"$dir/clients.csv", lookup_fields=>"client_id:id", fill_fields=>"client_email:email,client_phone");
-    is($res->[2], <<'_');
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_lookup_fields::csv_lookup_fields(input_filenames=>["$dir/report.csv", "$dir/clients.csv"], lookup_fields=>"client_id:id", fill_fields=>"client_email:email,client_phone") };
+    is($stdout, <<'_');
 client_id,followup_staff,followup_note,client_email,client_phone
 101,Jerry,"not renewing",andy@example.com,555-2983
 299,Jerry,"still thinking over",cindy@example.com,555-7892
