@@ -442,42 +442,6 @@ _
     },
 );
 
-# old, for non-modularized utils
-our %argspecopt_input_filename_0 = (
-    input_filename => {
-        summary => 'Input CSV file',
-        description => <<'_',
-
-Use `-` to read from stdin.
-
-Encoding of input file is assumed to be UTF-8.
-
-_
-        schema => 'filename*',
-        default => '-',
-        pos => 0,
-        tags => ['category:input'],
-    },
-);
-
-# old, for non-modularized utils
-our %argspecopt_input_filename_1 = (
-    input_filename => {
-        summary => 'Input CSV file',
-        description => <<'_',
-
-Use `-` to read from stdin.
-
-Encoding of input file is assumed to be UTF-8.
-
-_
-        schema => 'filename*',
-        default => '-',
-        pos => 1,
-        tags => ['category:input'],
-    },
-);
-
 our %argspecopt_input_filenames = (
     input_filenames => {
         'x.name.is_plural' => 1,
@@ -492,27 +456,6 @@ Encoding of input file is assumed to be UTF-8.
 _
         schema => ['array*', of=>'filename*'],
         default => ['-'],
-        tags => ['category:input'],
-    },
-);
-
-# old, for non-modularized utils
-our %argspecopt_input_filenames_0plus = (
-    input_filenames => {
-        'x.name.is_plural' => 1,
-        'x.name.singular' => 'input_filename',
-        summary => 'Input CSV files',
-        description => <<'_',
-
-Use `-` to read from stdin.
-
-Encoding of input file is assumed to be UTF-8.
-
-_
-        schema => ['array*', of=>'filename*'],
-        default => ['-'],
-        pos => 0,
-        slurpy => 1,
         tags => ['category:input'],
     },
 );
@@ -537,42 +480,6 @@ Encoding of output file is assumed to be UTF-8.
 
 _
         schema => 'filename*',
-        cmdline_aliases=>{o=>{}},
-        tags => ['category:output'],
-    },
-);
-
-# old, for non-modularized utils
-our %argspecopt_output_filename_1 = (
-    output_filename => {
-        summary => 'Output filename',
-        description => <<'_',
-
-Use `-` to output to stdout (the default if you don't specify this option).
-
-Encoding of output file is assumed to be UTF-8.
-
-_
-        schema => 'filename*',
-        pos => 1,
-        cmdline_aliases=>{o=>{}},
-        tags => ['category:output'],
-    },
-);
-
-# old, for non-modularized utils
-our %argspecopt_output_filename_2 = (
-    output_filename => {
-        summary => 'Output filename',
-        description => <<'_',
-
-Use `-` to output to stdout (the default if you don't specify this option).
-
-Encoding of output file is assumed to be UTF-8.
-
-_
-        schema => 'filename*',
-        pos => 2,
         cmdline_aliases=>{o=>{}},
         tags => ['category:output'],
     },
@@ -713,21 +620,6 @@ our %argspecsopt_field_selection = (
     },
 );
 
-our %argspecsopt_vcf = (
-    name_vcf_field => {
-        summary => 'Select field to use as VCF N (name) field',
-        schema => 'str*',
-    },
-    cell_vcf_field => {
-        summary => 'Select field to use as VCF CELL field',
-        schema => 'str*',
-    },
-    email_vcf_field => {
-        summary => 'Select field to use as VCF EMAIL field',
-        schema => 'str*',
-    },
-);
-
 our %argspec_eval = (
     eval => {
         summary => 'Perl code',
@@ -813,7 +705,6 @@ _
     },
 );
 
-# argspecs for csv-sort-rows
 our %argspecs_sort_rows = (
     reverse => {
         schema => ['bool', is=>1],
@@ -899,240 +790,6 @@ our %argspecopt_hash = (
     },
 );
 
-$SPEC{csvutil} = {
-    v => 1.1,
-    summary => 'Perform action on a CSV file',
-    'x.no_index' => 1,
-    args => {
-        %argspecs_csv_input,
-        action => {
-            schema => ['str*', in=>[
-                #'lookup-fields', # not implemented in csvutil
-                'fill-template',
-                'convert-to-vcf',
-            ]],
-            req => 1,
-            pos => 0,
-            cmdline_aliases => {a=>{}},
-        },
-        %argspecopt_input_filename_1,
-        %argspecopt_output_filename_2,
-        %argspecopt_overwrite,
-        %argspecopt_eval,
-        %argspecopt_field,
-        %argspecsopt_field_selection,
-        %argspecsopt_vcf,
-    },
-    args_rels => {
-    },
-};
-sub csvutil {
-    my %args = @_;
-    #use DD; dd \%args;
-
-    my $action = $args{action};
-    my $has_header = $args{input_header} // 1;
-    my $outputs_header = $args{output_header} // $has_header;
-    my $add_newline = $args{add_newline} // 1;
-
-    my $csv_parser  = _instantiate_parser(\%args, 'input_');
-    my $csv_emitter = _instantiate_emitter(\%args);
-
-    my ($fh, $err) = _open_file_read($args{input_filename});
-    return $err if $err;
-
-    my $res = "";
-    my $i = 0;
-    my $header_row_count = 0;
-    my $data_row_count = 0;
-
-    my $fields = []; # field names, in order
-    my %field_idxs; # key = field name, val = index (0-based)
-
-    my $selected_fields;
-    my $selected_field_idxs_array;
-    my $selected_field_idxs_array_sorted;
-    my $code;
-    my $field_idx;
-    my $sorted_fields;
-    my $selected_row;
-    my $row_spec_sub;
-    my @cells;
-
-    # for action convert-to-vcf
-    my %fields_for;
-    $fields_for{N}     = $args{name_vcf_field};
-    $fields_for{CELL}  = $args{cell_vcf_field};
-    $fields_for{EMAIL} = $args{email_vcf_field};
-
-    my $row0;
-    my $code_getline = sub {
-        if ($i == 0 && !$has_header) {
-            $row0 = $csv_parser->getline($fh);
-            return unless $row0;
-            return [map { "field$_" } 1..@$row0];
-        } elsif ($i == 1 && !$has_header) {
-            $data_row_count++ if $row0;
-            return $row0;
-        }
-        my $res = $csv_parser->getline($fh);
-        if ($res) {
-            $header_row_count++ if $i==0;
-            $data_row_count++ if $i;
-        }
-        $res;
-    };
-
-    my $rows = [];
-
-    while (my $row = $code_getline->()) {
-        #use DD; dd $row;<
-        $i++;
-        if ($i == 1) {
-            # header row
-
-            $fields = $row;
-            for my $j (0..$#{$row}) {
-                unless (length $row->[$j]) {
-                    #return [412, "Empty field name in field #$j"];
-                    next;
-                }
-                if (defined $field_idxs{ $row->[$j] }) {
-                    return [412, "Duplicate field name '$row->[$j]'"];
-                }
-                $field_idxs{$row->[$j]} = $j;
-            }
-
-            if ($action eq 'sort-fields') {
-                if (my $eg = $args{sort_examples}) {
-                    require Sort::ByExample;
-                    my $sorter = Sort::ByExample::sbe($eg);
-                    $sorted_fields = [$sorter->(@$row)];
-                } elsif ($args{sort_by_code} || $args{sort_by_sortsub}) {
-                    my $code;
-                    if ($args{sort_by_code}) {
-                        $code = compile_eval_code($args{sort_by_code}, 'sort_by_code');
-                    } elsif (defined $args{sort_by_sortsub}) {
-                        require Sort::Sub;
-                        $code = Sort::Sub::get_sorter(
-                            $args{sort_by_sortsub}, $args{sort_sortsub_args});
-                    }
-                    $sorted_fields = [sort { local $main::a=$a; local $main::b=$b; $code->($main::a,$main::b) } @$fields];
-                } else {
-                    # alphabetical
-                    if ($args{sort_ci}) {
-                        $sorted_fields = [sort {lc($a) cmp lc($b)} @$row];
-                    } else {
-                        $sorted_fields = [sort {$a cmp $b} @$row];
-                    }
-                }
-                $sorted_fields = [reverse @$sorted_fields]
-                    if $args{sort_reverse};
-                $row = $sorted_fields;
-            }
-
-            if ($action eq 'convert-to-vcf') {
-                for my $field (@$fields) {
-                    if ($field =~ /name/i && !defined($fields_for{N})) {
-                        log_info "Will be using field '$field' for VCF field 'N' (name)";
-                        $fields_for{N} = $field;
-                    }
-                    if ($field =~ /(e-?)?mail/i && !defined($fields_for{EMAIL})) {
-                        log_info "Will be using field '$field' for VCF field 'EMAIL'";
-                        $fields_for{EMAIL} = $field;
-                    }
-                    if ($field =~ /cell|hp|phone|wa|whatsapp/i && !defined($fields_for{CELL})) {
-                        log_info "Will be using field '$field' for VCF field 'CELL' (cellular phone)";
-                        $fields_for{CELL} = $field;
-                    }
-                }
-                if (!defined($fields_for{N})) {
-                    return [412, "Can't convert to VCF because we cannot determine which field to use as the VCF N (name) field"];
-                }
-                if (!defined($fields_for{EMAIL})) {
-                    log_warn "We cannot determine which field to use as the VCF EMAIL field";
-                }
-                if (!defined($fields_for{CELL})) {
-                    log_warn "We cannot determine which field to use as the VCF CELL (cellular phone) field";
-                }
-            }
-        } # if i==1 (header row)
-
-        if ($action eq 'fill-template') {
-            push @$rows, _array2hash($row, $fields) unless $i == 1;
-        } elsif ($action eq 'get-cells') {
-            my $j = -1;
-          COORD:
-            for my $coord (@{ $args{coordinates} }) {
-                $j++;
-                my ($coord_col, $coord_row) = $coord =~ /\A(.+),(.+)\z/
-                    or return [400, "Invalid coordinate '$coord': must be in col,row form"];
-                $coord_row =~ /\A[0-9]+\z/
-                    or return [400, "Invalid coordinate '$coord': invalid row syntax '$coord_row', must be a number"];
-                next COORD unless $i == $coord_row;
-                if ($coord_col =~ /\A[0-9]+\z/) {
-                    $coord_col >= 0 && $coord_col < @$fields-1
-                        or return [400, "Invalid coordinate '$coord': column number '$coord_col' out of bound, must be between 0-".(@$fields-1)];
-                    $cells[$j] = $row->[$coord_col];
-                } else {
-                    exists $field_idxs{$coord_col}
-                        or return [400, "Invalid coordinate '$coord': Unknown column name '$coord_col'"];
-                    $cells[$j] = $row->[$field_idxs{$coord_col}];
-                }
-            }
-        } elsif ($action eq 'convert-to-vcf') {
-            unless ($i == 1) {
-                my $vcard = join(
-                    "",
-                    "BEGIN:VCARD\n",
-                    "VERSION:3.0\n",
-                    "N:", $row->[$field_idxs{ $fields_for{N} }], "\n",
-                    (defined $fields_for{EMAIL} ? ("EMAIL;type=INTERNET;type=WORK;pref:", $row->[$field_idxs{ $fields_for{EMAIL} }], "\n") : ()),
-                    (defined $fields_for{CELL} ? ("TEL;type=CELL:", $row->[$field_idxs{ $fields_for{CELL} }], "\n") : ()),
-                    "END:VCARD\n\n",
-                );
-                push @$rows, $vcard;
-            }
-        } else {
-            return [400, "Unknown action '$action'"];
-        }
-    } # while getline()
-
-    if ($action eq 'convert-to-vcf') {
-        return [200, "OK", join("", @$rows)];
-    }
-
-    if ($action eq 'get-cells') {
-        if (@{ $args{coordinates} } == 1) {
-            return [200, "OK", $cells[0]];
-        } else {
-            return [200, "OK", \@cells];
-        }
-    }
-
-    if ($action eq 'fill-template') {
-        require File::Slurper::Dash;
-
-        my $output = '';
-        my $template = File::Slurper::Dash::read_text($args{template_filename});
-        for my $row (@$rows) {
-            my $text = $template;
-            $text =~ s/\[\[(.+?)\]\]/defined $row->{$1} ? $row->{$1} : "[[UNDEFINED:$1]]"/eg;
-            $output .= (length $output ? "\n---\n" : "") . $text;
-        }
-        return [200, "OK", $output];
-    }
-
-    _return_or_write_file([200, "OK", $res, {"cmdline.skip_format"=>1}], $args{output_filename}, $args{overwrite});
-} # csvutil
-
-our $common_desc = <<'_';
-*Common notes for the utilities*
-
-Encoding: The utilities in this module/distribution accept and emit UTF8 text.
-
-_
-
 $SPEC{csv_shuf_rows} = {
     v => 1.1,
     summary => 'Shuffle CSV rows',
@@ -1186,44 +843,6 @@ sub csv_shuf_fields {
     );
 }
 
-$SPEC{csv2td} = {
-    v => 1.1,
-    summary => 'Return an enveloped aoaos table data from CSV data',
-    description => <<'_',
-
-Read more about "table data" in <pm:App::td>, which comes with a CLI <prog:td>
-to munge table data.
-
-_
-    args => {
-        %argspecs_csv_input,
-        %argspecopt_input_filename_0,
-    },
-    description => '' . $common_desc,
-};
-
-$SPEC{csv2vcf} = {
-    v => 1.1,
-    summary => 'Create a VCF from selected fields of the CSV',
-    description => <<'_',
-
-You can set which CSV fields to use for name, cell phone, and email. If unset,
-will guess from the field name. If that also fails, will warn/bail out.
-
-_
-    args => {
-        %argspecs_csv_input,
-        %argspecopt_input_filename_0,
-        %argspecsopt_vcf,
-    },
-    description => '' . $common_desc,
-};
-sub csv2vcf {
-    my %args = @_;
-
-    csvutil(%args, action=>'convert-to-vcf');
-}
-
 $SPEC{csv_pick_fields} = {
     v => 1.1,
     summary => 'Select one or more random fields from CSV',
@@ -1250,100 +869,6 @@ sub csv_pick_fields {
         action=>'select-fields',
         pick_num => $args{num} // 1,
     );
-}
-
-$SPEC{csv_get_cells} = {
-    v => 1.1,
-    summary => 'Get one or more cells from CSV',
-    args => {
-        %argspecs_csv_input,
-        %argspecopt_input_filename_0,
-        coordinates => {
-            'x.name.is_plural' => 1,
-            'x.name.singular' => 'coordinate',
-            summary => 'List of coordinates, each in the form of <col>,<row> e.g. colname,0 or 1,1',
-            schema => ['array*', of=>'str*'],
-            pos => 1,
-            slurpy => 1,
-        },
-    },
-    description => <<'_' . $common_desc,
-
-This utility lets you specify "coordinates" of cell locations to extract. Each
-coordinate is in the form of `<col>,<row>` where `<col>` is the column name or
-position (zero-based, so 0 is the first column) and `<row>` is the row position
-(one-based, so 1 is the header row and 2 is the first data row).
-
-_
-};
-sub csv_get_cells {
-    my %args = @_;
-    csvutil(%args, action=>'get-cells');
-}
-
-$SPEC{csv_fill_template} = {
-    v => 1.1,
-    summary => 'Substitute template values in a text file with fields from CSV rows',
-    args => {
-        %argspecs_csv_input,
-        %argspecopt_input_filename_0,
-        %argspecopt_output_filename_1,
-        %argspecopt_overwrite,
-        template_filename => {
-            schema => 'filename*',
-            req => 1,
-            pos => 2,
-        },
-        # XXX whether to output multiple files or combined
-        # XXX row selection?
-    },
-    description => <<'_' . $common_desc,
-
-Templates are text that contain `[[NAME]]` field placeholders. The field
-placeholders will be replaced by values from the CSV file. This is a simple
-alternative to mail-merge. (I first wrote this utility because LibreOffice
-Writer, as always, has all the annoying bugs; that particular time, one that
-prevented mail merge from working.)
-
-Example:
-
-    % cat madlib.txt
-    Today I went to the park. I saw a(n) [[adjective1]] [[noun1]] running
-    towards me. It looked hungry, really hungry. Horrified and terrified, I took
-    a(n) [[adjective2]] [[noun2]] and waved the thing [[adverb1]] towards it.
-    [[adverb2]], when it arrived at my feet, it [[verb1]] and [[verb2]] me
-    instead. I was relieved, the [[noun1]] was a friendly creature after all.
-    After we [[verb3]] for a little while, I went home with a(n) [[noun3]] on my
-    face. That was an unforgettable day indeed.
-
-    % cat values.csv
-    adjective1,adjective2,adjective3,noun1,noun2,noun3,verb1,verb2,verb3,adverb1,adverb2
-    slow,gigantic,sticky,smartphone,six-wheeler truck,lollipop,piece of tissue,threw,kissed,stared,angrily,hesitantly
-    sweet,delicious,red,pelican,bottle of parfume,desk,exercised,jumped,slept,confidently,passively
-
-    % csv-fill-template values.csv - madlib.txt
-    Today I went to the park. I saw a(n) slow six-wheeler truck running
-    towards me. It looked hungry, really hungry. Horrified and terrified, I took
-    a(n) gigantic lollipop and waved the thing angrily towards it.
-    hesitantly, when it arrived at my feet, it threw and kissed me
-    instead. I was relieved, the six-wheeler truck was a friendly creature after all.
-    After we stared for a little while, I went home with a(n) piece of tissue on my
-    face. That was an unforgettable day indeed.
-
-    ---
-    Today I went to the park. I saw a(n) sweet pelican running
-    towards me. It looked hungry, really hungry. Horrified and terrified, I took
-    a(n) delicious bottle of parfume and waved the thing confidently towards it.
-    passively, when it arrived at my feet, it exercised and jumped me
-    instead. I was relieved, the pelican was a friendly creature after all.
-    After we slept for a little while, I went home with a(n) desk on my
-    face. That was an unforgettable day indeed.
-
-_
-};
-sub csv_fill_template {
-    my %args = @_;
-    csvutil(%args, action=>'fill-template');
 }
 
 $SPEC{csv_lookup_fields} = {
