@@ -976,7 +976,7 @@ If you are accepting CSV data, the following keys will also be available (in
 
 - `input_header_row_count`, uint. Contains the number of actual header rows that
   have been read. If CLI user specifies `--no-input-header`, this will stay at
-  0. Will be reset for each CSV file.
+  zero. Will be reset for each CSV file.
 
 - `input_data_row_count`, int. Contains the number of actual data rows that have
   read. Will be reset for each CSV file.
@@ -1665,7 +1665,7 @@ sub gen_csv_util {
 
     {
         my $package = caller();
-        no strict 'refs';
+        no strict 'refs'; ## no critic: TestingAndDebugging::ProhibitNoStrict
         *{"$package\::$name"} = $code;
         #use DD; dd $meta;
         ${"$package\::SPEC"}{$name} = $meta;

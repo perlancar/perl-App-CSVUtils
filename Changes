@@ -1,4 +1,4 @@
-0.999_1 2022-12-14  Released-By: PERLANCAR; Backward-Incompatible: yes; Unreleased: yes
+0.999_1 2022-12-14  Released-By: PERLANCAR; Backward-Incompatible: yes
 
         [Incompatible changes]
 
@@ -20,14 +20,14 @@
         - [cli csv-convert-to-hash] Row number now means *data* row number, e.g.
           1 means the first row number.
 
+        [New features]
+
+        - Add utility: csv-gen.
+
         [Internals]
 
         - Make API modular. It is now possible and easier to create a new
           utility without modifying the "core" routine. No more "core" routine.
-
-        [New features]
-
-        - Add utility: csv-gen.
 
         [Enhancements]
 
