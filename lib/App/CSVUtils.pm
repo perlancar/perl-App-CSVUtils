@@ -908,7 +908,6 @@ $SPEC{csvutil} = {
         action => {
             schema => ['str*', in=>[
                 #'lookup-fields', # not implemented in csvutil
-                'get-cells',
                 'fill-template',
                 'convert-to-vcf',
             ]],

@@ -60,16 +60,16 @@ _
             $r->{transposed_rows}[ $j ][0] = $r->{input_fields}[$j];
         }
 
-        $r->{output_fields} = ["row0"];
+        $r->{output_fields} = ["row1"];
     },
 
     on_input_data_row => sub {
         my $r = shift;
 
-        my $i = $r->{input_rownum}-1;
+        my $i = $r->{input_rownum};
         push @{ $r->{output_fields} }, "row$i";
         for my $j (0 .. $#{ $r->{input_row} }) {
-            $r->{transposed_rows}[ $j ][ $i ] =
+            $r->{transposed_rows}[ $j ][ $i-1 ] =
                 $r->{input_row}[$j];
         }
     },
