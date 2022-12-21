@@ -14,6 +14,9 @@
         - [cli csv-select-rows] Will not output header row if there is no rows
           matching spec.
 
+        - [cli csv-setop] Will not output header row if there is no result data
+          rows.
+
         - [cli csv-convert-to-hash] Row number now means *data* row number, e.g.
           1 means the first row number.
 
