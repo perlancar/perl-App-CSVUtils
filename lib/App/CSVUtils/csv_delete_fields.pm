@@ -34,7 +34,7 @@ gen_csv_util(
         },
         {
             summary => 'Delete fields matching regex from CSV',
-            argv => ['file.csv', '--inlude-field-pat', '/^extra_/'],
+            argv => ['file.csv', '--include-field-pat', '/^extra_/'],
             test => 0,
             'x.doc.show_result' => 0,
         },
@@ -46,7 +46,7 @@ gen_csv_util(
         },
         {
             summary => 'Only show what fields would be included, then exit',
-            argv => ['file.csv', '--inlude-field-pat', '/^extra_/', '--show-selected-fields'],
+            argv => ['file.csv', '--include-field-pat', '/^extra_/', '--show-selected-fields'],
             test => 0,
             'x.doc.show_result' => 0,
         },

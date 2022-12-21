@@ -65,13 +65,13 @@ _
     examples => [
         {
             summary => 'Generate 10 numbers from 1 to 10',
-            src => q{[[prog]] -F num -n 10 -e '[++$i]'},
+            src => q{[[prog]] -f num -n 10 -e '[++$i]'},
             src_plang => 'bash',
             test => 0,
         },
         {
             summary => 'Generate 10 numbers from 1 to 10 along with their squares',
-            src => q{[[prog]] -F num -F square -n 10 -e '[++$i, $i*$i]'},
+            src => q{[[prog]] -f num -f square -n 10 -e '[++$i, $i*$i]'},
             src_plang => 'bash',
             test => 0,
         },

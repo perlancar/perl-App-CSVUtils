@@ -37,7 +37,8 @@ _
         },
         {
             summary => 'Convert CSV to JSON',
-            argv => ['file.csv', '--json'],
+            src => '[[prog]] file.csv --json',
+            src_plang => 'bash',
             test => 0,
             'x.doc.show_result' => 0,
         },
