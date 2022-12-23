@@ -1,4 +1,17 @@
-0.999_1 2022-12-14  Released-By: PERLANCAR; Backward-Incompatible: yes
+0.999_2 2022-12-23  Released-By: PERLANCAR; Backward-Incompatible: yes
+
+        [Incompatible changes]
+
+        - [internal] Remove wants_repeat_* flow control because it is inherently
+          broken. Utilities that want to read files out of order or repeat
+          reading, like csv-concat, can construct the loop manually.
+
+        [Documentation]
+
+        - Add entries to cookbook.
+
+
+0.999_1 2022-12-21  Released-By: PERLANCAR; Backward-Incompatible: yes
 
         [Incompatible changes]
 
