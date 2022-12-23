@@ -3,6 +3,7 @@ package App::CSVUtils::csv_concat;
 use 5.010001;
 use strict;
 use warnings;
+use Log::ger;
 
 # AUTHORITY
 # DATE
@@ -60,48 +61,51 @@ _
         my $r = shift;
 
         # we add the following keys to the stash
-        $r->{has_collected_fields} //= 0; # to mark the first vs second loop over input files
-    },
-
-    after_close_input_files => sub {
-        my $r = shift;
-        unless ($r->{has_collected_fields}++) {
-            # we just finished the first loop over input files to gather the
-            # field names, repeat once to gather the data rows now
-            $r->{wants_repeat_files}++;
-        }
+        $r->{all_input_fields} = [];
+        $r->{all_input_fh} = [];
     },
 
     on_input_header_row => sub {
         my $r = shift;
 
-        unless ($r->{has_collected_fields}) {
-            $r->{output_fields} //= [];
-            $r->{output_fields_idx} //= {};
-            for my $j (0 .. $#{ $r->{input_fields} }) {
-                my $field = $r->{input_fields}[$j];
+        push @{ $r->{all_input_fields} }, $r->{input_fields};
+        push @{ $r->{all_input_fh} }, $r->{input_fh};
+        $r->{wants_skip_file}++;
+    },
+
+    after_close_input_files => sub {
+        my $r = shift;
+
+        # collect all output fields
+        $r->{output_fields} = [];
+        $r->{output_fields_idx} = {};
+        for my $i (0 .. $#{ $r->{all_input_fields} }) {
+            my $input_fields = $r->{all_input_fields}[$i];
+            for my $j (0 .. $#{ $input_fields }) {
+                my $field = $input_fields->[$j];
                 unless (grep {$field eq $_} @{ $r->{output_fields} }) {
                     push @{ $r->{output_fields} }, $field;
                     $r->{output_fields_idx}{$field} = $#{ $r->{output_fields} };
                 }
             }
-            # in the first loop over input files, we only read the header to
-            # collect the fields.
-            $r->{wants_skip_file}++;
         }
-    },
 
-    on_input_data_row => sub {
-        my $r = shift;
-
-        if ($r->{has_collected_fields}) {
-            my $combined_row = [("") x @{ $r->{output_fields} }];
-            for my $j (0 .. $#{ $r->{input_fields} }) {
-                my $field = $r->{input_fields}[$j];
-                $combined_row->[ $r->{output_fields_idx}{$field} ] = $r->{input_row}[$j];
+        # print all the data rows
+        my $csv = $r->{input_parser};
+        for my $i (0 .. $#{ $r->{all_input_fh} }) {
+            log_trace "[%d/%d] Adding rows from file #%d ...",
+                $i+1, scalar(@{$r->{all_input_fh}}), $i+1;
+            my $fh = $r->{all_input_fh}[$i];
+            my $input_fields = $r->{all_input_fields}[$i];
+            while (my $row = $csv->getline($fh)) {
+                my $combined_row = [("") x @{ $r->{output_fields} }];
+                for my $j (0 .. $#{ $input_fields }) {
+                    my $field = $input_fields->[$j];
+                    $combined_row->[ $r->{output_fields_idx}{$field} ] = $row->[$j];
+                }
+                $r->{code_print_row}->($combined_row);
             }
-            $r->{code_print_row}->($combined_row);
-        }
+        } # for all input fh
     },
 );
 
@@ -110,6 +114,5 @@ _
 
 =head1 IMPLEMENTATION NOTES
 
-We loop the files twice. The first time, we gather all the field names by
-reading the header rows and do not bother reading the data rows. The second
-time, we collect the data rows.
+We first read only the header rows for all input files, while collecting the
+input filehandles. Then we read the data rows of all the files ourselves.
