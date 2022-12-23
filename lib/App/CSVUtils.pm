@@ -934,8 +934,9 @@ The common keys that `r` will contain:
   row. You don't need to pass any arguments. Will only print the header row once
   per output file if output header is enabled, even if called multiple times.
 
-If you are accepting CSV data, the following keys will also be available (in
-`on_input_header_row` and `on_input_data_row` hooks):
+If you are accepting CSV data (`reads_csv` gen argument set to true), the
+following keys will also be available (in `on_input_header_row` and
+`on_input_data_row` hooks):
 
 - `input_parser`, a <pm:Text::CSV_XS> instance for input parsing.
 
@@ -950,7 +951,11 @@ If you are accepting CSV data, the following keys will also be available (in
 - `input_fh`, the handle to the current file being read.
 
 - `input_rownum`, uint. The number of rows that have been read (reset after each
-  input file).
+  input file). In `on_input_header_row` phase, this will be 1 since header row
+  (including the generated one) is the first row. Then in `on_input_data_row`
+  phase (called the first time for a file), it will be 2 for the first data row,
+  even if physically it is the first row for CSV file that does not have a
+  header.
 
 - `input_data_rownum`, uint. The number of data rows that have been read (reset
   after each input file). This will be equal to `input_rownum` less 1 if input
@@ -970,7 +975,8 @@ If you are accepting CSV data, the following keys will also be available (in
 - `input_data_row_count`, int. Contains the number of actual data rows that have
   read. Will be reset for each CSV file.
 
-If you are outputting CSV, the following keys will be available:
+If you are outputting CSV (`writes_csv` gen argument set to true), the following
+keys will be available:
 
 - `output_emitter`, a <pm:Text::CSV_XS> instance for output.
 
