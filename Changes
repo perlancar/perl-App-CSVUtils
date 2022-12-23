@@ -4,7 +4,9 @@
 
         - [internal] Remove wants_repeat_* flow control because it is inherently
           broken. Utilities that want to read files out of order or repeat
-          reading, like csv-concat, can construct the loop manually.
+          reading, like csv-concat, can construct the loop manually. Now,
+          csv-concat can work with non-seekable input files like process
+          substitution (e.g.: `csv-concat <(...) <(...)`).
 
         [Documentation]
 
