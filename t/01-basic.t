@@ -67,6 +67,10 @@ subtest csv_add_fields => sub {
     is($stdout, "f1,f4,f2,f3\n1,4,2,3\n4,6,5,6\n7,8,8,9\n", "output (with 'before' option)");
     $stdout = capture_stdout { $res = App::CSVUtils::csv_add_fields::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4"], eval=>'$main::rownum*2', at=>2) };
     is($stdout, "f1,f4,f2,f3\n1,4,2,3\n4,6,5,6\n7,8,8,9\n", "output (with 'at' option)");
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_add_fields::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4"], at=>1, eval=>'$main::rownum*2') };
+    is($stdout, "f4,f1,f2,f3\n4,1,2,3\n6,4,5,6\n8,7,8,9\n", "output (with eval, with 'at' option)");
+    $stdout = capture_stdout { $res = App::CSVUtils::csv_add_fields::csv_add_fields(input_filename=>"$dir/1.csv", fields=>["f4","f6","f5"], eval=>'[11,13,12]', at=>1) };
+    is($stdout, "f4,f6,f5,f1,f2,f3\n11,13,12,1,2,3\n11,13,12,4,5,6\n11,13,12,7,8,9\n", "output (with eval, multiple fields, with 'at' option)");
 };
 
 subtest csv_delete_fields => sub {
