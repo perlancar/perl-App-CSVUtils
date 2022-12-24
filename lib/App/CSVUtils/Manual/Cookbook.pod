@@ -44,10 +44,23 @@ calculated from Perl code:
  derry,33,121,10
 
 You can specify at which position the new field will be using one of the options
-C<--at>, C<--after>, C<--before>:
+C<--at>, C<--after>, C<--before>.
 
-TODO EXAMPLE.
+=head2 Adding a field containing line number
 
+ % csv-add-fields 1.csv linenum --at 1 -e '++$i'
+ linenum,name,age,rank
+ 1,andi,25,120
+ 2,budi,28,115
+ 3,cinta,19,142
+ 4,derry,33,121
+
+Other ways:
+
+ % csv-add-fields 1.csv linenum --at 1 -e '$rownum-1'
+ % csv-add-fields 1.csv linenum --at 1 -e '$data_rownum'
+
+See also: L</Adding line number to CSV rows>.
 
 =head1 ADDING ROWS
 
@@ -234,19 +247,40 @@ See also: L</SPLITTING CSV>
 
 =head1 MODIFYING FIELDS
 
-TODO.
+Keywords: munging fields
+
 
 
 
 
 =head1 MODIFYING ROWS
 
-TODO.
+Keywords: munging rows
 
+=head1 Adding line number to CSV rows
+
+ % csv-munge-row 1.csv -e '$_->[0] = ++$i . "|$_->[0]"'
+ name,age,rank
+ 1|andi,25,120
+ 2|budi,28,115
+ 3|cinta,19,142
+ 4|derry,33,121
+
+Other ways:
+
+ % csv-munge-row 1.csv -e '$_->[0] = $data_rownum . "|$_->[0]"'
+
+See also: L</Adding a field containing line number>.
+
+=head1 Shuffling every row
+
+ % csv-munge-row 1.csv -e 'use List::Util "shuffle"; $_=[shuffle @$_]'
 
 
 
 =head1 PERFORMING SET OPERATIONS WITH CSV
+
+See L<csv-setop>.
 
 TODO.
 
@@ -255,6 +289,8 @@ TODO.
 
 =head1 SORTING FIELDS
 
+See L<csv-sort-fields>.
+
 TODO.
 
 
@@ -262,12 +298,16 @@ TODO.
 
 =head1 SORTING ROWS
 
+See L<csv-sort-rows>.
+
 TODO.
 
 
 
 
 =head1 SPLITTING CSV
+
+See L<csv-split>.
 
 TODO.
 
