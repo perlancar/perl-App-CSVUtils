@@ -15,6 +15,7 @@ use Exporter qw(import);
 our @EXPORT_OK = qw(
                        gen_csv_util
                        compile_eval_code
+                       eval_code
                );
 
 our %SPEC;
@@ -91,6 +92,23 @@ sub compile_eval_code {
     my $code = eval $str; ## no critic: BuiltinFunctions::ProhibitStringyEval
     die [400, "Can't compile code ($label) '$str': $@"] if $@;
     $code;
+}
+
+sub eval_code {
+    my ($code, $r, $value_for_topic, $return_topic) = @_;
+    local $_ = $value_for_topic;
+    local $main::r = $r;
+    local $main::row = $r->{input_row};
+    local $main::rownum = $r->{input_rownum};
+    local $main::data_rownum = $r->{input_data_rownum};
+    local $main::csv = $r->{input_parser};
+    local $main::fields_idx = $r->{input_fields_idx};
+    if ($return_topic) {
+        $code->($_);
+        $_;
+    } else {
+        $code->($_);
+    }
 }
 
 sub _get_field_idx {
@@ -1677,6 +1695,12 @@ Usage:
 
 Compile string code C<$str> to coderef in 'main' package, without C<use strict>
 or C<use warnings>. Die on compile error.
+
+=head2 eval_code
+
+Usage:
+
+ $res = eval_code($coderef, $r, $topic_var_value, $return_topic_var);
 
 
 =head1 FAQ
