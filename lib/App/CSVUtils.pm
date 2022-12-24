@@ -6,7 +6,6 @@ use warnings;
 use Log::ger;
 
 use Exporter qw(import);
-use Hash::Subset qw(hash_subset);
 
 # AUTHORITY
 # DATE
