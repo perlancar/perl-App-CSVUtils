@@ -96,8 +96,16 @@ _
         {
             my $code = compile_eval_code($r->{util_args}{eval}, 'eval');
             local $main::r = $r;
+            my $i = 0;
             while (1) {
+                $i++;
+
+                # we don't use eval_code() because we don't need to provide most
+                # of the variables, because they are not available
+                local $main::rownum = $i+1;
+                local $main::data_rownum = $i+1;
                 my $row = $code->();
+
                 last unless $row;
                 last if defined $r->{util_args}{num_rows} &&
                     ($r->{output_data_rownum}//0) >= $r->{util_args}{num_rows};

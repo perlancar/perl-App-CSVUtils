@@ -12,6 +12,7 @@ use warnings;
 use App::CSVUtils qw(
                         gen_csv_util
                         compile_eval_code
+                        eval_code
                 );
 
 gen_csv_util(
@@ -58,17 +59,11 @@ _
     on_input_data_row => sub {
         my $r = shift;
 
-        {
-            local $_ = $r->{input_row}[ $r->{field_idx} ];
-            local $main::row = $r->{input_row};
-            local $main::rownum = $r->{input_rownum};
-            local $main::csv = $r->{input_parser};
-            local $main::fields_idx = $r->{input_fields_idx};
-            eval { $r->{code}->() };
-            die [500, "Error while munging row ".
-                 "#$r->{input_rownum} field '$r->{util_args}{field}' value '$_': $@\n"] if $@;
-            $r->{input_row}->[ $r->{field_idx} ] = $_;
-        }
+        my $topic;
+        eval { $topic = eval_code($r->{code}, $r, $r->{input_row}[$r->{field_idx}], 'return_topic') };
+        die [500, "Error while munging row ".
+             "#$r->{input_rownum} field '$r->{util_args}{field}': $@\n"] if $@;
+        $r->{input_row}->[ $r->{field_idx} ] = $topic;
         $r->{code_print_row}->($r->{input_row});
     },
 );

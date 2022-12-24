@@ -12,6 +12,7 @@ use warnings;
 use App::CSVUtils qw(
                         gen_csv_util
                         compile_eval_code
+                        eval_code
                 );
 
 gen_csv_util(
@@ -63,27 +64,20 @@ _
     on_input_data_row => sub {
         my $r = shift;
 
-        {
-            local $_ = $r->{wants_input_row_as_hashref} ? $r->{input_row_as_hashref} : $r->{input_row};
-            local $main::row = $r->{input_row};
-            local $main::rownum = $r->{input_rownum};
-            local $main::csv = $r->{input_parser};
-            local $main::fields_idx = $r->{input_fields_idx};
-            eval { $r->{code}->($_) };
-            die [500, "Error while munging row #$r->{input_rownum}: $@\n"] if $@;
-            # convert back hashref row to arrayref
-            my $newrow;
-            if ($r->{util_args}{hash}) {
-                $newrow = [('') x @{ $r->{input_fields} }];
-                for my $field (keys %$_) {
-                    next unless exists $r->{input_fields_idx}{$field}; # ignore created fields
-                    $newrow->[$r->{input_fields_idx}{$field}] = $_->{$field};
-                }
-            } else {
-                $newrow = $_;
+        my $topic; eval { $topic = eval_code($r->{code}, $r, $r->{wants_input_row_as_hashref} ? $r->{input_row_as_hashref} : $r->{input_row}, 'return_topic') };
+        die [500, "Error while munging row #$r->{input_rownum}: $@\n"] if $@;
+        # convert back hashref row to arrayref
+        my $newrow;
+        if ($r->{util_args}{hash}) {
+            $newrow = [('') x @{ $r->{input_fields} }];
+            for my $field (keys %$topic) {
+                next unless exists $r->{input_fields_idx}{$field}; # ignore created fields
+                $newrow->[$r->{input_fields_idx}{$field}] = $topic->{$field};
             }
-            $r->{code_print_row}->($newrow);
+        } else {
+            $newrow = $topic;
         }
+        $r->{code_print_row}->($newrow);
     },
 );
 

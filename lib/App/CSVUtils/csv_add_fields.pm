@@ -12,6 +12,7 @@ use warnings;
 use App::CSVUtils qw(
                         gen_csv_util
                         compile_eval_code
+                        eval_code
                 );
 
 gen_csv_util(
@@ -156,14 +157,7 @@ _
         my $r = shift;
 
         my @vals;
-        {
-            local $_ = $r->{wants_input_row_as_hashref} ? $r->{input_row_as_hashref} : $r->{input_row};
-            local $main::row = $r->{input_row};
-            local $main::rownum = $r->{input_rownum};
-            local $main::csv = $r->{input_parser};
-            local $main::fields_idx = $r->{input_fields_idx};
-            eval { @vals = $r->{code}->() };
-        }
+        eval { @vals = eval_code($r->{code}, $r, $r->{wants_input_row_as_hashref} ? $r->{input_row_as_hashref} : $r->{input_row}) };
         die [500, "Error while adding field(s) '".join(",", @{$r->{util_args}{fields}})."' for row #$r->{input_rownum}: $@"]
             if $@;
         if (ref $vals[0] eq 'ARRAY') { @vals = @{ $vals[0] } }
