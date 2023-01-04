@@ -58,6 +58,18 @@ Example:
 _
     add_args => {
         %App::CSVUtils::argspecopt_with_data_rows,
+        sort => {
+            summary => 'Sort the values first',
+            schema => 'true*',
+            description => <<'_',
+
+Sort is done numerically, in ascending order.
+
+If you want only certain fields sorted, you can use <prog:csv-sort-rows> first
+and pipe the result.
+
+_
+        },
     },
 
     on_input_header_row => sub {
@@ -85,6 +97,12 @@ _
         require Number::Util::Range;
 
         my $r = shift;
+
+        if ($r->{util_args}{sort}) {
+            for my $j (0 .. $#{ $r->{output_fields} }) {
+                $r->{field_values}[$j] = [ sort { $a <=> $b } @{ $r->{field_values}[$j] } ];
+            }
+        }
 
         my @ranges;
         for my $j (0 .. $#{ $r->{output_fields} }) {
