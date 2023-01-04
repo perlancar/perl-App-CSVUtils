@@ -15,7 +15,7 @@ use App::CSVUtils qw(
 
 gen_csv_util(
     name => 'csv_uniq',
-    summary => 'Repeat or omit duplicated values in CSV',
+    summary => 'Report or omit duplicated values in CSV',
     add_args => {
         %App::CSVUtils::argspec_fields_1plus,
         ignore_case => {
