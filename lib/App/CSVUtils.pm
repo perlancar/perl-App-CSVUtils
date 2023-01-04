@@ -95,6 +95,7 @@ sub compile_eval_code {
 }
 
 sub eval_code {
+    no warnings 'once';
     my ($code, $r, $value_for_topic, $return_topic) = @_;
     local $_ = $value_for_topic;
     local $main::r = $r;
@@ -304,6 +305,8 @@ sub _select_fields {
     [100, "Continue", [\@selected_fields, \@selected_field_idxs_array]];
 }
 
+our $xcomp_csvfiles = [filename => {file_ext_filter => /\.[tc]sv$/i}];
+
 our %argspecs_csv_input = (
     input_header => {
         summary => 'Specify whether input CSV has a header row',
@@ -447,6 +450,7 @@ Encoding of input file is assumed to be UTF-8.
 _
         schema => 'filename*',
         default => '-',
+        'x.completion' => $xcomp_csvfiles,
         tags => ['category:input'],
     },
 );
@@ -465,6 +469,7 @@ Encoding of input file is assumed to be UTF-8.
 _
         schema => ['array*', of=>'filename*'],
         default => ['-'],
+        'x.completion' => $xcomp_csvfiles,
         tags => ['category:input'],
     },
 );
@@ -515,6 +520,7 @@ our %argspecopt_field = (
         summary => 'Field name',
         schema => 'str*',
         cmdline_aliases => { f=>{} },
+        completion => \&_complete_field,
     },
 );
 
@@ -563,6 +569,7 @@ our %argspec_fields = (
         schema => ['array*', of=>['str*', min_len=>1], min_len=>1],
         req => 1,
         cmdline_aliases => {f=>{}},
+        element_completion => \&_complete_field,
     },
 );
 
@@ -573,6 +580,7 @@ our %argspecopt_fields = (
         summary => 'Field names',
         schema => ['array*', of=>['str*', min_len=>1], min_len=>1],
         cmdline_aliases => {f=>{}},
+        element_completion => \&_complete_field,
     },
 );
 
