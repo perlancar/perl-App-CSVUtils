@@ -305,7 +305,7 @@ sub _select_fields {
     [100, "Continue", [\@selected_fields, \@selected_field_idxs_array]];
 }
 
-our $xcomp_csvfiles = [filename => {file_ext_filter => /\.[tc]sv$/i}];
+our $xcomp_csvfiles = [filename => {file_ext_filter => qr/\.[tc]sv$/i}];
 
 our %argspecs_csv_input = (
     input_header => {
@@ -532,6 +532,20 @@ our %argspec_field_1 = (
         req => 1,
         pos => 1,
         completion => \&_complete_field,
+    },
+);
+
+our %argspec_fields_1plus = (
+    fields => {
+        'x.name.is_plural' => 1,
+        'x.name.singular' => 'field',
+        summary => 'Field names',
+        schema => ['array*', of=>['str*', min_len=>1], min_len=>1],
+        req => 1,
+        pos => 1,
+        slurpy => 1,
+        cmdline_aliases => {f=>{}},
+        element_completion => \&_complete_field,
     },
 );
 
