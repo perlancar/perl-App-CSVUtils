@@ -191,7 +191,7 @@ sub _complete_field_or_field_list {
     }
 
     # user hasn't specified -f, bail
-    return {message=>"Please specify -f first"} unless defined $args && $args->{input_filename};
+    return {message=>"Please specify input filename first"} unless defined $args && $args->{input_filename};
 
     # user wants to read CSV from stdin, bail
     return {message=>"Can't get field list when input is stdin"} if $args->{input_filename} eq '-';
