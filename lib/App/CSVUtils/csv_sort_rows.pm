@@ -87,7 +87,7 @@ sub after_close_input_files {
 
         if ($sort_indices) {
             my @sorted_indices = sort { local $main::a=$a; local $main::b=$b; $code->($main::a,$main::b) } 0..$#{$r->{input_rows}};
-            $sorted_rows = [map {$r->{rows}[$_]} @sorted_indices];
+            $sorted_rows = [map {$r->{input_rows}[$_]} @sorted_indices];
         } else {
             $sorted_rows = [sort { local $main::a=$a; local $main::b=$b; $code->($main::a,$main::b) } @{$r->{input_rows}}];
         }
