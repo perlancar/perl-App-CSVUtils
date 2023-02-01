@@ -20,7 +20,8 @@ gen_csv_util(
     summary => 'Check that CSV rows are sorted',
     description => <<'_',
 
-This utility checks that rows in the CSV is sorted. Example `input.csv`:
+This utility checks that rows in the CSV are sorted according to specified
+sorting rule(s). Example `input.csv`:
 
     name,age
     Andy,20
