@@ -26,12 +26,12 @@ sub on_input_data_row {
     # keys we add to the stash
     $r->{input_rows} //= [];
     if ($r->{wants_input_row_as_hashref}) {
-        $r->{rows_as_hashref} //= [];
+        $r->{input_rows_as_hashref} //= [];
     }
 
     push @{ $r->{input_rows} }, $r->{input_row};
     if ($r->{wants_input_row_as_hashref}) {
-        push @{ $r->{rows_as_hashref} }, $r->{input_row_as_hashref};
+        push @{ $r->{input_rows_as_hashref} }, $r->{input_row_as_hashref};
     }
 }
 
@@ -44,7 +44,7 @@ sub after_close_input_files {
     my @keys;
     if ($r->{util_args}{key}) {
         my $code_gen_key = compile_eval_code($r->{util_args}{key}, 'key');
-        for my $row (@{ $r->{util_args}{hash} ? $r->{rows_as_hashref} : $r->{input_rows} }) {
+        for my $row (@{ $r->{util_args}{hash} ? $r->{input_rows_as_hashref} : $r->{input_rows} }) {
             local $_ = $row;
             push @keys, $code_gen_key->($row);
         }
@@ -76,8 +76,8 @@ sub after_close_input_files {
         } elsif ($r->{util_args}{hash}) {
             $sort_indices++;
             $code = sub {
-                local $main::a = $r->{rows_as_hashref}[$a];
-                local $main::b = $r->{rows_as_hashref}[$b];
+                local $main::a = $r->{input_rows_as_hashref}[$a];
+                local $main::b = $r->{input_rows_as_hashref}[$b];
                 #log_trace "a=<%s> vs b=<%s>", $main::a, $main::b;
                 $code0->($main::a, $main::b);
             };
