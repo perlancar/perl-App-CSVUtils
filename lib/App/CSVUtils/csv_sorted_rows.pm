@@ -47,6 +47,9 @@ Example `input2.csv`:
 
     % csv-sorted-rows input2.csv --by-field ~name; # check if name is ascibetically sorted in descending order
     ERROR 400: Rows are NOT sorted
+
+See <prog:csv-sort-rows> for details on sorting options.
+
 _
 
     writes_csv => 0,
@@ -73,7 +76,7 @@ _
     on_input_data_row => \&App::CSVUtils::csv_sort_rows::on_input_data_row,
 
     after_close_input_files => sub {
-        local $main::_SORTED_ROWS = 1;
+        local $main::_CSV_SORTED_ROWS = 1;
         App::CSVUtils::csv_sort_rows::after_close_input_files(@_);
     },
 );

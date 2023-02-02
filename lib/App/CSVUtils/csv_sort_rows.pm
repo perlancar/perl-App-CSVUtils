@@ -136,7 +136,7 @@ sub after_close_input_files {
 
     }
 
-    if ($main::_SORTED_ROWS) {
+    if ($main::_CSV_SORTED_ROWS) {
         require Data::Cmp;
         #use DD; dd $r->{input_rows}; print "\n"; dd $sorted_rows;
         if (Data::Cmp::cmp_data($r->{input_rows}, $sorted_rows)) {
