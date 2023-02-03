@@ -58,7 +58,10 @@ _
         },
         with_schema => {
             summary => 'Check with a Sah schema module',
-            schema => ['str*', match => qr#\A\w+(?:(?:::|/)\w+)*\z#],
+            schema => ['any*', of=>[
+                ['str*', min_len=>1], # string schema
+                ['array*', max_len=>2], # an array schema
+            ]],
             description => <<'_',
 
 Should be the name of a Sah schema module without the `Sah::Schema::` prefix,
@@ -99,16 +102,19 @@ _
         my $r = shift;
 
         if ($r->{util_args}{with_schema}) {
+            require Data::Dmp;
             require Data::Sah;
-            my $sch_mod = $r->{util_args}{with_schema};
-            $sch_mod =~ s!/!::!g;
-            my $vdr = Data::Sah::gen_validator("$sch_mod*", {return_type=>"str_errmsg"});
+            my $sch = $r->{util_args}{with_schema};
+            if (!ref($sch)) {
+                $sch =~ s!/!::!g;
+            }
+            my $vdr = Data::Sah::gen_validator($sch, {return_type=>"str_errmsg"});
             my $res = $vdr->($r->{value});
             if ($res) {
-                my $msg = "Field '$r->{util_args}{field}' does NOT validate with schema '$sch_mod': $res";
+                my $msg = "Field '$r->{util_args}{field}' does NOT validate with schema ".Data::Dmp::dmp($sch).": $res";
                 $r->{result} = [400, $msg, $r->{util_args}{quiet} ? undef : $msg];
             } else {
-                my $msg = "Field '$r->{util_args}{field}' validates with schema '$sch_mod'";
+                my $msg = "Field '$r->{util_args}{field}' validates with schema ".Data::Dmp::dmp($sch);
                 $r->{result} = [200, "Sorted", $r->{util_args}{quiet} ? undef : $msg];
             }
         } elsif ($r->{util_args}{with_code}) {
