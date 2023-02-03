@@ -29,11 +29,11 @@ Example `input.csv`:
 
 Check that ingredients do not contain number:
 
-    % csv-check-cell input.csv %weight --with-schema array::num::rev_sorted
-    ERROR 400: Field '%weight' does not validate with schema 'array::num::rev_sorted'
+    % csv-check-cell input.csv -f ingredient --with-regex '/\\A[A-Za-z ]+\\z/'
 
-    % csv-check-field input2.csv %weight --with-schema array/num/rev_sorted
-    Field '%weight' validates with schema 'array::num::rev_sorted'
+Check that all %weight is between 0 and 100:
+
+    % csv-check-cell input.csv -f %weight --with-code '$_>0 && $_<=100'
 
 _
 
