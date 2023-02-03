@@ -32,7 +32,7 @@ Check that ingredients do not contain number:
     % csv-check-cell input.csv %weight --with-schema array::num::rev_sorted
     ERROR 400: Field '%weight' does not validate with schema 'array::num::rev_sorted'
 
-    % csv-check-field input2.csv %weight --with-schema array::num::rev_sorted
+    % csv-check-field input2.csv %weight --with-schema array/num/rev_sorted
     Field '%weight' validates with schema 'array::num::rev_sorted'
 
 _
@@ -101,7 +101,7 @@ _
                 my $code0 = compile_eval_code($r->{util_args}{with_code}, 'with_code');
                 $r->{code} = sub {
                     local $_ = $_[0]; my $res = $code0->($_);
-                    [($res ? "FAIL":""), $res];
+                    [($res ? "":"FAIL"), $res];
                 };
             }
         }
