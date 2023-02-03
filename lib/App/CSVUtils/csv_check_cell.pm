@@ -17,7 +17,7 @@ use App::CSVUtils qw(
 
 gen_csv_util(
     name => 'csv_check_cell',
-    summary => 'Check the value of cells of CSV against code/schema',
+    summary => 'Check the value of cells of CSV against code/schema/regex',
     description => <<'_',
 
 Example `input.csv`:
@@ -64,6 +64,10 @@ _
                 );
             },
         },
+        with_regex => {
+            schema => 're_from_str*',
+        },
+
         quiet => {
             schema => 'bool*',
             cmdline_aliases => {q=>{}},
@@ -80,7 +84,7 @@ _
         },
     },
     add_args_rels => {
-        req_one => ['with_code', 'with_schema'],
+        req_one => ['with_code', 'with_schema', 'with_regex'],
     },
 
     writes_csv => 0,
@@ -102,6 +106,10 @@ _
                 $r->{code} = sub {
                     local $_ = $_[0]; my $res = $code0->($_);
                     [($res ? "":"FAIL"), $res];
+                };
+            } elsif (defined $r->{util_args}{with_regex}) {
+                $r->{code} = sub {
+                    $_[0] =~ $r->{util_args}{with_regex} ? ["", $_[0]] : ["Does not match regex $r->{util_args}{with_regex}", $_[0]];
                 };
             }
         }
