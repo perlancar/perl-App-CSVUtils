@@ -155,6 +155,8 @@ sub _instantiate_parser {
         $tcsv_opts{"quote_char"}  = undef;
         $tcsv_opts{"escape_char"} = undef;
     }
+    $tcsv_opts{always_quote} = 1 if $args->{"${prefix}always_quote"};
+    $tcsv_opts{quote_empty} = 1 if $args->{"${prefix}quote_empty"};
 
     Text::CSV_XS->new(\%tcsv_opts);
 }
@@ -432,6 +434,40 @@ _
 This is like `--input-escape-char` option but for output instead of input.
 
 Defaults to `\\` (backslash). Overrides `--output-tsv` option.
+
+_
+        tags => ['category:output'],
+    },
+    output_always_quote => {
+        summary => 'Whether to always quote values',
+        schema => 'bool*',
+        default => 0,
+        description => <<'_',
+
+When set to false (the default), values are quoted only when necessary:
+
+    field1,field2,"field three contains comma (,)",field4
+
+When set to true, then all values will be quoted:
+
+    "field1","field2","field three contains comma (,)","field4"
+
+_
+        tags => ['category:output'],
+    },
+    output_quote_empty => {
+        summary => 'Whether to quote empty values',
+        schema => 'bool*',
+        default => 0,
+        description => <<'_',
+
+When set to false (the default), empty values are not quoted:
+
+    field1,field2,,field4
+
+When set to true, then empty values will be quoted:
+
+    field1,field2,"",field4
 
 _
         tags => ['category:output'],
