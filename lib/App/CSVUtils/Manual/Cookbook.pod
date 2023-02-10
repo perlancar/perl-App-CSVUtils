@@ -278,6 +278,40 @@ See also: L</Adding a field containing line number>.
 
 
 
+=head1 MODIFYING VALUES
+
+=head2 Quoting all values, including where quotes are not necessary
+
+Sample file F<input.csv>:
+
+ name,age
+ budi",21
+ "toni saputra, s.h",32
+
+ % csv-csv input.csv --output-always-quote
+ "name","age"
+ "budi","21"
+ "toni saputra, s.h","32"
+
+
+
+=head2 Removing non-necessary quotes around values
+
+Sample file F<input.csv>:
+
+ "name","age"
+ "budi","21"
+ "toni saputra, s.h","32"
+
+ % csv-csv input.csv --no-output-always-quote
+ name,age
+ budi",21
+ "toni saputra, s.h",32
+
+
+
+
+
 =head1 PERFORMING SET OPERATIONS WITH CSV
 
 See L<csv-setop>.

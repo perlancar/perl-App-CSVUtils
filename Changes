@@ -1,3 +1,11 @@
+1.009   2023-02-10  Released-By: PERLANCAR; Urgency: medium
+
+        - Add options: --output-always-quote, --output-quote-empty.
+
+        - [doc] Add an example of using --output-always-quote in
+          Manual/Cookbook.pod
+
+
 1.008   2023-02-03  Released-By: PERLANCAR; Urgency: low
 
         - No functional changes.
