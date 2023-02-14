@@ -538,8 +538,7 @@ Some caveats:
 
 - if input file is a symbolic link, it will be replaced with a regular file;
 - renaming (implemented using `rename()`) can fail if input filename is too long;
-- value specified in `--inplace-backup-ext` is currently not checked for
-  acceptable characters;
+- value specified in `-b` is currently not checked for acceptable characters;
 - things can also fail if permissions are restrictive;
 
 _
@@ -556,6 +555,7 @@ rename the input file using this extension as a backup. The old existing backup
 will be overwritten, if any.
 
 _
+        cmdline_aliases => {b=>{}},
         tags => ['category:output'],
     },
 );
