@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use Log::ger;
 
+use Cwd;
 use Exporter qw(import);
 
 # AUTHORITY
@@ -519,6 +520,46 @@ our %argspecopt_overwrite = (
     },
 );
 
+our %argspecsopt_inplace = (
+    inplace => {
+        summary => 'Output to the same file as input',
+        schema => 'true*',
+        description => <<'_',
+
+Normally, you output to a different file than input. If you try to output to the
+same file (`-o INPUT.csv -O`) you will clobber the input file; thus the utility
+prevents you from doing it. However, with this `--inplace` option, you can
+output to the same file. Like perl's `-i` option, this will first output to a
+temporary file in the same directory as the input file then rename to the final
+file at the end. You cannot specify output file (`-o`) when using this option,
+but you can specify backup extension with `-b` option.
+
+Some caveats:
+
+- if input file is a symbolic link, it will be replaced with a regular file;
+- renaming (implemented using `rename()`) can fail if input filename is too long;
+- value specified in `--inplace-backup-ext` is currently not checked for
+  acceptable characters;
+- things can also fail if permissions are restrictive;
+
+_
+        tags => ['category:output'],
+    },
+    inplace_backup_ext => {
+        summary => 'Extension to add for backup of input file',
+        schema => 'str*',
+        default => '',
+        description => <<'_',
+
+In inplace mode (`--inplace`), if this option is set to a non-empty string, will
+rename the input file using this extension as a backup. The old existing backup
+will be overwritten, if any.
+
+_
+        tags => ['category:output'],
+    },
+);
+
 our %argspecopt_output_filename = (
     output_filename => {
         summary => 'Output filename',
@@ -886,6 +927,14 @@ sub _add_arg_pos {
         $args->{$argname}{slurpy} = 1 if $is_slurpy;
         last;
     }
+}
+
+sub _randext {
+    state $charset = [0..9, "A".."Z","a".."z"];
+    my $len = shift;
+    my $ext = "";
+    for (1..$len) { $ext .= $charset->[rand @$charset] }
+    $ext;
 }
 
 $SPEC{gen_csv_util} = {
@@ -1297,6 +1346,11 @@ sub gen_csv_util {
           MAIN_EVAL:
             eval {
 
+                # do some checking
+                if ($util_args{inplace} && (!$reads_csv || !$writes_csv)) {
+                    die [412, "--inplace cannot be specified when we do not read & write CSV"];
+                }
+
                 if ($on_begin) {
                     log_trace "[csvutil] Calling on_begin hook handler ...";
                     $on_begin->($r);
@@ -1306,11 +1360,40 @@ sub gen_csv_util {
                     # set output filenames, if not yet
                     unless ($r->{output_filenames}) {
                         my @output_filenames;
-                        if ($writes_multiple_csv) {
+                        if ($util_args{inplace}) {
+                            for my $input_filename (@{ $r->{input_filenames} }) {
+                                my $output_filename;
+                                while (1) {
+                                    $output_filename = $input_filename . "." . _randext(5);
+                                    last unless -e $output_filename;
+                                }
+                                push @output_filenames, $output_filename;
+                            }
+                        } elsif ($writes_multiple_csv) {
                             @output_filenames = @{ $util_args{output_filenames} // ['-'] };
                         } else {
                             @output_filenames = ($util_args{output_filename} // '-');
                         }
+
+                      CHECK_OUTPUT_FILENAME_SAME_AS_INPUT_FILENAME: {
+                            my %seen_output_abs_path; # key = output filename
+                            last unless $reads_csv && $writes_csv;
+                            for my $input_filename (@{ $r->{input_filenames} }) {
+                                next if $input_filename eq '-';
+                                my $input_abs_path = Cwd::abs_path($input_filename);
+                                die [500, "Can't get absolute path of input filename '$input_filename'"] unless $input_abs_path;
+                                for my $output_filename (@output_filenames) {
+                                    next if $output_filename eq '-';
+                                    next if $seen_output_abs_path{$output_filename};
+                                    my $output_abs_path = Cwd::abs_path($output_filename);
+                                    die [500, "Can't get absolute path of output filename '$output_filename'"] unless $output_abs_path;
+                                    die [412, "Cannot set output filename to '$output_filename' ".
+                                         ($output_filename ne $output_abs_path ? "($output_abs_path) ":"").
+                                         "because it is the same as input filename and input will be clobbered; use --inplace to avoid clobbering<"]
+                                        if $output_abs_path eq $input_abs_path;
+                                }
+                            }
+                        } # CHECK_OUTPUT_FILENAME_SAME_AS_INPUT_FILENAME
 
                         $r->{output_filenames} = \@output_filenames;
                         $r->{output_num_of_files} //= scalar(@output_filenames);
@@ -1617,7 +1700,6 @@ sub gen_csv_util {
                 }
 
                 # cleanup stash from csv-outputting-related keys
-                delete $r->{output_filenames};
                 delete $r->{output_num_of_files};
                 delete $r->{output_filenum};
                 if ($r->{output_fh}) {
@@ -1627,6 +1709,20 @@ sub gen_csv_util {
                     }
                     delete $r->{output_fh};
                 }
+                if ($r->{util_args}{inplace}) {
+                    for my $output_filename (@{ $r->{output_filenames} }) {
+                        (my $input_filename = $output_filename) =~ s/\.\w{5}\z//
+                            or die [500, "BUG: Can't get original input file '$output_filename'"];
+                        if (length(my $ext = $r->{util_args}{inplace_backup_ext})) {
+                            my $backup_filename = $input_filename . $ext;
+                            log_info "[csvutil] Backing up input file '$output_filename' -> '$backup_filename' ...";
+                            rename $input_filename, $backup_filename or die [500, "Can't rename '$input_filename' -> '$backup_filename': $!"];
+                        }
+                        log_info "[csvutil] Renaming from temporary output file '$output_filename' -> '$input_filename' ...";
+                        rename $output_filename, $input_filename or die [500, "Can't rename back '$output_filename' -> '$input_filename': $!"];
+                    }
+                }
+                delete $r->{output_filenames};
                 delete $r->{output_filename};
                 delete $r->{output_rownum};
                 delete $r->{output_data_rownum};
@@ -1694,12 +1790,26 @@ sub gen_csv_util {
             if ($writes_csv) {
                 $meta->{args}{$_} = {%{$argspecs_csv_output{$_}}} for keys %argspecs_csv_output;
 
+                if ($reads_csv) {
+                    $meta->{args}{$_} = {%{$argspecsopt_inplace{$_}}} for keys %argspecsopt_inplace;
+                    $meta->{args_rels}{'dep_all&'} //= [];
+                    push @{ $meta->{args_rels}{'dep_all&'} }, ['inplace_backup_ext', ['inplace']];
+                }
+
                 if ($writes_multiple_csv) {
                     $meta->{args}{output_filenames} = {%{$argspecopt_output_filenames{output_filenames}}};
                     _add_arg_pos($meta->{args}, 'output_filenames', 'slurpy');
+                    if ($reads_csv) {
+                        $meta->{args_rels}{'choose_one&'} //= [];
+                        push @{ $meta->{args_rels}{'choose_one&'} }, [qw/output_filenames inplace/];
+                    }
                 } else {
                     $meta->{args}{output_filename} = {%{$argspecopt_output_filename{output_filename}}};
                     _add_arg_pos($meta->{args}, 'output_filename');
+                    if ($reads_csv) {
+                        $meta->{args_rels}{'choose_one&'} //= [];
+                        push @{ $meta->{args_rels}{'choose_one&'} }, [qw/output_filename inplace/];
+                    }
                 }
 
                 $meta->{args}{overwrite} = {%{$argspecopt_overwrite{overwrite}}};
