@@ -94,7 +94,7 @@ _
 
         # check arguments
         if (!defined($r->{util_args}{fields}) || !@{ $r->{util_args}{fields} }) {
-            die [400, "Please specify one or more fields (-F)"];
+            die [400, "Please specify one or more fields (-f)"];
         }
     },
 
