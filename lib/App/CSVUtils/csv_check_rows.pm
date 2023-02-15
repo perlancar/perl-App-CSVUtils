@@ -20,11 +20,12 @@ gen_csv_util(
 
 This utility performs the following checks:
 
-- For header row:
+For header row:
 
-- For data rows:
-  + There are the same number of values as the number of fields (no missing
-    values, no extraneous values)
+For data rows:
+
+- There are the same number of values as the number of fields (no missing
+  values, no extraneous values)
 
 For each failed check, an error message will be printed to stderr. And if there
 is any error, the exit code will be non-zero. If there is no error, the utility
