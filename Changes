@@ -1,3 +1,23 @@
+1.012   2023-02-15  Released-By: PERLANCAR; Urgency: medium
+
+        - [incompatible change] Rename utilities for clarity: csv-check-cell ->
+          csv-check-cell-values, csv-check-fields -> csv-check-field-values;
+          Remove csv-check-values.
+
+        - Add utility: csv-check-field-names.
+
+        - Handle sparse fields that caused perl warning 'splice() offset
+          past end of array' (RT#146473).
+
+        - [bugfix] Fix completion for filenames (file_ext_filter is applied
+          to extension and not filename).
+
+        - [bugfix] In inplace mode, do not rename unwritten output files
+          (RT#146453, https://rt.cpan.org/Transaction/Display.html?id=2442471).
+
+        - Update error message (field option -F is now -f).
+
+
 1.011   2023-02-14  Released-By: PERLANCAR; Urgency: medium
 
         - [bugfix] -b was not added.
