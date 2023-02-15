@@ -1,4 +1,4 @@
-package App::CSVUtils::csv_check_field;
+package App::CSVUtils::csv_check_field_values;
 
 use 5.010001;
 use strict;
@@ -16,8 +16,8 @@ use App::CSVUtils qw(
                 );
 
 gen_csv_util(
-    name => 'csv_check_field',
-    summary => 'Check the value of a whole field against code/schema',
+    name => 'csv_check_field_values',
+    summary => 'Check the values of whole fields against code/schema',
     description => <<'_',
 
 Example `input.csv`:
@@ -36,10 +36,10 @@ Example `input2.csv`:
 
 Check that ingredients are sorted in descending %weight:
 
-    % csv-check-field input.csv %weight --with-schema array::num::rev_sorted
+    % csv-check-field-values input.csv %weight --with-schema array::num::rev_sorted
     ERROR 400: Field '%weight' does not validate with schema 'array::num::rev_sorted'
 
-    % csv-check-field input2.csv %weight --with-schema array::num::rev_sorted
+    % csv-check-field-values input2.csv %weight --with-schema array::num::rev_sorted
     Field '%weight' validates with schema 'array::num::rev_sorted'
 
 _
@@ -86,6 +86,11 @@ _
     add_args_rels => {
         req_one => ['with_code', 'with_schema'],
     },
+
+    links => [
+        {url=>'prog:csv-check-cell-values', summary=>'Check single-cell values'},
+        {url=>'prog:csv-check-field-names', summary=>'Check the field names'},
+    ],
 
     writes_csv => 0,
 

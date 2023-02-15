@@ -1,4 +1,4 @@
-package App::CSVUtils::csv_check_cell;
+package App::CSVUtils::csv_check_cell_values;
 
 use 5.010001;
 use strict;
@@ -16,8 +16,8 @@ use App::CSVUtils qw(
                 );
 
 gen_csv_util(
-    name => 'csv_check_cell',
-    summary => 'Check the value of cells of CSV against code/schema/regex',
+    name => 'csv_check_cell_values',
+    summary => 'Check the value of single cells of CSV against code/schema/regex',
     description => <<'_',
 
 Example `input.csv`:
@@ -29,11 +29,11 @@ Example `input.csv`:
 
 Check that ingredients do not contain number:
 
-    % csv-check-cell input.csv -f ingredient --with-regex '/\\A[A-Za-z ]+\\z/'
+    % csv-check-cell-values input.csv -f ingredient --with-regex '/\\A[A-Za-z ]+\\z/'
 
 Check that all %weight is between 0 and 100:
 
-    % csv-check-cell input.csv -f %weight --with-code '$_>0 && $_<=100'
+    % csv-check-cell-values input.csv -f %weight --with-code '$_>0 && $_<=100'
 
 _
 
@@ -86,6 +86,10 @@ _
     add_args_rels => {
         req_one => ['with_code', 'with_schema', 'with_regex'],
     },
+
+    links => [
+        {url=>'prog:csv-check-field-values', summary=>'Check of the values of whole fields'},
+    ],
 
     writes_csv => 0,
 
