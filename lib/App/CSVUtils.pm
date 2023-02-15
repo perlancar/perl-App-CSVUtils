@@ -1633,6 +1633,12 @@ sub gen_csv_util {
                                 }
 
                             } else {
+                                # fill up the elements of row to the number of
+                                # fields, in case the row contains sparse values
+                                if (@{ $r->{input_row} } < @{ $r->{input_fields} }) {
+                                    splice @{ $r->{input_row} }, scalar(@{ $r->{input_row} }), 0, (("") x (@{ $r->{input_fields} } - @{ $r->{input_row} }));
+                                }
+
                                 # generate the hashref version of row if utility
                                 # requires it
                                 if ($r->{wants_input_row_as_hashref}) {
