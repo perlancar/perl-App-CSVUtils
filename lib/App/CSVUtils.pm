@@ -1002,6 +1002,12 @@ The order of the hooks, in processing chronological order:
   row will be the generated `["field1", "field2", ...]`. You can use this hook
   e.g. to add/remove/rearrange fields.
 
+  You can set `$r->{wants_fill_rows}` to a defined false if you do not want
+  `$r->{input_rows}` to be filled with empty string elements when it contains
+  less than the number of fields (in case of sparse values at the end). Normally
+  you only want to do this when you want to do checking, e.g. in
+  <prog:csv-check-rows>.
+
 * on_input_data_row
 
   Called when receiving each data row. You can use this hook e.g. to modify the
@@ -1635,8 +1641,10 @@ sub gen_csv_util {
                             } else {
                                 # fill up the elements of row to the number of
                                 # fields, in case the row contains sparse values
-                                if (@{ $r->{input_row} } < @{ $r->{input_fields} }) {
-                                    splice @{ $r->{input_row} }, scalar(@{ $r->{input_row} }), 0, (("") x (@{ $r->{input_fields} } - @{ $r->{input_row} }));
+                                unless (defined $r->{wants_fill_rows} && !$r->{wants_fill_rows}) {
+                                    if (@{ $r->{input_row} } < @{ $r->{input_fields} }) {
+                                        splice @{ $r->{input_row} }, scalar(@{ $r->{input_row} }), 0, (("") x (@{ $r->{input_fields} } - @{ $r->{input_row} }));
+                                    }
                                 }
 
                                 # generate the hashref version of row if utility
