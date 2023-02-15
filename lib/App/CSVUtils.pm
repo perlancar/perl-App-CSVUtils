@@ -1710,7 +1710,11 @@ sub gen_csv_util {
                     delete $r->{output_fh};
                 }
                 if ($r->{util_args}{inplace}) {
+                    my $output_filenum = $r->{output_filenum} // 0;
+                    my $i = -1;
                     for my $output_filename (@{ $r->{output_filenames} }) {
+                        $i++;
+                        last if $i > $output_filenum;
                         (my $input_filename = $output_filename) =~ s/\.\w{5}\z//
                             or die [500, "BUG: Can't get original input file '$output_filename'"];
                         if (length(my $ext = $r->{util_args}{inplace_backup_ext})) {
