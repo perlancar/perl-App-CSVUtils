@@ -308,7 +308,7 @@ sub _select_fields {
     [100, "Continue", [\@selected_fields, \@selected_field_idxs_array]];
 }
 
-our $xcomp_csvfiles = [filename => {file_ext_filter => qr/\.[tc]sv$/i}];
+our $xcomp_csvfiles = [filename => {file_ext_filter => qr/^[tc]sv$/i}];
 
 our %argspecs_csv_input = (
     input_header => {
