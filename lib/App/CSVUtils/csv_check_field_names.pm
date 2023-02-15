@@ -20,8 +20,9 @@ gen_csv_util(
 
 This utility performs the following checks:
 
-- There is no duplicate field name
-- There is no field name of '' (empty string)
+- There is at least 1 field;
+- There is no duplicate field name;
+- There is no field name of '' (empty string);
 
 There will be options to add some additional checks in the future.
 
@@ -41,6 +42,8 @@ _
 
     on_input_header_row => sub {
         my $r = shift;
+
+        die [400, "There must at least be 1 field"] unless @{ $r->{input_fields} };
 
         my %seen;
         my $i = 0;
