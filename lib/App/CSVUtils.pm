@@ -948,6 +948,13 @@ simply using <pm:Perinci::CmdLine::Gen> or, if you use <pm:Dist::Zilla>,
 <pm:Dist::Zilla::Plugin::GenPericmdScript> or, if on the command-line,
 <prog:gen-pericmd-script>.
 
+Using this routine, by providing just one or a few hooks and setting some
+parameters like a couple of extra arguments, you will get a complete CLI with
+decent POD/manpage, ability to read one or multiple CSV's and write one or
+multiple CSV's, some command-line options to customize how the input CSV's
+should be parsed and how the output CSV's should be formatted and named. Your
+CLI also has tab completion, usage and help message, and other features.
+
 To create a CSV utility, you specify a `name` (e.g. `csv_dump`; must be a valid
 unqualified Perl identifier/function name) and optionally `summary`,
 `description`, and other metadata like `links` or even `add_meta_props`. Then
