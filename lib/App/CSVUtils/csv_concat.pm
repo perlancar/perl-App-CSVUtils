@@ -68,6 +68,11 @@ _
     on_input_header_row => sub {
         my $r = shift;
 
+        # after we read the header row of each input file, we record the fields
+        # as well as the filehandle, so we can resume reading the data rows
+        # later. before printing all the rows, we collect all the fields from
+        # all files first.
+
         push @{ $r->{all_input_fields} }, $r->{input_fields};
         push @{ $r->{all_input_fh} }, $r->{input_fh};
         $r->{wants_skip_file}++;
