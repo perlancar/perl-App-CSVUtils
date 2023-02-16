@@ -601,6 +601,16 @@ our %argspecopt_field = (
     },
 );
 
+our %argspecopt_field_1 = (
+    field => {
+        summary => 'Field name',
+        schema => 'str*',
+        pos => 1,
+        cmdline_aliases => { f=>{} },
+        completion => \&_complete_field,
+    },
+);
+
 our %argspec_field_1 = (
     field => {
         summary => 'Field name',
