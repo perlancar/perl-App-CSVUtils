@@ -45,7 +45,7 @@ Example:
     quux,6
     corge,6
 
-    % csv-sum products2 --with-data-row
+    % csv-intrange products2 --with-data-row
     name,sku_number
     foo,1
     bar,2
