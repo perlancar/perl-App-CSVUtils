@@ -1,3 +1,14 @@
+1.014   2023-02-16  Released-By: PERLANCAR; Urgency: low
+
+        - No functional changes.
+
+        - [doc] Fix terminology column -> field in description & error message.
+
+        - [doc][bugfix] Fix typo in example of csv-intrange.
+
+        - [doc] Add some description to gen_csv_util().
+
+
 1.013   2023-02-15  Released-By: PERLANCAR; Urgency: medium
 
         - Add utility: csv-check-rows.
