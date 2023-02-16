@@ -18,7 +18,7 @@ gen_csv_util(
     summary => 'Output a summary row which are range notation of numbers',
     description => <<'_',
 
-You can use this to check whether integer values in a column form a contiguous
+You can use this to check whether integer values in a field form a contiguous
 range.
 
 Non-numbers will be assumed to be 0.

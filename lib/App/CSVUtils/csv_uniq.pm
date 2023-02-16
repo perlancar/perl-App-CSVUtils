@@ -30,13 +30,13 @@ gen_csv_util(
     },
     examples => [
         {
-            summary => 'Check that column foo in CSV is unique, compare case-insensitively, report duplicates',
+            summary => 'Check that field "foo" in CSV is unique, compare case-insensitively, report duplicates',
             argv => ['file.csv', '-i', 'foo'],
             test => 0,
             'x.doc.show_result' => 0,
         },
         {
-            summary => 'Check that combination of columns foo, bar, baz in CSV is unique, report duplicates',
+            summary => 'Check that combination of fields "foo", "bar", "baz" in CSV is unique, report duplicates',
             argv => ['file.csv', 'foo', 'bar', 'baz'],
             test => 0,
             'x.doc.show_result' => 0,
