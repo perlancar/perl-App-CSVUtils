@@ -84,12 +84,12 @@ Long lines are also by default folded at 78 columns (but you can customize with
 the `--width` option); if a line is folded a literal backslash is added to the
 end of each physical line and the next line will be indented by two spaces:
 
-    notes: This is a long note. This is a long note. This is a long note. This is\
+    notes: This is a long note. This is a long note. This is a long note. This is
       a long note. This is a long note.
 
 A long word is also folded and the next line will be indented by one space:
 
-    notes: Thisisalongwordthisisalongwordthisisalongwordthisisalongwordthisisalongw\
+    notes: Thisisalongwordthisisalongwordthisisalongwordthisisalongwordthisisalongw
      ord
 
 Newline and backslash are also escaped in header; additionally a literal ":"
@@ -168,7 +168,6 @@ _
                 require Text::Wrap::NoStrip;
                 local $Text::Wrap::NoStrip::columns = $r->{util_args}{width};
                 my $wrapped_line = Text::Wrap::NoStrip::wrap("", " ", $line);
-                $wrapped_line =~ s!$(?=.)!\\!gm;
                 print $wrapped_line, "\n";
             }
         }
