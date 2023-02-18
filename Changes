@@ -1,3 +1,11 @@
+1.015   2023-02-18  Released-By: PERLANCAR; Urgency: medium
+
+        - Add utilities: csv2paras, paras2csv.
+
+        - [cli csv-freqtable] Add options --ignore-case (-i) and --key
+          (-k).
+
+
 1.014   2023-02-16  Released-By: PERLANCAR; Urgency: low
 
         - No functional changes.
