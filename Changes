@@ -1,8 +1,6 @@
-1.018   2023-02-18  Released-By: PERLANCAR; Urgency: low
+1.018   2023-02-18  Released-By: PERLANCAR
 
-        - No functional changes.
-
-        - Release v1.017.
+        - Fix documentation on csv2paras.
 
 
 1.017   2023-02-18  Released-By: PERLANCAR; Urgency: medium
