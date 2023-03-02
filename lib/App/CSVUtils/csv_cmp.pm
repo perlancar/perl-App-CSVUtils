@@ -67,6 +67,20 @@ _
             schema => 'bool*',
         },
     },
+    examples => [
+        {
+            summary => 'Compare two identical files, will output nothing and exits 0',
+            argv => ['file.csv', 'file.csv'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+        {
+            summary => 'Compare two CSV files case-insensitively (-i), show detailed report (-l)',
+            argv => ['file1.csv', 'file2.csv', '-il'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+    ],
 
     reads_multiple_csv => 1,
 
