@@ -258,11 +258,14 @@ sub _array2hash {
 }
 
 sub _select_fields {
-    my ($fields, $field_idxs, $args) = @_;
+    my ($fields, $field_idxs, $args, $default_to_select_all) = @_;
 
     my @selected_fields;
 
+    my $select_field_options_used;
+
     if (defined $args->{include_field_pat}) {
+        $select_field_options_used++;
         for my $field (@$fields) {
             if ($field =~ $args->{include_field_pat}) {
                 push @selected_fields, $field;
@@ -270,10 +273,12 @@ sub _select_fields {
         }
     }
     if (defined $args->{exclude_field_pat}) {
+        $select_field_options_used++;
         @selected_fields = grep { $_ !~ $args->{exclude_field_pat} }
             @selected_fields;
     }
     if (defined $args->{include_fields}) {
+        $select_field_options_used++;
       FIELD:
         for my $field (@{ $args->{include_fields} }) {
             unless (defined $field_idxs->{$field}) {
@@ -285,6 +290,7 @@ sub _select_fields {
         }
     }
     if (defined $args->{exclude_fields}) {
+        $select_field_options_used++;
       FIELD:
         for my $field (@{ $args->{exclude_fields} }) {
             unless (defined $field_idxs->{$field}) {
@@ -293,6 +299,10 @@ sub _select_fields {
             }
             @selected_fields = grep { $field ne $_ } @selected_fields;
         }
+    }
+
+    if (!$select_field_options_used && $default_to_select_all) {
+        @selected_fields = @$fields;
     }
 
     if ($args->{show_selected_fields}) {

@@ -37,8 +37,19 @@ where `rownum` begins at 1 (for header row), `fieldnum` begins at 1 (first
 field), `value1` is the value in first CSV file, `value2` is the value in the
 second CSV file.
 
+Other notes:
+
+* If none of the field selection options are used, it means all fields are
+  included (equivalent to `--include-all-fields`).
+
+* Field selection will be performed on the first CSV file, then the indexes will
+be used for the second CSV file.
+
 _
     add_args => {
+        %App::CSVUtils::argspecsopt_field_selection,
+        %App::CSVUtils::argspecsopt_show_selected_fields,
+
         detail => {
             summary => 'Report all differences instead of just the first one',
             schema => 'true*',
@@ -99,12 +110,30 @@ _
 
         # we add the following keys to the stash
         $r->{all_input_rows} = [[], []]; # including header row. format: [ [row1 of csv1, row2 of csv1...], [row1 of csv2, row2 of csv2, ...] ]
+        $r->{selected_fields_idx_array_sorted} = undef;
     },
 
     on_input_header_row => sub {
         my $r = shift;
 
         push @{ $r->{all_input_rows}[ $r->{input_filenum}-1 ] }, $r->{input_fields};
+
+        if ($r->{input_filenum} == 1) {
+            # set selected_fields_idx_array_sorted
+            my $res = App::CSVUtils::_select_fields($r->{input_fields}, $r->{input_fields_idx}, $r->{util_args}, 1);
+            die $res unless $res->[0] == 100;
+            my $selected_fields = $res->[2][0];
+            my $selected_fields_idx_array = $res->[2][1];
+            die [412, "At least one field must be selected"]
+                unless @$selected_fields;
+            $r->{selected_fields_idx_array_sorted} = [sort { $b <=> $a } @$selected_fields_idx_array];
+
+            if ($r->{util_args}{show_selected_fields}) {
+                $r->{wants_skip_files}++;
+                $r->{result} = [200, "OK", $selected_fields];
+                return;
+            }
+        }
     },
 
     on_input_data_row => sub {
@@ -138,7 +167,8 @@ _
 
         my $numrows_min = $numrows1 < $numrows2 ? $numrows1 : $numrows2;
         for my $rownum (1 .. $numrows_min) {
-            for my $fieldnum (1 .. $numfields1) {
+            for my $j (@{ $r->{selected_fields_idx_array_sorted} }) {
+                my $fieldnum = $j+1;
                 my $origvalue1 = my $value1 = $r->{all_input_rows}[0][ $rownum-1 ][ $fieldnum-1 ];
                 my $origvalue2 = my $value2 = $r->{all_input_rows}[1][ $rownum-1 ][ $fieldnum-1 ];
 
