@@ -39,7 +39,7 @@ _
         {
             summary => 'Only show rows where the amount field '.
                 'is divisible by 7',
-            argv => ['-He', '$_->{amount} % 7 ? 1:0', 'file.csv'],
+            argv => ['-He', '$_->{amount} % 7 == 0', 'file.csv'],
             test => 0,
             'x.doc.show_result' => 0,
         },
