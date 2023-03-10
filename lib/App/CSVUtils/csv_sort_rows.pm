@@ -108,10 +108,7 @@ sub after_close_input_files {
         my $code_str = "";
         for my $field_spec (@{ $r->{util_args}{by_fields} }) {
             my ($prefix, $field) = $field_spec =~ /\A([+~-]?)(.+)/;
-            my $field_idx = $r->{input_fields_idx}{$field};
-            die [400, "Unknown field '$field' (known fields include: ".
-                 join(", ", map { "'$_'" } sort {$r->{input_fields_idx}{$a} <=> $r->{input_fields_idx}{$b}}
-                      keys %{$r->{input_fields_idx}}).")"] unless defined $field_idx;
+            my $field_idx = App::CSVUtils::_find_field($r->{input_fields}, $field);
             $prefix //= "";
             if ($prefix eq '+') {
                 $code_str .= ($code_str ? " || " : "") .
@@ -245,6 +242,10 @@ descending length of name):
     Jerry,30
     Andy,20
     Ben,30
+
+If none of the `--by-*` options are specified, the utility will bail unless
+there's a default that can be used, e.g. when CSV has a single field then that
+field will be used.
 
 _
 

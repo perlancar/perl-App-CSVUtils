@@ -274,6 +274,39 @@ sub _is_numeric_field {
     $is_numeric;
 }
 
+# find a single field by name or index (1-based), return index (0-based). die
+# when requested field does not exist.
+sub _find_field {
+    my ($fields, $name_or_idx) = @_;
+
+    # search by name first
+    for my $i (0 .. $#{$fields}) {
+        my $field = $fields->[$i];
+        return $i if $field eq $name_or_idx;
+    }
+
+    if ($name_or_idx eq '0') {
+        die [400, "Field index 0 is requested, you probably meant 1 for the first field?"];
+    } elsif ($name_or_idx =~ /\A[1-9][0-9]*\z/) {
+        if ($name_or_idx > @$fields) {
+            die [400, "There are only ".scalar(@$fields)." field(s) but field index $name_or_idx is requested"];
+        } else {
+            return $name_or_idx-1;
+        }
+    } elsif ($name_or_idx =~ /\A-[1-9][0-9]*\z/) {
+        if (-$name_or_idx > @$fields) {
+            die [400, "There are only ".scalar(@$fields)." field(s) but field index $name_or_idx is requested"];
+        } else {
+            return @$fields + $name_or_idx;
+        }
+    }
+
+    # not found
+    die [404, "Unknown field name/index '$name_or_idx' (known fields include: ".
+         join(", ", map { "'$_'" } @$fields).")"];
+}
+
+# select one or more fields with options like --include-field, etc
 sub _select_fields {
     my ($fields, $field_idxs, $args, $default_select_choice) = @_;
 

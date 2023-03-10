@@ -50,10 +50,11 @@ gen_csv_util(
 
         # we add this key to the stash
         $r->{seen} = {};
+        $r->{fields_idx} = [];
 
         # check arguments
         for my $field (@{ $r->{util_args}{fields} }) {
-            die [404, "Unknown field '$field'"] unless defined $r->{input_fields_idx}{$field};
+            push @{ $r->{fields_idx} }, App::CSVUtils::_find_field($r->{input_fields}, $field);
         }
     },
 
@@ -61,8 +62,8 @@ gen_csv_util(
         my $r = shift;
 
         my @vals;
-        for my $field (@{ $r->{util_args}{fields} }) {
-            my $fieldval = $r->{input_row}[ $r->{input_fields_idx}{$field} ] // '';
+        for my $field_idx (@{ $r->{fields_idx} }) {
+            my $fieldval = $r->{input_row}[ $field_idx ] // '';
             push @vals, $r->{util_args}{ignore_case} ? lc($fieldval) : $fieldval;
         }
         my $val = join("|", @vals);

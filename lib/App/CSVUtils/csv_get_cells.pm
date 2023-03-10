@@ -73,9 +73,8 @@ _
                         or die [400, "Invalid coordinate '$coord': field number '$coord_field' out of bound, must be between 1-". ($#{$r->{input_fields}}+1)];
                 $r->{cells}[$j] = $row->[$coord_field-1];
             } else {
-                exists $r->{input_fields_idx}{$coord_field}
-                    or die [400, "Invalid coordinate '$coord': Unknown field name '$coord_field'"];
-                $r->{cells}[$j] = $row->[ $r->{input_fields_idx}{$coord_field} ];
+                my $field_idx = App::CSVUtils::_find_field($r->{input_fields}, $coord_field;
+                $r->{cells}[$j] = $row->[ $field_idx ];
             }
         }
     },

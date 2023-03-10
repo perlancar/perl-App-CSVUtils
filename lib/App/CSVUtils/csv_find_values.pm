@@ -103,8 +103,7 @@ _
 
         # check arguments
         my $field = $r->{util_args}{field};
-        my $field_idx = $r->{input_fields_idx}{$field};
-        die [404, "Unknown field '$field'"] unless defined $field_idx;
+        my $field_idx = App::CSVUtils::_select_field($r->{input_fields}, $field);
 
         # we add the following keys to the stash
         $r->{field} = $field;
