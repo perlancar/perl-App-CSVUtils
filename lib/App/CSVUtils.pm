@@ -258,7 +258,7 @@ sub _array2hash {
 }
 
 sub _select_fields {
-    my ($fields, $field_idxs, $args, $default_to_select_all) = @_;
+    my ($fields, $field_idxs, $args, $default_select_choice) = @_;
 
     my @selected_fields;
 
@@ -301,8 +301,16 @@ sub _select_fields {
         }
     }
 
-    if (!$select_field_options_used && $default_to_select_all) {
-        @selected_fields = @$fields;
+    if (!$select_field_options_used && $default_select_choice) {
+        if ($default_select_choice eq 'all') {
+            @selected_fields = @$fields;
+        } elsif ($default_select_choice eq 'first') {
+            @selected_fields = ($fields->[0]) if @$fields;
+        } elsif ($default_select_choice eq 'last') {
+            @selected_fields = ($fields->[-1]) if @$fields;
+        } elsif ($default_select_choice eq 'first-if-only-field') {
+            @selected_fields = ($fields->[0]) if @$fields == 1;
+        }
     }
 
     if ($args->{show_selected_fields}) {

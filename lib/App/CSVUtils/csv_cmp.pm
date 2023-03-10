@@ -120,7 +120,7 @@ _
 
         if ($r->{input_filenum} == 1) {
             # set selected_fields_idx_array_sorted
-            my $res = App::CSVUtils::_select_fields($r->{input_fields}, $r->{input_fields_idx}, $r->{util_args}, 1);
+            my $res = App::CSVUtils::_select_fields($r->{input_fields}, $r->{input_fields_idx}, $r->{util_args}, 'all');
             die $res unless $res->[0] == 100;
             my $selected_fields = $res->[2][0];
             my $selected_fields_idx_array = $res->[2][1];
