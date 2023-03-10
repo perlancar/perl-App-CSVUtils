@@ -50,6 +50,16 @@ sub after_close_input_files {
         }
     }
 
+    # if user doesn't specify any by_* args, try to set a default if we can
+    if (!(grep {defined} ($r->{util_args}{by_code}, $r->{util_args}{by_sortsub}, $r->{util_args}{by_fields}))) {
+        # if there is only a single field, use it
+        if (@{ $r->{input_fields} } == 1) {
+            my $field = $r->{input_fields}[0];
+            $r->{util_args}{by_fields} = App::CSVUtils::_is_numeric_field(
+                $r->{input_rows}, 0) ? ["+$field"] : [$field];
+        }
+    }
+
     my $sorted_rows;
     if ($r->{util_args}{by_code} || $r->{util_args}{by_sortsub}) {
 
@@ -241,9 +251,6 @@ _
     add_args => {
         %App::CSVUtils::argspecopt_hash,
         %App::CSVUtils::argspecs_sort_rows,
-    },
-    add_args_rels => {
-        req_one => ['by_fields', 'by_code', 'by_sortsub'],
     },
 
     on_input_header_row => \&App::CSVUtils::csv_sort_rows::on_input_header_row,

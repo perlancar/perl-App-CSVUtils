@@ -257,6 +257,23 @@ sub _array2hash {
     $rowhash;
 }
 
+# check that the first N values of a field are all defined and numeric. if there
+# are now rows or less than N values, return true.
+sub _is_numeric_field {
+    require Scalar::Util::Numeric;
+
+    my ($rows, $field_idx, $num_samples) = @_;
+    $num_samples //= 5;
+
+    my $is_numeric = 1;
+    for my $row (@$rows) {
+        my $val = $row->[$field_idx];
+        return 0 unless defined $val;
+        return 0 unless Scalar::Util::Numeric::isnum($val);
+    }
+    $is_numeric;
+}
+
 sub _select_fields {
     my ($fields, $field_idxs, $args, $default_select_choice) = @_;
 

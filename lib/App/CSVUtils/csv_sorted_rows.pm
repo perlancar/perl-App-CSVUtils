@@ -66,11 +66,6 @@ _
         },
     },
 
-    # KEEP SYNC WITH csv_sort_rows
-    add_args_rels => {
-        req_one => ['by_fields', 'by_code', 'by_sortsub'],
-    },
-
     on_input_header_row => \&App::CSVUtils::csv_sort_rows::on_input_header_row,
 
     on_input_data_row => \&App::CSVUtils::csv_sort_rows::on_input_data_row,
