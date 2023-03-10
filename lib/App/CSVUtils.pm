@@ -1897,6 +1897,9 @@ sub gen_csv_util {
                     $meta->{args}{$_} = {%{$argspecsopt_inplace{$_}}} for keys %argspecsopt_inplace;
                     $meta->{args_rels}{'dep_all&'} //= [];
                     push @{ $meta->{args_rels}{'dep_all&'} }, ['inplace_backup_ext', ['inplace']];
+                    $meta->{args_rels}{'choose_one&'} //= [];
+                    push @{ $meta->{args_rels}{'choose_one&'} }, ['inplace', 'output_filename'];
+                    push @{ $meta->{args_rels}{'choose_one&'} }, ['inplace', 'output_filenames'];
                 }
 
                 if ($writes_multiple_csv) {
@@ -1916,6 +1919,8 @@ sub gen_csv_util {
                 }
 
                 $meta->{args}{overwrite} = {%{$argspecopt_overwrite{overwrite}}};
+                $meta->{args_rels}{'dep_any&'} //= [];
+                push @{ $meta->{args_rels}{'dep_any&'} }, ['overwrite', ['output_filename', 'output_filenames']];
             } # if outputs csv
 
         } # CREATE_ARGS_PROP
