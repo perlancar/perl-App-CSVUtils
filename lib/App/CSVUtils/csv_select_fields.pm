@@ -15,7 +15,7 @@ use App::CSVUtils qw(
 
 gen_csv_util(
     name => 'csv_select_fields',
-    summary => 'Only output selected field(s)',
+    summary => 'Select (only output) field(s) using a combination of excludes/includes, including by regex',
     add_args => {
         %App::CSVUtils::argspecsopt_field_selection,
         %App::CSVUtils::argspecsopt_show_selected_fields,

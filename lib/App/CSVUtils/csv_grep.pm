@@ -17,7 +17,7 @@ use App::CSVUtils qw(
 
 gen_csv_util(
     name => 'csv_grep',
-    summary => 'Only output row(s) where Perl expression returns true',
+    summary => 'Select (only output) row(s) where Perl expression returns true',
     description => <<'_',
 
 This is like Perl's `grep` performed over rows of CSV. In `$_`, your Perl code

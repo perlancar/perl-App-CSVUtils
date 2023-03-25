@@ -16,7 +16,7 @@ use App::CSVUtils qw(
 
 gen_csv_util(
     name => 'csv_select_rows',
-    summary => 'Only output of specified row numbers',
+    summary => 'Select (only output) rows based on a specification of row numbers (e.g. 2-5,7)',
     description => <<'_',
 
 To select rows by Perl code, see <prog:csv-grep>.
