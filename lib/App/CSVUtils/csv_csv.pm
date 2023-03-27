@@ -36,6 +36,7 @@ Example:
 _
     add_args => {
     },
+    tags => ['category:converting','category:munging'],
 
     on_input_data_row => sub {
         my $r = shift;

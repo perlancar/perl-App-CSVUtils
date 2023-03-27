@@ -126,6 +126,8 @@ _
     links => [
         {url=>'prog:paras2csv'},
     ],
+    tags => ['category:converting'],
+
     examples => [
         {
             summary => 'Convert to paragraphs format, show fields alphabetically, do not fold, hide empty values',

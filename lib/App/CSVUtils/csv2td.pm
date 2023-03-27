@@ -22,6 +22,8 @@ to munge table data.
 _
     add_args => {
     },
+    tags => ['category:converting','outputs-data-structure'],
+
     examples => [
         {
             summary => 'Convert to table data then use the "td" utility to grab the first 5 rows',

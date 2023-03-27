@@ -36,6 +36,7 @@ _
             },
         },
     },
+    tags => ['category:munging', 'modifies-rows'],
 
     examples => [
         {

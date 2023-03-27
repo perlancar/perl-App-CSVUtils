@@ -35,6 +35,7 @@ _
             schema => 'str*',
         },
     },
+    tags => ['category:converting', 'format:vcf'],
 
     examples => [
         {

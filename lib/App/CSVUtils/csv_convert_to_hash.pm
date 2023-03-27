@@ -26,6 +26,8 @@ _
             pos => 1,
         },
     },
+    tags => ['category:converting', 'outputs-data-structure'],
+
     examples => [
         {
             summary => 'Create a table containing field name as keys and second row as values',

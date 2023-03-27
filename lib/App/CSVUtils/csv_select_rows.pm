@@ -31,6 +31,8 @@ _
             pos => 1,
         },
     },
+    tags => ['category:filtering'],
+
     examples => [
         {
             summary => 'Only show rows 1-3 (first to third data rows)',

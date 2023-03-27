@@ -36,6 +36,8 @@ _
             },
         ];
     },
+    tags => ['category:munging', 'random'],
+
     output_code => sub {
         App::CSVUtils::csv_sort_rows::csv_sort_rows(
             @_,

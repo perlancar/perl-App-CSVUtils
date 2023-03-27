@@ -127,6 +127,8 @@ _
 
     reads_multiple_csv => 1,
 
+    tags => ['category:combining', 'set'],
+
     on_begin => sub {
         my $r = shift;
 

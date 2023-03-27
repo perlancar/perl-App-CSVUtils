@@ -29,9 +29,14 @@ There will be options to add some additional checks in the future.
 _
     add_args => {
     },
+    links => [
+        {url=>'prog:csv-check-cell-values', summary=>'Check of the values of individual cells'},
+    ],
+    tags => ['category:checking'],
+
     examples => [
         {
-            summary => 'Check field names',
+            summary => 'Check that all field names are valid',
             argv => ['file.csv'],
             test => 0,
             'x.doc.show_result' => 0,

@@ -98,6 +98,8 @@ _
 
     writes_csv => 0,
 
+    tags => ['category:searching'],
+
     on_input_header_row => sub {
         my $r = shift;
 

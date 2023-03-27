@@ -47,6 +47,8 @@ _
 
     writes_csv => 0,
 
+    tags => ['category:checking'],
+
     add_args => {
         # KEEP SYNC WITH csv_sort_fields
         %App::CSVUtils::argspecs_sort_fields,

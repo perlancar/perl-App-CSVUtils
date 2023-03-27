@@ -1399,6 +1399,7 @@ sub gen_csv_util {
     my $add_args_rels = delete $gen_args{add_args_rels};
     my $reads_multiple_csv = delete($gen_args{reads_multiple_csv});
     my $reads_csv = delete($gen_args{reads_csv}) // 1;
+    my $tags = [ @{ delete($gen_args{tags}) // [] } ];
     $reads_csv = 1 if $reads_multiple_csv;
     my $writes_multiple_csv = delete($gen_args{writes_multiple_csv});
     my $writes_csv = delete($gen_args{writes_csv}) // 1;
@@ -1871,6 +1872,7 @@ sub gen_csv_util {
             args_rels => {},
             links => $links,
             examples => $examples,
+            tags => $tags,
         };
 
       CREATE_ARGS_PROP: {
@@ -1884,10 +1886,13 @@ sub gen_csv_util {
                 if ($reads_multiple_csv) {
                     $meta->{args}{input_filenames} = {%{$argspecopt_input_filenames{input_filenames}}};
                     _add_arg_pos($meta->{args}, 'input_filenames', 'slurpy');
+                    push @$tags, 'reads-multiple-csv';
                 } else {
                     $meta->{args}{input_filename} = {%{$argspecopt_input_filename{input_filename}}};
                     _add_arg_pos($meta->{args}, 'input_filename');
                 }
+
+                push @$tags, 'reads-csv';
             } # if reads_csv
 
             if ($writes_csv) {
@@ -1909,6 +1914,7 @@ sub gen_csv_util {
                         $meta->{args_rels}{'choose_one&'} //= [];
                         push @{ $meta->{args_rels}{'choose_one&'} }, [qw/output_filenames inplace/];
                     }
+                    push @$tags, 'writes-multiple-csv';
                 } else {
                     $meta->{args}{output_filename} = {%{$argspecopt_output_filename{output_filename}}};
                     _add_arg_pos($meta->{args}, 'output_filename');
@@ -1921,7 +1927,9 @@ sub gen_csv_util {
                 $meta->{args}{overwrite} = {%{$argspecopt_overwrite{overwrite}}};
                 $meta->{args_rels}{'dep_any&'} //= [];
                 push @{ $meta->{args_rels}{'dep_any&'} }, ['overwrite', ['output_filename', 'output_filenames']];
-            } # if outputs csv
+
+                push @$tags, 'writes-csv';
+            } # if writes csv
 
         } # CREATE_ARGS_PROP
 

@@ -33,6 +33,7 @@ _
         %App::CSVUtils::argspec_field_1,
         %App::CSVUtils::argspec_eval_2,
     },
+    tags => ['category:munging', 'modifies-field'],
 
     examples => [
         {

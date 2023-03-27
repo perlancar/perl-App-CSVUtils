@@ -25,6 +25,8 @@ This is a simple wrapper to <prog:csv-csv>. It's equivalent to:
 _
 
     remove_args => [qw/output_always_quote output_quote_emty/],
+    tags => ['category:munging', 'modifies-values'],
+
     modify_meta => sub {
         my $meta = shift;
         delete $meta->{args_rels};

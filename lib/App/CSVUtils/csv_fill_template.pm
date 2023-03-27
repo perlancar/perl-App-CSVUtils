@@ -65,6 +65,7 @@ _
             pos => 1,
         },
     },
+    tags => ['category:templating'],
 
     examples => [
     ],

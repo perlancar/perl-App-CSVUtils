@@ -28,6 +28,8 @@ _
             cmdline_aliases => {H=>{}},
         },
     },
+    tags => ['category:converting', 'outputs-data-structure'],
+
     examples => [
         {
             summary => 'Convert CSV to a text table',

@@ -23,6 +23,8 @@ This is basically like Unix command `shuf` performed over the CSV fields instead
 _
 
     remove_args => [qw/by_examples by_code by_sortsub sortsub_args ci reverse hash/],
+    tags => ['category:munging', 'modifies-rows', 'random'],
+
     modify_meta => sub {
         my $meta = shift;
         delete $meta->{args_rels};

@@ -45,6 +45,8 @@ gen_csv_util(
 
     writes_csv => 0,
 
+    tags => ['category:filtering'],
+
     on_input_header_row => sub {
         my $r = shift;
 

@@ -50,10 +50,13 @@ will result in:
     ,,,X
     ,,,Y
 
+Keywords: join, merge
+
 _
     add_args => {
         %App::CSVUtils::argspecopt_with_data_rows,
     },
+    tags => ['category:combining', 'join', 'merge'],
 
     reads_multiple_csv => 1,
 

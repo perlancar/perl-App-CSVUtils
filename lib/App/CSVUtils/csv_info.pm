@@ -33,6 +33,8 @@ _
 
     writes_csv => 0,
 
+    tags => ['category:information'],
+
     after_close_input_files => sub {
         my $r = shift;
 

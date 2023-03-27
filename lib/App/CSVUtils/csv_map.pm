@@ -41,6 +41,8 @@ _
             default => 1,
         },
     },
+    tags => ['category:iterating', 'accepts-code'],
+
     examples => [
         {
             summary => 'Create SQL insert statements (escaping is left as an exercise for users)',

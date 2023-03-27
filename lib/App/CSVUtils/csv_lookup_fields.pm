@@ -70,6 +70,8 @@ _
 
     reads_multiple_csv => 1,
 
+    tags => ['category:templating'],
+
     on_begin => sub {
         my $r = shift;
 

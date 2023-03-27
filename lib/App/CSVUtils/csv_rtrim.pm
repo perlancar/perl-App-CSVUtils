@@ -32,6 +32,8 @@ _
             default => 1,
         },
     },
+    tags => ['category:munging', 'modifies-values'],
+
     examples => [
         {
             summary => 'Right-trim values in a CSV',

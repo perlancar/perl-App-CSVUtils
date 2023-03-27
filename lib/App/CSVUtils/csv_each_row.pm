@@ -27,6 +27,7 @@ _
         %App::CSVUtils::argspecopt_hash,
         %App::CSVUtils::argspec_eval,
     },
+    tags => ['category:iterating', 'accepts-code'],
     examples => [
         {
             summary => 'Delete user data',

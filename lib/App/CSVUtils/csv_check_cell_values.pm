@@ -90,6 +90,16 @@ _
     links => [
         {url=>'prog:csv-check-field-values', summary=>'Check of the values of whole fields'},
     ],
+    tags => ['accepts-schema', 'accepts-regex', 'category:checking'],
+
+    examples => [
+        {
+            summary => 'Check whether the `rank` field has monotonically increasing values',
+            argv => ['formula.csv', '-f', 'rank', '--with-schema', 'array/num//monotonically_increasing'],
+            test => 0,
+            'x.doc.show_result' => 0,
+        },
+    ],
 
     writes_csv => 0,
 

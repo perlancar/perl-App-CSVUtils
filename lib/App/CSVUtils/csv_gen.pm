@@ -62,6 +62,8 @@ _
 
     reads_csv => 0,
 
+    tags => ['category:generating', 'accepts-code'],
+
     examples => [
         {
             summary => 'Generate 10 numbers from 1 to 10',

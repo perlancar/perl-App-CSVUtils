@@ -86,6 +86,8 @@ _
     links => [
         {url=>'prog:csv2paras'},
     ],
+    tags => ['category:converting'],
+
     examples => [
         {
             summary => 'Convert paragraphs format to CSV',

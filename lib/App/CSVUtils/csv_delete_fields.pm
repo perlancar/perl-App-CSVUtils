@@ -19,6 +19,8 @@ gen_csv_util(
     add_args => {
         %App::CSVUtils::argspecsopt_field_selection,
     },
+    tags => ['category:munging','deletes-fields'],
+
     examples => [
         {
             summary => 'Delete a single field from CSV',

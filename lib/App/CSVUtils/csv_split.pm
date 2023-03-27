@@ -41,6 +41,8 @@ _
         # --suffix-length (-a)
         # --number, -n (chunks)
     },
+    tags => ['category:splitting'],
+
     examples => [
         {
             summary => 'Split CSV files to xaa, xab, ... where each split file gets 1000 rows',

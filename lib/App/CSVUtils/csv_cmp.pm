@@ -78,6 +78,11 @@ _
             schema => 'bool*',
         },
     },
+    tags => [
+        'accepts-regex', # for selecting fields
+        'category:comparing',
+    ],
+
     examples => [
         {
             summary => 'Compare two identical files, will output nothing and exits 0',

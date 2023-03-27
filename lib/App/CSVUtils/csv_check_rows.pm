@@ -39,6 +39,8 @@ handled by <pm:Text::CSV_XS>.
 _
     add_args => {
     },
+    tags => ['category:checking'],
+
     examples => [
         {
             summary => 'Check CSV rows',

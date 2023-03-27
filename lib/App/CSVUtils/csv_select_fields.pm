@@ -20,6 +20,8 @@ gen_csv_util(
         %App::CSVUtils::argspecsopt_field_selection,
         %App::CSVUtils::argspecsopt_show_selected_fields,
     },
+    tags => ['category:filtering'],
+
     examples => [
         {
             summary => 'Select a single field from CSV',

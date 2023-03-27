@@ -47,6 +47,8 @@ _
     add_args_rels => {
         'req_one&' => [ ['field', 'key'] ],
     },
+    tags => ['category:summarizing', 'outputs-data-structure', 'accepts-code'],
+
     examples => [
         {
             summary => 'Show the age distribution of people',

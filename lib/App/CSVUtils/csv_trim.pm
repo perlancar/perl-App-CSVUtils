@@ -45,6 +45,8 @@ _
         {url=>'prog:csv-rtrim'},
     ],
 
+    tags => ['category:munging', 'modifies-values'],
+
     on_begin => sub {
         my $r = shift;
 

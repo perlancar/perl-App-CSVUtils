@@ -62,6 +62,8 @@ _
     add_args_rels => {
         choose_one => [qw/after before at/],
     },
+    tags => ['category:munging','adds-fields'],
+
     examples => [
         {
             summary => 'Add a few new blank fields at the end',

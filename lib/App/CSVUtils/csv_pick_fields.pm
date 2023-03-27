@@ -28,6 +28,8 @@ _
             cmdline_aliases => {n=>{}},
         },
     },
+    tags => ['category:extracting', 'random'],
+
     examples => [
         {
             summary => 'Pick 2 random fields row from CSV',

@@ -35,6 +35,8 @@ _
         %App::CSVUtils::argspecopt_hash,
         %App::CSVUtils::argspec_eval,
     },
+    tags => ['category:filtering', 'accepts-code'],
+
     examples => [
         {
             summary => 'Only show rows where the amount field '.

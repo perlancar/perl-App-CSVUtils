@@ -86,11 +86,13 @@ _
     add_args_rels => {
         req_one => ['with_code', 'with_schema'],
     },
-
     links => [
         {url=>'prog:csv-check-cell-values', summary=>'Check single-cell values'},
         {url=>'prog:csv-check-field-names', summary=>'Check the field names'},
     ],
+    tags => ['category:checking', 'accepts-schema', 'accepts-code',
+             #'accepts-regex',
+         ],
 
     writes_csv => 0,
 

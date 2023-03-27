@@ -46,6 +46,8 @@ _
         %App::CSVUtils::argspecopt_with_data_rows,
     },
 
+    tags => ['category:summarizing'],
+
     on_input_header_row => sub {
         my $r = shift;
 

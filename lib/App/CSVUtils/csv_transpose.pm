@@ -40,6 +40,8 @@ _
 
     add_args => {
     },
+    tags => ['category:munging'],
+
     examples => [
         {
             summary => 'Transpose a CSV',

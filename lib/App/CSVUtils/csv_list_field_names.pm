@@ -38,6 +38,8 @@ _
 
     writes_csv => 0,
 
+    tags => ['category:information'],
+
     on_input_header_row => sub {
         my $r = shift;
 

@@ -100,6 +100,8 @@ _
         choose_one => ['by_examples', 'by_code', 'by_sortsub'],
     },
 
+    tags => ['category:sorting'],
+
     on_input_header_row => \&on_input_header_row,
 
     on_input_data_row => \&on_input_data_row,

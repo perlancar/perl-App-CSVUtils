@@ -45,6 +45,8 @@ _
 
     writes_csv => 0,
 
+    tags => ['category:extracting-values'],
+
     on_input_data_row => sub {
         my $r = shift;
 
