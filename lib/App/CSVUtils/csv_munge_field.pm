@@ -26,7 +26,7 @@ will contain the value of the field, and the Perl code is expected to modify it.
 row number (2 means the first data row). `$main::csv` is the <pm:Text::CSV_XS>
 object. `$main::fields_idx` is also available for additional information.
 
-To munge multiple fields, use <prog:csv-munge-row>.
+To munge multiple fields, use <prog:csv-munge-rows>.
 
 _
     add_args => {

@@ -17,7 +17,7 @@ If you process data from/to GUI spreadsheet program, you can install L<clipget>
 and L<clipadd> from L<App::ClipboardUtils>. For example, after you copy a range
 of cells from LibreOffice, you can do:
 
- % clipget | csv-munge-row -He '$_->{foo} = some-calculation...' --input-tsv --output-tsv | clipadd
+ % clipget | csv-munge-rows -He '$_->{foo} = some-calculation...' --input-tsv --output-tsv | clipadd
 
 
 =head1 SEE ALSO
