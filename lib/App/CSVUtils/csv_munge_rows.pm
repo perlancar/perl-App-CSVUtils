@@ -17,7 +17,7 @@ use App::CSVUtils qw(
 
 gen_csv_util(
     name => 'csv_munge_rows',
-    summary => '',
+    summary => 'Modify CSV data rows using Perl code',
     description => <<'_',
 
 Perl code (-e) will be called for each row (excluding the header row) and `$_`

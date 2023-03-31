@@ -1,0 +1,108 @@
+#!perl
+
+#use 5.010001;
+use strict;
+use warnings;
+
+use Perinci::CmdLine::Any;
+use Perinci::Sub::Gen::AccessTable qw(gen_read_table_func);
+use Module::List::Tiny;
+
+# AUTHORITY
+# DATE
+# DIST
+# VERSION
+
+my $res = gen_read_table_func(
+    name => 'list_csvutils',
+    summary => 'List CSV utilities',
+    table_data => sub {
+        no strict 'refs'; ## no critic: TestingAndDebugging::ProhibitNoStrict
+
+        my $mods = Module::List::Tiny::list_modules(
+            'App::CSVUtils::', {list_modules=>1, recurse=>0});
+        my @rows;
+        for my $mod (sort keys %$mods) {
+            (my $util = $mod) =~ s/\AApp::CSVUtils:://; my $func = $util; $util =~ s/_/-/g;
+            my $row = {name=>$util};
+            (my $mod_pm = "$mod.pm") =~ s!::!/!g;
+            require $mod_pm;
+            my $meta = ${"$mod\::SPEC"}{$func};
+
+            $row->{summary} = $meta->{summary};
+
+            my %tags = map {$_ => 1} @{ $meta->{tags} };
+            for (keys %tags) {
+                if (/^category:(.+)/) {
+                    $row->{category} = $1;
+                    delete $tags{$_};
+                }
+            }
+            $row->{reads_csv} = delete($tags{'reads-csv'}) ? 1:0;
+            $row->{reads_multiple_csv} = delete($tags{'reads-multiple-csv'}) ? 1:0;
+            $row->{writes_csv} = delete($tags{'writes-csv'}) ? 1:0;
+            $row->{writes_multiple_csv} = delete($tags{'writes-multiple-csv'}) ? 1:0;
+            $row->{tags} = join(", ", sort keys %tags);
+
+            push @rows, $row;
+        }
+        {data => \@rows};
+    },
+    table_def => {
+        fields => {
+            name => {
+                schema => 'str*',
+                pos => 0,
+                sortable => 1,
+            },
+            summary => {
+                schema => 'str*',
+                pos => 1,
+                sortable => 1,
+            },
+            category => {
+                schema => 'str*',
+                pos => 2,
+                sortable => 1,
+            },
+            reads_csv => {
+                schema => 'bool*',
+                pos => 3,
+                sortable => 1,
+            },
+            reads_multiple_csv => {
+                schema => 'bool*',
+                pos => 4,
+                sortable => 1,
+            },
+            writes_csv => {
+                schema => 'bool*',
+                pos => 5,
+                sortable => 1,
+            },
+            writes_multiple_csv => {
+                schema => 'bool*',
+                pos => 6,
+                sortable => 1,
+            },
+            tags => {
+                schema => 'str*',
+                pos => 7,
+                sortable => 1,
+            },
+        },
+        pk => 'name',
+    },
+);
+die "Can't generate function: $res->[0] - $res->[1]" unless $res->[0] == 200;
+
+Perinci::CmdLine::Any->new(url => '/main/list_csvutils')->run;
+
+# ABSTRACT:
+# PODNAME:
+
+=head1 SEE ALSO
+
+L<show-sah-schema-module>
+
+L<list-sah-schemas-modules>
