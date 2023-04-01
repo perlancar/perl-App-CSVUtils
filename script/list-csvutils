@@ -15,7 +15,7 @@ use Module::List::Tiny;
 
 my $res = gen_read_table_func(
     name => 'list_csvutils',
-    summary => 'List CSV utilities',
+    summary => 'List CSV utilities in App::CSVUtils::*',
     table_data => sub {
         no strict 'refs'; ## no critic: TestingAndDebugging::ProhibitNoStrict
 
@@ -93,10 +93,26 @@ my $res = gen_read_table_func(
         },
         pk => 'name',
     },
+    extra_props => {
+        examples => [
+            {
+                summary => 'List CSV utilities that munge CSV data',
+                argv => ["-l", "--category-is", "munging"],
+            },
+            {
+                summary => 'List CSV utilities that reads multiple CSV files',
+                argv => ["-l", "--reads-multiple-csv"],
+            },
+        ],
+    },
 );
 die "Can't generate function: $res->[0] - $res->[1]" unless $res->[0] == 200;
 
-Perinci::CmdLine::Any->new(url => '/main/list_csvutils')->run;
+Perinci::CmdLine::Any->new(
+    url => '/main/list_csvutils',
+    read_config => 0,
+    read_env => 0,
+)->run;
 
 # ABSTRACT:
 # PODNAME:
