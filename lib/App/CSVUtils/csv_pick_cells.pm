@@ -29,6 +29,11 @@ _
             cmdline_aliases => {n=>{}},
         },
     },
+    links => [
+        {url=>'prog:csv-pick-rows'},
+        {url=>'prog:csv-pick-fields'},
+        {url=>'prog:csv-fill-cells'},
+    ],
     tags => ['category:extracting', 'random'],
 
     examples => [
