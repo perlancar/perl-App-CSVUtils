@@ -1155,6 +1155,11 @@ following keys will also be available (in `on_input_header_row` and
 
 - `input_parser`, a <pm:Text::CSV_XS> instance for input parsing.
 
+- `input_fields`, array of str. Input CSV's field names.
+
+- `input_fields_idx`, hash with field name as keys and field index (0-based
+  integer) as values.
+
 - `input_filenames`, array of str.
 
 - `input_filename`, str. The name of the current input file being read (`-` if
@@ -1194,6 +1199,14 @@ If you are outputting CSV (`writes_csv` gen argument set to true), the following
 keys will be available:
 
 - `output_emitter`, a <pm:Text::CSV_XS> instance for output.
+
+- `output_fields`, array of str. Should be set to list of output field names. If
+  unset, will be set to be the same as `input_fields`.
+
+- `output_fields_idx`, hash with field names as keys and field indexes (0-based
+  integer) as values. Normally you do not need to set this manually; you just
+  need to set `output_fields` and this hash will be computed automatically for
+  you just before the first output row is outputted.
 
 - `output_filenames`, array of str.
 
