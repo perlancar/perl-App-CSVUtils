@@ -24,6 +24,8 @@ This is a simple wrapper to <prog:csv-csv>. It's equivalent to:
 
 which is the default anyway.
 
+Keywords: dequote
+
 _
 
     remove_args => [qw/output_always_quote output_quote_emty/],
