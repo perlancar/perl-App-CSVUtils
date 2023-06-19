@@ -23,15 +23,21 @@ This utility takes values (from cells of a 1-column input CSV), creates an
 output CSV of specified size, and fills the output CSV in one of several
 possible ways (e.g. left-to-right first then top-to-bottom, or bottom-to-top
 then left-to-right, etc). Some additional options are available: a filter to let
-skip filling some cells,
+skip filling some cells.
+
+When there are more input values than can be fitted, the extra input values are
+not placed into the output CSV.
+
+When there are less input values to fill the specified number of rows, then only
+the required number of rows and/or columns will be used.
 
 Additional options planned:
 
-- what to do when there are less values to completely fill the output
-  CSV (fill with blanks or leave as-is).
+- what to do when there are less values to completely fill the output CSV
+  (whether to always expand or expand when necessary, which is the default).
 
 - what to do when there are more values (extend the table or ignore the extra
-  input values).
+  input values, which is the default).
 
 _
     add_args => {
@@ -123,20 +129,79 @@ _
         my $r = shift;
 
         my $i = -1;
-        my $x = 0;
-        my $y = 1;
+        my $layout = $r->{util_args}{layout} // 'left_to_right_then_top_to_bottom';
         my $output_rows = [];
+
+        my $x = $layout =~ /left_to_right/ ? 0 : $r->{util_args}{num_fields}-1;
+        my $y = $layout =~ /top_to_bottom/ ? 1 : $r->{util_args}{num_rows};
         while (1) {
+            goto INC_POS if $r->{filter} && !$r->{filter}->($r, $y, $x);
+
+          INC_I:
             $i++;
             last if $i >= @{ $r->{input_values} };
-            $output_rows->[$y] //= [map {undef} 1 .. $r->{util_args}{num_fields}];
-            if (!$r->{filter} || $r->{filter}->(0, $y, $x)) {
-                $output_rows->[$y][$x] = $r->{input_values}[$i];
+
+          FILL_CELL:
+            for (1 .. $y) {
+                $output_rows->[$_-1] //= [map {undef} 1 .. $r->{util_args}{num_fields}];
             }
-            $x++;
-            if ($x >= $r->{util_args}{num_fields}) {
-                $x = 0;
-                $y++;
+            $output_rows->[$y-1][$x] = $r->{input_values}[$i];
+
+          INC_POS:
+            if ($layout =~ /\A(top|bottom)_/) {
+                # vertically first then horizontally
+                if ($layout =~ /top_to_bottom/) {
+                    $y++;
+                    if ($y > $r->{util_args}{num_rows}) {
+                        $y = 1;
+                        if ($layout =~ /left_to_right/) {
+                            $x++;
+                            last if $x >= $r->{util_args}{num_fields};
+                        } else {
+                            $x--;
+                            last if $x < 0;
+                        }
+                    }
+                } else {
+                    $y--;
+                    if ($y < 1) {
+                        $y = $r->{util_args}{num_rows};
+                        if ($layout =~ /left_to_right/) {
+                            $x++;
+                            last if $x >= $r->{util_args}{num_fields};
+                        } else {
+                            $x--;
+                            last if $x < 0;
+                        }
+                    }
+                }
+            } else {
+                # horizontally first then vertically
+                if ($layout =~ /left_to_right/) {
+                    $x++;
+                    if ($x >= $r->{util_args}{num_fields}) {
+                        $x = 0;
+                        if ($layout =~ /top_to_bottom/) {
+                            $y++;
+                            last if $y > $r->{util_args}{num_rows};
+                        } else {
+                            $y--;
+                            last if $y < 1;
+                        }
+                    }
+                } else {
+                    $x--;
+                    if ($x < 0) {
+                        $x = $r->{util_args}{num_fields}-1;
+                        if ($layout =~ /top_to_bottom/) {
+                            $y++;
+                            last if $y > $r->{util_args}{num_rows};
+                        } else {
+                            $y--;
+                            last if $y < 1;
+                        }
+                    }
+                }
             }
         }
 
