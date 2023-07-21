@@ -1,3 +1,16 @@
+1.028   2023-07-21  Released-By: PERLANCAR; Urgency: low
+
+        - No functional changes.
+
+        - [ux] Indicate alias utilities with "(shorter name for ...)" in
+          Abstract.
+
+        - [doc] [ux] [cli csv-fill-cells] Add illustration to show how
+          different layouts fill cells differently.
+
+        - [doc] [cli csv-sorted-rows] Add description to --quiet.
+
+
 1.027   2023-06-19  Released-By: PERLANCAR; Urgency: medium
 
         - [bugfix][cli csv-fill-cells] Forgot to update schema in function
