@@ -21,9 +21,46 @@ gen_csv_util(
 
 This utility takes values (from cells of a 1-column input CSV), creates an
 output CSV of specified size, and fills the output CSV in one of several
-possible ways (e.g. left-to-right first then top-to-bottom, or bottom-to-top
-then left-to-right, etc). Some additional options are available: a filter to let
-skip filling some cells.
+possible ways ("layouts"): left-to-right first then top-to-bottom, or
+bottom-to-top then left-to-right, etc.
+
+Some illustration of the layout:
+
+    % cat 1-to-100.csv
+    num
+    1
+    2
+    3
+    ...
+
+    % csv-fill-cells 1-to-100.csv --num-rows 10 --num-fields 10 ; # default layout is 'left_to_right_then_top_to_bottom'
+    field0,field1,field2,field3,field4,field5,field6,field7,field8,field9
+    1,2,3,4,5,6,7,8,9,10
+    11,12,13,14,15,16,17,18,19,20
+    21,22,23,24,25,26,27,28,29,30
+    ...
+
+    % csv-fill-cells 1-to-100.csv --num-rows 10 --num-fields 10 --layout top_to_bottom_then_left_to_right
+    field0,field1,field2,field3,field4,field5,field6,field7,field8,field9
+    1,11,21,31,41,51,61,71,81,91
+    2,12,22,32,42,52,62,72,82,92
+    3,13,23,33,43,53,63,73,83,93
+    ...
+
+    % csv-fill-cells 1-to-100.csv --num-rows 10 --num-fields 10 --layout top_to_bottom_then_right_to_left
+    91,81,71,61,51,41,31,21,11,1
+    92,82,72,62,52,42,32,22,12,2
+    93,83,73,63,53,43,33,23,13,3
+    ...
+
+    % csv-fill-cells 1-to-100.csv --num-rows 10 --num-fields 10 --layout right_to_left_then_top_to_bottom
+    10,9,8,7,6,5,4,3,2,1
+    20,19,18,17,16,15,14,13,12,11
+    30,29,28,27,26,25,24,23,22,21
+    ...
+
+Some additional options are available, e.g.: a filter to let skip filling some
+cells.
 
 When there are more input values than can be fitted, the extra input values are
 not placed into the output CSV.
