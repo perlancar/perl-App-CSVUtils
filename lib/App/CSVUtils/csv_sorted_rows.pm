@@ -61,6 +61,19 @@ _
 
         quiet => {
             summary => 'If set to true, do not show messages',
+            description => <<'_',
+
+Normally a message will be printed to stdout saying whether the rows are sorted
+or not, i.e. one of:
+
+    Rows are sorted
+    Rows are NOT sorted
+
+If this option is specified, then no message will be printed. Instead, you can
+find out whether things are sorted via exit code (or status code in the
+enveloped result, if you request JSON or call this utility as a Perl function).
+
+_
             schema => 'bool*',
             cmdline_aliases => {q=>{}},
         },
