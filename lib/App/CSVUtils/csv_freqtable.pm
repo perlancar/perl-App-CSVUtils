@@ -43,6 +43,7 @@ _
             cmdline_aliases => {k=>{}},
         },
         %App::CSVUtils::argspecopt_hash,
+        %App::CSVUtils::argspecopt_with_data_rows,
     },
     add_args_rels => {
         'req_one&' => [ ['field', 'key'] ],
@@ -87,10 +88,29 @@ _
         $r->{freqtable} //= {};
         $r->{field_idx} = $field_idx;
         $r->{code} = undef;
+        $r->{has_added_field} = 0;
+        $r->{freq_field} = undef;
+        $r->{input_rows} = [];
     },
 
     on_input_data_row => sub {
         my $r = shift;
+
+        # add freq field
+        if ($r->{util_args}{with_data_rows} && !$r->{has_added_field}++) {
+            my $i = 1;
+            while (1) {
+                my $field = "freq" . ($i>1 ? $i : "");
+                unless (defined $r->{input_fields_idx}{$field}) {
+                    $r->{input_fields_idx}{$field} = @{ $r->{input_fields} };
+                    push @{ $r->{input_fields} }, $field;
+                    $r->{freq_field} = $field;
+                    push @{ $r->{input_row} }, undef;
+                    last;
+                }
+                $i++;
+            }
+        }
 
         my $field_val;
         if ($r->{util_args}{key}) {
@@ -107,18 +127,49 @@ _
         }
 
         $r->{freqtable}{$field_val}++;
+
+        if ($r->{util_args}{with_data_rows}) {
+            # we first put the field val, later we will fill the freq
+            if ($r->{wants_input_row_as_hashref}) {
+                $r->{input_row}{ $r->{freq_field} } = $field_val;
+            } else {
+                $r->{input_row}[-1] = $field_val;
+            }
+            push @{ $r->{input_rows} }, $r->{input_row};
+        }
     },
 
-    writes_csv => 0,
+    writes_csv => 1,
+
+    after_close_input_files => sub {
+        my $r = shift;
+
+        if ($r->{util_args}{with_data_rows}) {
+            for my $row (@{ $r->{input_rows} }) {
+                if ($r->{wants_input_row_as_hashref}) {
+                    my $field_val = $row->{ $r->{freq_field} };
+                    $row->{ $r->{freq_field} } = $r->{freqtable}{ $field_val };
+                } else {
+                    my $field_val = $row->[-1];
+                    $row->[-1] = $r->{freqtable}{ $field_val };
+                }
+                $r->{code_print_row}->($row);
+            }
+        }
+    },
 
     on_end => sub {
         my $r = shift;
 
-        my @freqtable;
-        for (sort { $r->{freqtable}{$b} <=> $r->{freqtable}{$a} } keys %{$r->{freqtable}}) {
-            push @freqtable, [$_, $r->{freqtable}{$_}];
+        if ($r->{util_args}{with_data_rows}) {
+            $r->{result} = [200];
+        } else {
+            my @freqtable;
+            for (sort { $r->{freqtable}{$b} <=> $r->{freqtable}{$a} } keys %{$r->{freqtable}}) {
+                push @freqtable, [$_, $r->{freqtable}{$_}];
+            }
+            $r->{result} = [200, "OK", \@freqtable, {'table.fields'=>['value','freq']}];
         }
-        $r->{result} = [200, "OK", \@freqtable, {'table.fields'=>['value','freq']}];
     },
 );
 

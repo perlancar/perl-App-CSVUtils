@@ -46,7 +46,7 @@ _
         %App::CSVUtils::argspecopt_with_data_rows,
     },
 
-    tags => ['category:summarizing'],
+    tags => ['category:summarizing', 'adds-field'],
 
     on_input_header_row => sub {
         my $r = shift;
