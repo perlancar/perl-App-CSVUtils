@@ -1,3 +1,8 @@
+1.030   2023-07-25  Released-By: PERLANCAR; Urgency: medium
+
+        - [cli csv-freqtable] Add option --with-data-rows.
+
+
 1.029   2023-07-21  Released-By: PERLANCAR; Urgency: low
 
         - No functional changes.
