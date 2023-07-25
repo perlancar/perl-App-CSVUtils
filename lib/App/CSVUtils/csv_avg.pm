@@ -45,7 +45,7 @@ _
     add_args => {
         %App::CSVUtils::argspecopt_with_data_rows,
     },
-    tags => ['add-row','category:summarizing'],
+    tags => ['adds-row','category:summarizing'],
 
     on_input_header_row => sub {
         my $r = shift;
