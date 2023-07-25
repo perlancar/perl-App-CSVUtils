@@ -1069,11 +1069,11 @@ The order of the hooks, in processing chronological order:
   Called before an input CSV file is about to be opened, including for stdin
   (`-`). You can use this hook e.g. to check/preprocess input file. Flow control
   is available by setting `$r->{wants_skip_files}` to skip reading all the input
-  file and go directly to the `after_read_input` hook.
+  files and go directly to the `after_read_input` hook.
 
 * before_open_input_file
 
-  Called before an input CSV file is about to be opened, including for stdin
+  Called before each input CSV file is about to be opened, including for stdin
   (`-`). For the first file, called after `before_open_input_file` hook. You can
   use this hook e.g. to check/preprocess input file. Flow control is available
   by setting `$r->{wants_skip_file}` to skip reading a single input file and go
