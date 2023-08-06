@@ -64,7 +64,7 @@ _
         my $r = shift;
 
         for my $field (@{ $r->{input_fields} }) {
-            if ($field =~ /name/i && !defined($r->{fields_for}{N})) {
+            if ($field =~ /name|nama/i && !defined($r->{fields_for}{N})) {
                 log_info "Will be using field '$field' for VCF field 'N' (name)";
                 $r->{fields_for}{N} = $field;
             }
@@ -72,7 +72,7 @@ _
                 log_info "Will be using field '$field' for VCF field 'EMAIL'";
                 $r->{fields_for}{EMAIL} = $field;
             }
-            if ($field =~ /cell|hp|phone|wa|whatsapp/i && !defined($r->{fields_for}{CELL})) {
+            if ($field =~ /cell|hp|phone|wa|whatsapp|te?le?[fp](on)?/i && !defined($r->{fields_for}{CELL})) {
                 log_info "Will be using field '$field' for VCF field 'CELL' (cellular phone)";
                 $r->{fields_for}{CELL} = $field;
             }
