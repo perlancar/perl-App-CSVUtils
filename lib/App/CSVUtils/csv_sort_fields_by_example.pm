@@ -9,6 +9,7 @@ use warnings;
 # DIST
 # VERSION
 
+use App::CSVUtils;
 use App::CSVUtils::csv_sort_fields;
 use Perinci::Sub::Util qw(gen_modified_sub);
 
@@ -18,7 +19,14 @@ my $res = gen_modified_sub(
     summary => 'Sort CSV fields by example',
     description => <<'MARKDOWN',
 
-This is a thin wrapper for
+This is a thin wrapper for <prog:csv-sort-fields>, which can already sort fields
+by example but you have to specify it as a series of `--by-example` options:
+
+    % csv-sort-fields in.csv --by-example c --by-example g --by-example d
+
+This utility allows you to say:
+
+    % csv-sort-fields-by-example in.csv c g d
 
 Example:
 
@@ -42,6 +50,8 @@ MARKDOWN
             req => 1,
             pos => 1,
             slurpy => 1,
+            cmdline_aliases => {f=>{}},
+            completion => \&App::CSVUtils::_complete_field,
         },
     },
     modify_args => {
