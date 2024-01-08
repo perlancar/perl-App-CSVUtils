@@ -69,8 +69,8 @@ second not in the first:
     4,5,6
     4,5,7
 
-You can specify `--compare-fields` to only consider some fields only, for
-example `--union --compare-fields a,b file1.csv file2.csv`:
+You can specify `--compare-fields` to consider some fields only, for example
+`--union --compare-fields a,b file1.csv file2.csv`:
 
     a,b,c
     1,2,3
