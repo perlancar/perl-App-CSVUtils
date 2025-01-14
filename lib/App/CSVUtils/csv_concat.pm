@@ -124,6 +124,12 @@ MARKDOWN
     after_close_input_files => sub {
         my $r = shift;
 
+        # as described in the on_input_header_row hook, we have saved the input
+        # fields as well as the filehandles. so even though we are called in the
+        # after_close_input_files hook, where the main routine supposedly has
+        # closed all input files, we actually have saved the filehandles and can
+        # resume reading from them.
+
         # collect all output fields
         $r->{output_fields} = [];
         $r->{output_fields_idx} = {};
