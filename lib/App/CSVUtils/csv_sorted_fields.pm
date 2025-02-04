@@ -18,7 +18,7 @@ use App::CSVUtils::csv_sort_fields;
 gen_csv_util(
     name => 'csv_sorted_fields',
     summary => 'Check that CSV fields are sorted',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This utility checks that fields in the CSV are sorted according to specified
 sorting rule(s). Example `input.csv`:
@@ -43,7 +43,7 @@ Example `input2.csv`:
 
 See <prog:csv-sort-fields> for details on sorting options.
 
-_
+MARKDOWN
 
     writes_csv => 0,
 

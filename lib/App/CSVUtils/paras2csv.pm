@@ -56,14 +56,14 @@ sub _parse_para {
 gen_csv_util(
     name => 'paras2csv',
     summary => 'Convert paragraphs to CSV',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This utility is the counterpart of the <prog:csv2paras> utility. See its
 documentation for more details.
 
 Keywords: paragraphs, cards, pages, headers
 
-_
+MARKDOWN
     add_args => {
         input_file => {
             schema => 'filename*',

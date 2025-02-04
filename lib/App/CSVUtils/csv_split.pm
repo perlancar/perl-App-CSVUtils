@@ -16,7 +16,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_split',
     summary => 'Split CSV file into several files',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 Will output split files xaa, xab, and so on. Each split file will contain a
 maximum of `lines` rows (options to limit split files' size based on number of
@@ -28,7 +28,7 @@ overwritten.
 
 Interface is loosely based on the `split` Unix utility.
 
-_
+MARKDOWN
     add_args => {
         lines => {
             schema => 'posint*',

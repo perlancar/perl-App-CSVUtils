@@ -163,7 +163,7 @@ sub after_close_input_files {
 gen_csv_util(
     name => 'csv_sort_rows',
     summary => 'Sort CSV rows',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This utility sorts the rows in the CSV. Example input CSV:
 
@@ -247,7 +247,7 @@ If none of the `--by-*` options are specified, the utility will bail unless
 there's a default that can be used, e.g. when CSV has a single field then that
 field will be used.
 
-_
+MARKDOWN
 
     add_args => {
         %App::CSVUtils::argspecopt_hash,

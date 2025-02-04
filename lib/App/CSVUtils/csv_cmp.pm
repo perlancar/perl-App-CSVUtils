@@ -17,7 +17,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_cmp',
     summary => 'Compare two CSV files value by value',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This utility is modelled after the Unix command `cmp`; it compares two CSV files
 value by value and ignore quoting (and can be instructed to ignore whitespaces,
@@ -45,7 +45,7 @@ Other notes:
 * Field selection will be performed on the first CSV file, then the indexes will
 be used for the second CSV file.
 
-_
+MARKDOWN
     add_args => {
         %App::CSVUtils::argspecsopt_field_selection,
         %App::CSVUtils::argspecsopt_show_selected_fields,

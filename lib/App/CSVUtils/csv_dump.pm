@@ -14,12 +14,12 @@ use App::CSVUtils qw(gen_csv_util);
 gen_csv_util(
     name => 'csv_dump',
     summary => 'Dump CSV as data structure (array of array/hash)',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This utility reads CSV file then dumps it as a text table, or as JSON if you
 specify the `--format=json` or `--json` option.
 
-_
+MARKDOWN
 
     add_args => {
         hash => {

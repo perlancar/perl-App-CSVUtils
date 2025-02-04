@@ -16,10 +16,10 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_pick_rows',
     summary => 'Return one or more random rows from CSV',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 
-_
+MARKDOWN
     add_args => {
         num_rows => {
             summary => 'Number of rows to pick',

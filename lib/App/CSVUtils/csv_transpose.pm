@@ -14,7 +14,7 @@ use App::CSVUtils qw(gen_csv_util);
 gen_csv_util(
     name => 'csv_transpose',
     summary => 'Transpose a CSV',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This utility transpose a CSV file: rows will become fields and vice versa.
 
@@ -36,7 +36,7 @@ Example:
     name,andi,budi,chandra,dudi
     age,17,22,19,22
 
-_
+MARKDOWN
 
     add_args => {
     },

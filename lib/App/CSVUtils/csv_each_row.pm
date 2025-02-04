@@ -18,11 +18,11 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_each_row',
     summary => 'Run Perl code for every data row',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This is like <prog:csv-map>, except result of code is not printed.
 
-_
+MARKDOWN
     add_args => {
         %App::CSVUtils::argspecopt_hash,
         %App::CSVUtils::argspec_eval,

@@ -16,13 +16,13 @@ my $res = gen_modified_sub(
     output_name => 'csv_quote',
     base_name => 'App::CSVUtils::csv_csv::csv_csv',
     summary => 'Make sure values of CSV are quoted',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This is a simple wrapper to <prog:csv-csv>. It's equivalent to:
 
     % csv-csv --output-always-quote --output-quote-empty ...
 
-_
+MARKDOWN
 
     remove_args => [qw/output_always_quote output_quote_emty/],
     tags => ['category:munging', 'modifies-values'],

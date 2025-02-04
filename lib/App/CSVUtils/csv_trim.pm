@@ -16,11 +16,11 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_trim',
     summary => 'Trim (remove leading & trailing whitespace) values and/or fields in CSV',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 Whitespace includes space, tab, and newline.
 
-_
+MARKDOWN
     add_args => {
         trim_fields => {
             schema => 'bool*',

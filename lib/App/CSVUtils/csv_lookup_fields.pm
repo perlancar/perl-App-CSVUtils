@@ -16,7 +16,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_lookup_fields',
     summary => 'Fill fields of a CSV file from another',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 Example input:
 
@@ -47,7 +47,7 @@ The result will be:
     299,Jerry,still thinking over,cindy@example.com,555-7892
     734,Elaine,renewing,felipe@example.com,555-9067
 
-_
+MARKDOWN
     add_args => {
         ignore_case => {
             schema => 'bool*',

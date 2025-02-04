@@ -16,7 +16,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_intrange',
     summary => 'Output a summary row which are range notation of numbers',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 You can use this to check whether integer values in a field form a contiguous
 range.
@@ -55,20 +55,20 @@ Example:
     corge,6
     0,"1..4,6"
 
-_
+MARKDOWN
     add_args => {
         %App::CSVUtils::argspecopt_with_data_rows,
         sort => {
             summary => 'Sort the values first',
             schema => 'true*',
-            description => <<'_',
+            description => <<'MARKDOWN',
 
 Sort is done numerically, in ascending order.
 
 If you want only certain fields sorted, you can use <prog:csv-sort-rows> first
 and pipe the result.
 
-_
+MARKDOWN
         },
     },
 

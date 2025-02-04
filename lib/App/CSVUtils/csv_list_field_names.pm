@@ -14,9 +14,9 @@ use App::CSVUtils qw(gen_csv_util);
 gen_csv_util(
     name => 'csv_list_field_names',
     summary => 'List field names of CSV file',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
-_
+MARKDOWN
 
     add_args => {
     },

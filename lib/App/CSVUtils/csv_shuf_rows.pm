@@ -16,12 +16,12 @@ my $res = gen_modified_sub(
     output_name => 'csv_shuf_rows',
     base_name => 'App::CSVUtils::csv_sort_rows::csv_sort_rows',
     summary => 'Shuffle CSV rows',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This is basically like Unix command `shuf` except it does not shuffle the header
 row.
 
-_
+MARKDOWN
 
     remove_args => [qw/by_code by_fields by_sortsub sortsub_args key ci reverse hash/],
     modify_meta => sub {

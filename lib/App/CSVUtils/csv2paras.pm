@@ -27,7 +27,7 @@ sub _escape_header {
 gen_csv_util(
     name => 'csv2paras',
     summary => 'Convert CSV to paragraphs',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This utility converts CSV format like this:
 
@@ -100,7 +100,7 @@ align the ":" header separator.
 
 Keywords: paragraphs, cards, pages, headers
 
-_
+MARKDOWN
     add_args => {
         width => {
             summary => 'The width at which to fold long lines, -1 means to never fold',
@@ -114,13 +114,13 @@ _
         align => {
             summary => 'Whether to align header separator across lines',
             schema => 'bool*',
-            description => <<'_',
+            description => <<'MARKDOWN',
 
 Note that if you want to convert the paragraphs back to CSV later using
 <prog:paras2csv>, the padding spaces added by this option will become part of
 header value, unless you use its `--trim-header` or `--rtrim-header` option.
 
-_
+MARKDOWN
         },
     },
     links => [

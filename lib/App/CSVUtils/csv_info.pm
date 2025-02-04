@@ -14,10 +14,10 @@ use App::CSVUtils qw(gen_csv_util);
 gen_csv_util(
     name => 'csv_info',
     summary => 'Show information about CSV file (number of rows, fields, etc)',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 
-_
+MARKDOWN
 
     add_args => {
     },

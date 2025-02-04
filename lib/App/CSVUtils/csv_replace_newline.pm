@@ -16,7 +16,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_replace_newline',
     summary => 'Replace newlines in CSV values',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 Some CSV parsers or applications cannot handle multiline CSV values. This
 utility can be used to convert the newline to something else. There are a few
@@ -24,7 +24,7 @@ choices: replace newline with space (`--with-space`, the default), remove
 newline (`--with-nothing`), replace with encoded representation
 (`--with-backslash-n`), or with characters of your choice (`--with 'blah'`).
 
-_
+MARKDOWN
     add_args => {
         with => {
             schema => 'str*',

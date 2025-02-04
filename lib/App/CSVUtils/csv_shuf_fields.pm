@@ -16,11 +16,11 @@ my $res = gen_modified_sub(
     output_name => 'csv_shuf_fields',
     base_name => 'App::CSVUtils::csv_sort_fields::csv_sort_fields',
     summary => 'Shuffle CSV fields',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This is basically like Unix command `shuf` performed over the CSV fields instead of lines of text.
 
-_
+MARKDOWN
 
     remove_args => [qw/by_examples by_code by_sortsub sortsub_args ci reverse hash/],
     tags => ['category:munging', 'modifies-rows', 'random'],

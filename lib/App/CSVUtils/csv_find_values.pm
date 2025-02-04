@@ -16,7 +16,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_find_values',
     summary => 'Find specified values in a CSV field',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 Example input:
 
@@ -61,7 +61,7 @@ is found in, equals `$rownum` - 1):
 There is an option to do fuzzy matching, where similar values will be suggested
 when exact match is not found.
 
-_
+MARKDOWN
     add_args => {
         ignore_case => {
             schema => 'bool*',
@@ -86,11 +86,11 @@ _
         print_when => {
             schema => ['str*', in=>[qw/found not_found always/]],
             default => 'found',
-            description => <<'_',
+            description => <<'MARKDOWN',
 
 Overriden by the `--eval` option.
 
-_
+MARKDOWN
             tags => ['category:output'],
         },
         %App::CSVUtils::argspecopt_eval,

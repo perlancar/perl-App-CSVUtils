@@ -18,7 +18,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_add_fields',
     summary => 'Add one or more fields to CSV file',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 The new fields by default will be added at the end, unless you specify one of
 `--after` (to put after a certain field), `--before` (to put before a certain
@@ -38,7 +38,7 @@ also available for additional information.
 If `-e` is not supplied, the new fields will be getting the default value of
 empty string (`''`).
 
-_
+MARKDOWN
     add_args => {
         %App::CSVUtils::argspec_fields_1plus_nocomp,
         %App::CSVUtils::argspecopt_eval,

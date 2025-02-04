@@ -17,11 +17,11 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_select_rows',
     summary => 'Select (only output) rows based on a specification of row numbers (e.g. 2-5,7)',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 To select rows by Perl code, see <prog:csv-grep>.
 
-_
+MARKDOWN
     add_args => {
         rownum_spec => {
             schema => 'str*',

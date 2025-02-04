@@ -14,14 +14,14 @@ use App::CSVUtils qw(gen_csv_util);
 gen_csv_util(
     name => 'csv_get_cells',
     summary => 'Get one or more cells from CSV',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This utility lets you specify "coordinates" of cell locations to extract. Each
 coordinate is in the form of `<field>,<row>` where `<field>` is the field name
 or position (1-based, so 1 is the first field) and `<row>` is the row position
 (1-based, so 1 is the header row and 2 is the first data row).
 
-_
+MARKDOWN
 
     add_args => {
         coordinates => {

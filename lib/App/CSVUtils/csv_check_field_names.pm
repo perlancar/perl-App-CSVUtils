@@ -16,7 +16,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_check_field_names',
     summary => 'Check field names',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This utility performs the following checks:
 
@@ -26,7 +26,7 @@ This utility performs the following checks:
 
 There will be options to add some additional checks in the future.
 
-_
+MARKDOWN
     add_args => {
     },
     links => [

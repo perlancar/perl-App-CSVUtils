@@ -16,7 +16,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_setop',
     summary => 'Set operation (union/unique concatenation of rows, intersection/common rows, difference of rows) against several CSV files',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This utility lets you perform one of several set options against several CSV
 files:
@@ -96,7 +96,7 @@ Then `--union --compare-fields a:Ei,b:Bi file1.csv file3.csv` will result in:
 
 Finally you can print out only certain fields using `--result-fields`.
 
-_
+MARKDOWN
     add_args => {
         op => {
             summary => 'Set operation to perform',

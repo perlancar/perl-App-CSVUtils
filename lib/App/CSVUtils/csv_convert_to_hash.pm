@@ -14,9 +14,9 @@ use App::CSVUtils qw(gen_csv_util);
 gen_csv_util(
     name => 'csv_convert_to_hash',
     summary => 'Return a hash of field names as keys and first data row as values',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
-_
+MARKDOWN
 
     add_args => {
         rownum => {

@@ -15,12 +15,12 @@ use App::CSVUtils qw(gen_csv_util);
 gen_csv_util(
     name => 'csv2vcf',
     summary => 'Create a VCF from selected fields of the CSV',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 You can set which CSV fields to use for name, cell phone, and email. If unset,
 will guess from the field name. If that also fails, will warn/bail out.
 
-_
+MARKDOWN
     add_args => {
         name_vcf_field => {
             summary => 'Select field to use as VCF N (name) field',

@@ -18,7 +18,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_map',
     summary => 'Return result of Perl code for every row',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This is like Perl's `map` performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
@@ -30,7 +30,7 @@ information.
 Your code is then free to return a string based on some operation against these
 data. This utility will then print out the resulting string.
 
-_
+MARKDOWN
     add_args => {
         %App::CSVUtils::argspecopt_hash,
         %App::CSVUtils::argspec_eval,

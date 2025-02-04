@@ -18,7 +18,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_munge_field',
     summary => 'Munge a field in every row of CSV file with Perl code',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 Perl code (-e) will be called for each row (excluding the header row) and `$_`
 will contain the value of the field, and the Perl code is expected to modify it.
@@ -28,7 +28,7 @@ object. `$main::fields_idx` is also available for additional information.
 
 To munge multiple fields, use <prog:csv-munge-rows>.
 
-_
+MARKDOWN
     add_args => {
         %App::CSVUtils::argspec_field_1,
         %App::CSVUtils::argspec_eval_2,

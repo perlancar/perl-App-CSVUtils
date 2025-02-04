@@ -14,12 +14,12 @@ use App::CSVUtils qw(gen_csv_util);
 gen_csv_util(
     name => 'csv2td',
     summary => 'Return an enveloped aoaos table data from CSV data',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 Read more about "table data" in <pm:App::td>, which comes with a CLI <prog:td>
 to munge table data.
 
-_
+MARKDOWN
     add_args => {
     },
     tags => ['category:converting','outputs-data-structure'],

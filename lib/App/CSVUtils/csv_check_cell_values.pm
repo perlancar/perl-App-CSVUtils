@@ -18,7 +18,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_check_cell_values',
     summary => 'Check the value of single cells of CSV against code/schema/regex',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 Example `input.csv`:
 
@@ -35,19 +35,19 @@ Check that all %weight is between 0 and 100:
 
     % csv-check-cell-values input.csv -f %weight --with-code '$_>0 && $_<=100'
 
-_
+MARKDOWN
 
     add_args => {
         %App::CSVUtils::argspecsopt_field_selection,
         with_code => {
             summary => 'Check with Perl code',
             schema => $App::CSVUtils::sch_req_str_or_code,
-            description => <<'_',
+            description => <<'MARKDOWN',
 
 Code will be given the value of the cell and should return a true value if value
 is valid.
 
-_
+MARKDOWN
         },
         with_schema => {
             summary => 'Check with a Sah schema',
@@ -75,12 +75,12 @@ _
         print_validated => {
             summary => 'Print the validated values of each cell',
             schema => 'bool*',
-            description => <<'_',
+            description => <<'MARKDOWN',
 
 When validating with schema, will print each validated (possible coerced,
 filtered) value of each cell.
 
-_
+MARKDOWN
         },
     },
     add_args_rels => {

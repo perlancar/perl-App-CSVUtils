@@ -18,7 +18,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_check_field_values',
     summary => 'Check the values of whole fields against code/schema',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 Example `input.csv`:
 
@@ -42,19 +42,19 @@ Check that ingredients are sorted in descending %weight:
     % csv-check-field-values input2.csv %weight --with-schema array::num::rev_sorted
     Field '%weight' validates with schema 'array::num::rev_sorted'
 
-_
+MARKDOWN
 
     add_args => {
         %App::CSVUtils::argspec_field_1,
         with_code => {
             summary => 'Check with Perl code',
             schema => $App::CSVUtils::sch_req_str_or_code,
-            description => <<'_',
+            description => <<'MARKDOWN',
 
 Code will be given the value of the rows of the field as an array of scalars and
 should return a true value if value is valid.
 
-_
+MARKDOWN
         },
         with_schema => {
             summary => 'Check with a Sah schema module',
@@ -62,12 +62,12 @@ _
                 ['str*', min_len=>1], # string schema
                 ['array*', max_len=>2], # an array schema
             ]],
-            description => <<'_',
+            description => <<'MARKDOWN',
 
 Should be the name of a Sah schema module without the `Sah::Schema::` prefix,
 typically in the `Sah::Schema::array::` subnamespace.
 
-_
+MARKDOWN
             completion => sub {
                 require Complete::Module;
                 my %args = @_;

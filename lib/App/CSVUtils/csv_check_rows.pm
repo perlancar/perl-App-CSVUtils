@@ -16,7 +16,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_check_rows',
     summary => 'Check CSV rows',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This utility performs the following checks:
 
@@ -36,7 +36,7 @@ There will be options to add some additional checks in the future.
 Note that parsing errors, e.g. missing closing quotes on values, are currently
 handled by <pm:Text::CSV_XS>.
 
-_
+MARKDOWN
     add_args => {
     },
     tags => ['category:checking'],

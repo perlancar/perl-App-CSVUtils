@@ -16,7 +16,7 @@ my $res = gen_modified_sub(
     output_name => 'csv_unquote',
     base_name => 'App::CSVUtils::csv_csv::csv_csv',
     summary => 'Make sure values of CSV are unquoted unless when necessary',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This is a simple wrapper to <prog:csv-csv>. It's equivalent to:
 
@@ -26,7 +26,7 @@ which is the default anyway.
 
 Keywords: dequote
 
-_
+MARKDOWN
 
     remove_args => [qw/output_always_quote output_quote_emty/],
     tags => ['category:munging', 'modifies-values'],

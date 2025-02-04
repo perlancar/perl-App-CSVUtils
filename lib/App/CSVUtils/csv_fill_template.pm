@@ -14,7 +14,7 @@ use App::CSVUtils qw(gen_csv_util);
 gen_csv_util(
     name => 'csv_fill_template',
     summary => 'Substitute template values in a text file with fields from CSV rows',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 Templates are text that contain `[[NAME]]` field placeholders. The field
 placeholders will be replaced by values from the CSV file. This is a simple
@@ -56,7 +56,7 @@ Example:
     After we slept for a little while, I went home with a(n) desk on my
     face. That was an unforgettable day indeed.
 
-_
+MARKDOWN
 
     add_args => {
         template_filename => {

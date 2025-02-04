@@ -18,7 +18,7 @@ use App::CSVUtils::csv_sort_rows;
 gen_csv_util(
     name => 'csv_sorted_rows',
     summary => 'Check that CSV rows are sorted',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This utility checks that rows in the CSV are sorted according to specified
 sorting rule(s). Example `input.csv`:
@@ -50,7 +50,7 @@ Example `input2.csv`:
 
 See <prog:csv-sort-rows> for details on sorting options.
 
-_
+MARKDOWN
 
     writes_csv => 0,
 
@@ -61,7 +61,7 @@ _
 
         quiet => {
             summary => 'If set to true, do not show messages',
-            description => <<'_',
+            description => <<'MARKDOWN',
 
 Normally a message will be printed to stdout saying whether the rows are sorted
 or not, i.e. one of:
@@ -73,7 +73,7 @@ If this option is specified, then no message will be printed. Instead, you can
 find out whether things are sorted via exit code (or status code in the
 enveloped result, if you request JSON or call this utility as a Perl function).
 
-_
+MARKDOWN
             schema => 'bool*',
             cmdline_aliases => {q=>{}},
         },

@@ -16,7 +16,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_sum',
     summary => 'Output a summary row which are arithmetic sum of data rows',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 Non-numbers will be assumed to be 0.
 
@@ -41,7 +41,7 @@ Example:
     dudi,120
     0,12.25
 
-_
+MARKDOWN
     add_args => {
         %App::CSVUtils::argspecopt_with_data_rows,
     },

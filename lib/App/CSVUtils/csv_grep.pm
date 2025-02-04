@@ -18,7 +18,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_grep',
     summary => 'Select (only output) row(s) where Perl expression returns true',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This is like Perl's `grep` performed over rows of CSV. In `$_`, your Perl code
 will find the CSV row as an arrayref (or, if you specify `-H`, as a hashref).
@@ -30,7 +30,7 @@ information.
 Your code is then free to return true or false based on some criteria. Only rows
 where Perl expression returns true will be included in the result.
 
-_
+MARKDOWN
     add_args => {
         %App::CSVUtils::argspecopt_hash,
         %App::CSVUtils::argspec_eval,

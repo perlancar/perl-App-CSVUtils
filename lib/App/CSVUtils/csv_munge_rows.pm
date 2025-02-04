@@ -18,7 +18,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_munge_rows',
     summary => 'Modify CSV data rows using Perl code',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 Perl code (-e) will be called for each row (excluding the header row) and `$_`
 will contain the row (arrayref, or hashref if `-H` is specified). The Perl code
@@ -38,7 +38,7 @@ string if you delete the field in the eval code). To delete fields, use
 
 Note that you can also munge a single field using <prog:csv-munge-field>.
 
-_
+MARKDOWN
     add_args => {
         %App::CSVUtils::argspec_eval_1,
         %App::CSVUtils::argspecopt_hash,

@@ -16,11 +16,11 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_pick_cells',
     summary => 'Get one or more random cells from CSV',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 The values will be returned as a 1-column CSV.
 
-_
+MARKDOWN
     add_args => {
         num_cells => {
             summary => 'Number of cells to pick',

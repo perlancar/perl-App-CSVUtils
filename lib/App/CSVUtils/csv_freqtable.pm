@@ -18,9 +18,9 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_freqtable',
     summary => 'Output a frequency table of values of a specified field in CSV',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
-_
+MARKDOWN
 
     add_args => {
         %App::CSVUtils::argspecopt_field_1,
@@ -31,14 +31,14 @@ _
         },
         key => {
             summary => 'Generate computed field with this Perl code',
-            description => <<'_',
+            description => <<'MARKDOWN',
 
 If specified, then will compute field using Perl code.
 
 The code will receive the row (arrayref, or if -H is specified, hashref) as the
 argument. It should return the computed field (str).
 
-_
+MARKDOWN
             schema => $App::CSVUtils::sch_req_str_or_code,
             cmdline_aliases => {k=>{}},
         },

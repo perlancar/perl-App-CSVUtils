@@ -73,7 +73,7 @@ sub on_input_data_row {
 gen_csv_util(
     name => 'csv_sort_fields',
     summary => 'Sort CSV fields',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This utility sorts the order of fields in the CSV. Example input CSV:
 
@@ -91,7 +91,7 @@ You can also reverse the sort order (`-r`), sort case-insensitively (`-i`), or
 provides the ordering example, e.g. `--by-examples-json '["a","c","b"]'`, or use
 `--by-code` or `--by-sortsub`.
 
-_
+MARKDOWN
 
     add_args => {
         %App::CSVUtils::argspecs_sort_fields,

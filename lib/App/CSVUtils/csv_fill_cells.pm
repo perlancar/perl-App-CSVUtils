@@ -17,7 +17,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_fill_cells',
     summary => 'Create a CSV and fill its cells from supplied values (a 1-column CSV)',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This utility takes values (from cells of a 1-column input CSV), creates an
 output CSV of specified size, and fills the output CSV in one of several
@@ -81,7 +81,7 @@ Additional options planned:
 - what to do when there are more values (extend the table or ignore the extra
   input values, which is the default).
 
-_
+MARKDOWN
     add_args => {
         # TODO
         #fields => $App::CSVUtils::argspecopt_fields{fields}, # category:output
@@ -105,7 +105,7 @@ _
         filter => {
             summary => 'Code to filter cells to fill',
             schema => 'str*',
-            description => <<'_',
+            description => <<'MARKDOWN',
 
 Code will be compiled in the `main` package.
 
@@ -115,7 +115,7 @@ stash, `$output_row_num` is a 1-based integer (first data row means 1), and
 is expected to return a boolean value, where true meaning the cell should be
 filied.
 
-_
+MARKDOWN
             tags => ['category:filtering'],
         },
         num_rows => {

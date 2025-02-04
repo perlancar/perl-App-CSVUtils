@@ -16,10 +16,10 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_pick_fields',
     summary => 'Select one or more random fields from CSV',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 
-_
+MARKDOWN
     add_args => {
         num_fields => {
             summary => 'Number of fields to pick',

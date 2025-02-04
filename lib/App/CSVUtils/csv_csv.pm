@@ -16,7 +16,7 @@ use App::CSVUtils qw(
 gen_csv_util(
     name => 'csv_csv',
     summary => 'Convert CSV to CSV',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 Why convert CSV to CSV? When you want to change separator/quote/escape
 character, for one. Or you want to remove header or add one.
@@ -33,7 +33,7 @@ Example:
     andi;12
     budi;13
 
-_
+MARKDOWN
     add_args => {
     },
     tags => ['category:converting','category:munging'],
