@@ -409,6 +409,7 @@ before the CSV header row.
 See also the alternative option: `--input-skip-until-pattern`.
 
 MARKDOWN
+        tags => ['category:input'],
     },
     input_skip_until_pattern => {
         summary => 'Skip rows until the first header row matches a regex pattern',
@@ -425,6 +426,7 @@ option, rows will be skipped until the first field matches the specified regex
 pattern.
 
 MARKDOWN
+        tags => ['category:input'],
     },
     input_tsv => {
         summary => "Inform that input file is in TSV (tab-separated) format instead of CSV",
