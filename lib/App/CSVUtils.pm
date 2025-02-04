@@ -384,7 +384,7 @@ our %argspecs_csv_input = (
         'summary.alt.bool.not' => 'Specify that input CSV does not have a header row',
         schema => 'bool*',
         default => 1,
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 By default, the first row of the input CSV will be assumed to contain field
 names (and the second row contains the first data row). When you declare that
@@ -392,7 +392,7 @@ input CSV does not have header row (`--no-input-header`), the first row of the
 CSV is assumed to contain the first data row. Fields will be named `field1`,
 `field2`, and so on.
 
-_
+MARKDOWN
         cmdline_aliases => {
         },
         tags => ['category:input'],
@@ -431,43 +431,43 @@ MARKDOWN
     input_tsv => {
         summary => "Inform that input file is in TSV (tab-separated) format instead of CSV",
         schema => 'true*',
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 Overriden by `--input-sep-char`, `--input-quote-char`, `--input-escape-char`
 options. If one of those options is specified, then `--input-tsv` will be
 ignored.
 
-_
+MARKDOWN
         tags => ['category:input'],
     },
     input_sep_char => {
         summary => 'Specify field separator character in input CSV, will be passed to Text::CSV_XS',
         schema => ['str*', len=>1],
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 Defaults to `,` (comma). Overrides `--input-tsv` option.
 
-_
+MARKDOWN
         tags => ['category:input'],
     },
     input_quote_char => {
         summary => 'Specify field quote character in input CSV, will be passed to Text::CSV_XS',
         schema => ['str*', len=>1],
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 Defaults to `"` (double quote). Overrides `--input-tsv` option.
 
-_
+MARKDOWN
         tags => ['category:input'],
     },
     input_escape_char => {
         summary => 'Specify character to escape value in field in input CSV, will be passed to Text::CSV_XS',
         schema => ['str*', len=>1],
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 Defaults to `\\` (backslash). Overrides `--input-tsv` option.
 
-_
+MARKDOWN
         tags => ['category:input'],
     },
 );
@@ -476,7 +476,7 @@ our %argspecs_csv_output = (
     output_header => {
         summary => 'Whether output CSV should have a header row',
         schema => 'bool*',
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 By default, a header row will be output *if* input CSV has header row. Under
 `--output-header`, a header row will be output even if input CSV does not have
@@ -485,13 +485,13 @@ header row (value will be something like "col0,col1,..."). Under
 header row. So this option can be used to unconditionally add or remove header
 row.
 
-_
+MARKDOWN
         tags => ['category:output'],
     },
     output_tsv => {
         summary => "Inform that output file is TSV (tab-separated) format instead of CSV",
         schema => 'bool*',
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 This is like `--input-tsv` option but for output instead of input.
 
@@ -499,50 +499,50 @@ Overriden by `--output-sep-char`, `--output-quote-char`, `--output-escape-char`
 options. If one of those options is specified, then `--output-tsv` will be
 ignored.
 
-_
+MARKDOWN
         tags => ['category:output'],
     },
     output_sep_char => {
         summary => 'Specify field separator character in output CSV, will be passed to Text::CSV_XS',
         schema => ['str*', len=>1],
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 This is like `--input-sep-char` option but for output instead of input.
 
 Defaults to `,` (comma). Overrides `--output-tsv` option.
 
-_
+MARKDOWN
         tags => ['category:output'],
     },
     output_quote_char => {
         summary => 'Specify field quote character in output CSV, will be passed to Text::CSV_XS',
         schema => ['str*', len=>1],
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 This is like `--input-quote-char` option but for output instead of input.
 
 Defaults to `"` (double quote). Overrides `--output-tsv` option.
 
-_
+MARKDOWN
         tags => ['category:output'],
     },
     output_escape_char => {
         summary => 'Specify character to escape value in field in output CSV, will be passed to Text::CSV_XS',
         schema => ['str*', len=>1],
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 This is like `--input-escape-char` option but for output instead of input.
 
 Defaults to `\\` (backslash). Overrides `--output-tsv` option.
 
-_
+MARKDOWN
         tags => ['category:output'],
     },
     output_always_quote => {
         summary => 'Whether to always quote values',
         schema => 'bool*',
         default => 0,
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 When set to false (the default), values are quoted only when necessary:
 
@@ -552,14 +552,14 @@ When set to true, then all values will be quoted:
 
     "field1","field2","field three contains comma (,)","field4"
 
-_
+MARKDOWN
         tags => ['category:output'],
     },
     output_quote_empty => {
         summary => 'Whether to quote empty values',
         schema => 'bool*',
         default => 0,
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 When set to false (the default), empty values are not quoted:
 
@@ -569,7 +569,7 @@ When set to true, then empty values will be quoted:
 
     field1,field2,"",field4
 
-_
+MARKDOWN
         tags => ['category:output'],
     },
 );
@@ -577,13 +577,13 @@ _
 our %argspecopt_input_filename = (
     input_filename => {
         summary => 'Input CSV file',
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 Use `-` to read from stdin.
 
 Encoding of input file is assumed to be UTF-8.
 
-_
+MARKDOWN
         schema => 'filename*',
         default => '-',
         'x.completion' => $xcomp_csvfiles,
@@ -596,13 +596,13 @@ our %argspecopt_input_filenames = (
         'x.name.is_plural' => 1,
         'x.name.singular' => 'input_filename',
         summary => 'Input CSV files',
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 Use `-` to read from stdin.
 
 Encoding of input file is assumed to be UTF-8.
 
-_
+MARKDOWN
         schema => ['array*', of=>'filename*'],
         default => ['-'],
         'x.completion' => $xcomp_csvfiles,
@@ -623,7 +623,7 @@ our %argspecsopt_inplace = (
     inplace => {
         summary => 'Output to the same file as input',
         schema => 'true*',
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 Normally, you output to a different file than input. If you try to output to the
 same file (`-o INPUT.csv -O`) you will clobber the input file; thus the utility
@@ -640,20 +640,20 @@ Some caveats:
 - value specified in `-b` is currently not checked for acceptable characters;
 - things can also fail if permissions are restrictive;
 
-_
+MARKDOWN
         tags => ['category:output'],
     },
     inplace_backup_ext => {
         summary => 'Extension to add for backup of input file',
         schema => 'str*',
         default => '',
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 In inplace mode (`--inplace`), if this option is set to a non-empty string, will
 rename the input file using this extension as a backup. The old existing backup
 will be overwritten, if any.
 
-_
+MARKDOWN
         cmdline_aliases => {b=>{}},
         tags => ['category:output'],
     },
@@ -662,13 +662,13 @@ _
 our %argspecopt_output_filename = (
     output_filename => {
         summary => 'Output filename',
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 Use `-` to output to stdout (the default if you don't specify this option).
 
 Encoding of output file is assumed to be UTF-8.
 
-_
+MARKDOWN
         schema => 'filename*',
         cmdline_aliases=>{o=>{}},
         tags => ['category:output'],
@@ -678,13 +678,13 @@ _
 our %argspecopt_output_filenames = (
     output_filenames => {
         summary => 'Output filenames',
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 Use `-` to output to stdout (the default if you don't specify this option).
 
 Encoding of output file is assumed to be UTF-8.
 
-_
+MARKDOWN
         schema => ['array*', of=>'filename*'],
         cmdline_aliases=>{o=>{}},
         tags => ['category:output'],
@@ -886,14 +886,14 @@ our %argspecopt_eval_2 = (
 our %argspecsopt_sortsub = (
     by_sortsub => {
         schema => 'str*',
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 When sorting rows, usually combined with `--key` because most Sort::Sub routine
 expects a string to be compared against.
 
 When sorting fields, the Sort::Sub routine will get the field name as argument.
 
-_
+MARKDOWN
         summary => 'Sort using a Sort::Sub routine',
         'x.completion' => ['sortsub_spec'],
     },
@@ -906,7 +906,7 @@ _
 our %argspecopt_key = (
     key => {
         summary => 'Generate sort keys with this Perl code',
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 If specified, then will compute sort keys using Perl code and sort using the
 keys. Relevant when sorting using `--by-code` or `--by-sortsub`. If specified,
@@ -916,7 +916,7 @@ receive these sort keys to sort against.
 The code will receive the row (arrayref, or if -H is specified, hashref) as the
 argument.
 
-_
+MARKDOWN
         schema => $sch_req_str_or_code,
         cmdline_aliases => {k=>{}},
     },
@@ -936,27 +936,27 @@ our %argspecs_sort_rows = (
         'summary.alt.plurality.singular' => 'Add a sort field specification',
         'x.name.is_plural' => 1,
         'x.name.singular' => 'by_field',
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 Each field specification is a field name with an optional prefix. `FIELD`
 (without prefix) means sort asciibetically ascending (smallest to largest),
 `~FIELD` means sort asciibetically descending (largest to smallest), `+FIELD`
 means sort numerically ascending, `-FIELD` means sort numerically descending.
 
-_
+MARKDOWN
         schema => ['array*', of=>'str*'],
         element_completion => \&_complete_sort_field,
     },
     by_code => {
         summary => 'Sort by using Perl code',
         schema => $sch_req_str_or_code,
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 `$a` and `$b` (or the first and second argument) will contain the two rows to be
 compared. Which are arrayrefs; or if `--hash` (`-H`) is specified, hashrefs; or
 if `--key` is specified, whatever the code in `--key` returns.
 
-_
+MARKDOWN
     },
     %argspecopt_key,
     %argspecsopt_sortsub,
@@ -982,12 +982,12 @@ our %argspecs_sort_fields = (
     by_code => {
         summary => 'Sort fields using Perl code',
         schema => $sch_req_str_or_code,
-        description => <<'_',
+        description => <<'MARKDOWN',
 
 `$a` and `$b` (or the first and second argument) will contain `[$field_name,
 $field_idx]`.
 
-_
+MARKDOWN
     },
     %argspecsopt_sortsub,
 );
@@ -1049,7 +1049,7 @@ sub _randext {
 $SPEC{gen_csv_util} = {
     v => 1.1,
     summary => 'Generate a CSV utility',
-    description => <<'_',
+    description => <<'MARKDOWN',
 
 This routine is used to generate a CSV utility in the form of a <pm:Rinci>
 function (code and metadata). You can then produce a CLI from the Rinci function
@@ -1324,7 +1324,7 @@ convention, you can set `$r->{output_fields}` and `$r->{output_fields_idx}` to
 let other handlers know about the output fields. For example, see the
 implementation of <prog:csv-concat>.
 
-_
+MARKDOWN
     args => {
         name => {
             schema => 'perl::identifier::unqualified_ascii*',
@@ -1370,12 +1370,12 @@ _
         reads_multiple_csv => {
             summary => 'Whether utility accepts CSV data',
             schema => 'bool*',
-            description => <<'_',
+            description => <<'MARKDOWN',
 
 Setting this option to true will implicitly set the `reads_csv` option to true,
 obviously.
 
-_
+MARKDOWN
         },
         writes_csv => {
             summary => 'Whether utility writes CSV data',
@@ -1386,12 +1386,12 @@ _
         writes_multiple_csv => {
             summary => 'Whether utility outputs CSV data',
             schema => 'bool*',
-            description => <<'_',
+            description => <<'MARKDOWN',
 
 Setting this option to true will implicitly set the `writes_csv` option to true,
 obviously.
 
-_
+MARKDOWN
         },
 
         on_begin => {
