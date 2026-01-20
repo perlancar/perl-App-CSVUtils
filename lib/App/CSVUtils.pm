@@ -428,6 +428,30 @@ pattern.
 MARKDOWN
         tags => ['category:input'],
     },
+    input_skip_before_num_data_rows => {
+        summary => 'Skip a certain number of data rows for each input file',
+        schema => 'uint*',
+        description => <<'MARKDOWN',
+
+This option can be used to skip the first certain number of data rows. If set to
+1, for example, will only process 1 data row for each input file. This option is
+a convenient alternative to composing with <pm:csv-tail>.
+
+MARKDOWN
+        tags => ['category:input'],
+    },
+    input_skip_file_after_num_data_rows => {
+        summary => 'Limit processing each input file to this number of data rows',
+        schema => 'uint*',
+        description => <<'MARKDOWN',
+
+This option can be used to limit processing only to a certain number of data
+rows. If set to 1, for example, will only process 1 data row for each input
+file. This option is a convenient alternative to composing with <pm:csv-head>.
+
+MARKDOWN
+        tags => ['category:input'],
+    },
     input_tsv => {
         summary => "Inform that input file is in TSV (tab-separated) format instead of CSV",
         schema => 'true*',
@@ -1751,14 +1775,22 @@ sub gen_csv_util {
                                 $r->{input_data_row_count}++ if $i;
                             }
                             $res;
+
                         };
                         $r->{code_getline} = $code_getline;
 
                         $i = 0;
+                      INPUT_ROW:
                         while ($r->{input_row} = $code_getline->()) {
                             $i++;
                             $r->{input_rownum} = $i;
                             $r->{input_data_rownum} = $has_header ? $i-1 : $i;
+
+                            if (defined($r->{util_args}{input_skip_file_after_num_data_rows}) && $r->{input_data_rownum} > $r->{util_args}{input_skip_file_after_num_data_rows}) {
+                                log_trace "[csvutil] Stopping after reading $r->{util_args}{input_skip_file_after_num_data_rows} row(s) ...";
+                                next INPUT_FILENAME;
+                            }
+
                             if ($i == 1) {
                                 # gather the list of fields
                                 $r->{input_fields} = $r->{input_row};
@@ -1792,6 +1824,11 @@ sub gen_csv_util {
                                 }
 
                             } else {
+                                if (defined($r->{util_args}{input_skip_before_num_data_rows}) && $r->{input_data_rownum} <= $r->{util_args}{input_skip_before_num_data_rows}) {
+                                    #log_trace "[csvutil] Skipping row (before input_skip_before_num_data_rows) ...";
+                                    next INPUT_ROW;
+                                }
+
                                 # fill up the elements of row to the number of
                                 # fields, in case the row contains sparse values
                                 unless (defined $r->{wants_fill_rows} && !$r->{wants_fill_rows}) {
