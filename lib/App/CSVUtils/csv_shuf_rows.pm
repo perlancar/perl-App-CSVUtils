@@ -3,50 +3,67 @@ package App::CSVUtils::csv_shuf_rows;
 use 5.010001;
 use strict;
 use warnings;
+use Log::ger;
 
 # AUTHORITY
 # DATE
 # DIST
 # VERSION
 
-use App::CSVUtils::csv_sort_rows;
-use Perinci::Sub::Util qw(gen_modified_sub);
+use App::CSVUtils qw(
+                        gen_csv_util
+                );
 
-my $res = gen_modified_sub(
-    output_name => 'csv_shuf_rows',
-    base_name => 'App::CSVUtils::csv_sort_rows::csv_sort_rows',
+gen_csv_util(
+    name => 'csv_shuf_rows',
     summary => 'Shuffle CSV rows',
     description => <<'MARKDOWN',
 
-This is basically like Unix command `shuf` except it does not shuffle the header
-row.
+This utility shuffle the rows in the CSV. Example input CSV:
+
+    name,age
+    Andy,20
+    Dennis,15
+    Ben,30
+    Jerry,30
+
+Example output CSV:
+
+    name,age
+    Ben,30
+    Andy,20
+    Jerry,30
+    Dennis,15
 
 MARKDOWN
 
-    remove_args => [qw/by_code by_fields by_sortsub sortsub_args key ci reverse hash/],
-    modify_meta => sub {
-        my $meta = shift;
-        delete $meta->{args_rels};
-        $meta->{examples} = [
-            {
-                summary => 'Shuffle a CSV file',
-                argv => ['file.csv'],
-                test => 0,
-                'x.doc.show_result' => 0,
-            },
-        ];
+    add_args => {
     },
-    tags => ['category:munging', 'random'],
 
-    output_code => sub {
-        App::CSVUtils::csv_sort_rows::csv_sort_rows(
-            @_,
-            # TODO: this feels less shuffled
-            by_code => sub { int(rand 3)-1 }, # return -1,0,1 randomly
-        );
+    tags => ['category:sorting'],
+
+    on_input_data_row => sub {
+        my $r = shift;
+
+        # keys we add to the stash
+        $r->{input_rows} //= [];
+
+        push @{ $r->{input_rows} }, $r->{input_row};
+    },
+
+    after_close_input_files => sub {
+        my $r = shift;
+
+        # we do the actual shuffling here after collecting all the rows
+
+        require List::Util;
+        my $shuffled_rows = [List::Util::shuffle(@{$r->{input_rows}})];
+
+        for my $row (@$shuffled_rows) {
+            $r->{code_print_row}->($row);
+        }
     },
 );
-die "Can't generate sub: $res->[0] - $res->[1]" unless $res->[0] == 200;
 
 1;
 # ABSTRACT:
